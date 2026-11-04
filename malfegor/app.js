@@ -941,6 +941,9 @@ const TITRE_ALERTE = {
 };
 const AFFICHAGE = PARTAGE ? "visuel" : "liste";          // affichage par défaut d'un deck : les images sur une page partagée
 const ORDRE_TYPES = ["Créatures", "Planeswalkers", "Batailles", "Éphémères", "Rituels", "Artefacts", "Enchantements", "Terrains", "Autres"];
+// fonctions (Scryfall Tagger, familles calculées par recherche.fonctions_cartes) : une carte est rangée sous la première des siennes
+const ORDRE_FONCTIONS = ["Ramp", "Pioche", "Tuteurs", "Removal", "Balayages", "Contresorts", "Recursion", "Protection", "Autres", "Terrains"];
+const fonctionPrincipale = (c) => (estTerrain(c) ? "Terrains" : (c.fonctions || [])[0] || "Autres");
 const ABREV = { "Créatures": "Cré", "Planeswalkers": "PW", "Batailles": "Bat", "Éphémères": "Éph", "Rituels": "Rit", "Artefacts": "Art",
   "Enchantements": "Ench", "Terrains": "Ter", "Autres": "?" };
 
@@ -972,7 +975,7 @@ function correspond(c, q) {
     const t = sansAccent(q.slice(1));
     return c.tags.some((x) => sansAccent(x) === t);
   }
-  const h = sansAccent([c.nom, c.info.fr, c.info.type, typeCarte(c.info.type), ...c.tags].join(" | "));
+  const h = sansAccent([c.nom, c.info.fr, c.info.type, typeCarte(c.info.type), ...c.tags, ...(c.fonctions || []), ...(c.fonctions_detail || [])].join(" | "));
   return sansAccent(q).split(/\s+/).every((m) => h.includes(m));
 }
 
@@ -982,10 +985,11 @@ function grouper(cartes, rangement) {
   for (const c of cartes) {
     if (c.cat === "Commander") ajoute("Commandant", c);
     else if (c.cat === "Maybeboard") ajoute("Maybeboard", c);
-    else ajoute(rangement === "tags" ? c.cat : typeCarte(c.info.type), c);
+    else ajoute(rangement === "tags" ? c.cat : rangement === "fonction" ? fonctionPrincipale(c) : typeCarte(c.info.type), c);
   }
   const rang = (k) => k === "Commandant" ? -1 : k === "Maybeboard" ? 999
-    : rangement === "tags" ? (k === "Sans catégorie" ? 998 : 0) : ORDRE_TYPES.indexOf(k);
+    : rangement === "tags" ? (k === "Sans catégorie" ? 998 : 0)
+    : (rangement === "fonction" ? ORDRE_FONCTIONS : ORDRE_TYPES).indexOf(k);
   return [...g.keys()].sort((a, b) => rang(a) - rang(b)).map((k) => ({ cat: k, cartes: g.get(k) }));
 }
 
@@ -1006,7 +1010,7 @@ function ongletListe(el, d) {
     ${!d.cartes.length ? `<div class="panneau vide"><p>Ce deck est vide.</p><button class="btn btn-accent ecrit" id="vide-ajouter">${ico("plus")}Ajouter des cartes</button></div>` : `
     <div class="barre-outils">
       ${segments("affichage", [["liste", "Liste", "liste"], ["visuel", "Visuel", "cartes"]], AFFICHAGE)}
-      <span class="outil"><span class="petit muet">Ranger par</span>${segments("rangement", [["type", "type"], ["tags", "tags"]], "type")}</span>
+      <span class="outil"><span class="petit muet">Ranger par</span>${segments("rangement", [["type", "type"], ["tags", "tags"], ["fonction", "fonction"]], "type")}</span>
       <label class="outil petit muet">Trier par
         <select class="champ champ-petit" id="tri">${[["cout", "coût"], ["nom", "nom"], ["prix", "prix"]].map(([v, l]) =>
           `<option value="${v}" ${PREF.get("tri", "cout") === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
@@ -1179,6 +1183,8 @@ function ouvrirCarte(c) {
         ${assembleHtml(f.assemble)}
         ${f.fr_texte || f.texte ? `<div class="texte fs-texte">${(f.fr_texte || f.texte).split("\n").map((l) => l.trim() === "//" ? "<hr>" : l.trim() ? `<p>${texteMana(l)}</p>` : "").join("")}</div>` : ""}
         ${f.fr_texte && f.texte ? `<details class="petit"><summary>Texte anglais</summary><div class="fs-texte" style="margin-top:.4rem">${f.texte.split("\n").map((l) => l.trim() === "//" ? "<hr>" : `<p>${texteMana(l)}</p>`).join("")}</div></details>` : ""}
+        ${(c.fonctions_detail || []).length ? `<div class="fc-ligne"><span class="petit muet">Fonctions</span>
+          ${c.fonctions_detail.map((x) => `<span class="puce">${esc(x)}</span>`).join("")}</div>` : ""}
         ${cmd ? "" : `
           <div class="fc-ligne"><span class="petit muet">Tags</span>
             ${tags.length ? tags.map((t, i) => `<span class="puce ${i === 0 ? "puce-1" : ""}">${i === 0 ? "★ " : ""}${esc(t)}</span>`).join("") : `<span class="muet petit">aucun</span>`}
@@ -1599,7 +1605,7 @@ const COULEURS = [["W", "Blanc"], ["U", "Bleu"], ["B", "Noir"], ["R", "Rouge"], 
 const nbCartes = (l) => l.reduce((s, c) => s + c.n, 0);
 const estTerrain = (c) => typeCarte(c.info.type) === "Terrains";
 const REPERES = [[/^(ramp|acc[eé]l[eé]ration)$/i, "≈ 10"], [/^(draw|card draw|pioche)$/i, "≈ 10"],
-  [/^(removal|d[eé]gagement|anti-?cr[eé]atures?)$/i, "5 à 10"], [/^(board ?wipes?|wipes?|rase-?boards?)$/i, "≈ 5"],
+  [/^(removal|d[eé]gagement|anti-?cr[eé]atures?)$/i, "5 à 10"], [/^(board ?wipes?|wipes?|rase-?boards?|balayages?)$/i, "≈ 5"],
   [/^(lands?|terrains?)$/i, "37-38"]];
 const repere = (t) => (REPERES.find(([r]) => r.test(t.trim())) || [])[1] || "";
 
@@ -1695,6 +1701,11 @@ function ongletStats(el, d) {
   for (const c of S.jeu) for (const t of c.tags) if (t !== "Commander" && t !== "Maybeboard") (tags[t] ||= []).push(c);
   const lignesTags = Object.entries(tags).sort((a, b) => nbCartes(b[1]) - nbCartes(a[1]))
     .map(([t, l]) => ({ label: esc(t), valeur: nbCartes(l), bulle: nomsBulle(`${t} : ${nbCartes(l)}`, l), repere: repere(t) }));
+  // fonctions des sorts des 99 (une carte compte dans chacune des siennes), comparées au gabarit
+  const lignesFonctions = ORDRE_FONCTIONS.filter((f) => f !== "Terrains")
+    .map((f) => [f, S.sorts.filter((c) => (f === "Autres" ? !(c.fonctions || []).length : (c.fonctions || []).includes(f)))])
+    .filter(([, l]) => l.length)
+    .map(([f, l]) => ({ label: esc(f), valeur: nbCartes(l), bulle: nomsBulle(`${f} : ${nbCartes(l)}`, l), repere: repere(f) }));
   // couleurs du commandant (sinon celles que demandent les cartes) : Command Tower « produit » les 5, ça ne compte pas
   const coul = S.couleurs.filter((c) => d.identite ? d.identite.includes(c.x) : c.cartes.length);
   const colorees = S.sorts.filter((c) => coul.some((k) => k.cartes.includes(c)));
@@ -1714,8 +1725,9 @@ function ongletStats(el, d) {
       <div class="panneau"><h3>Courbe de mana</h3>${grapheCourbe(S, 170)}</div>
       <div class="panneau"><h3>Cartes par couleur</h3>${grapheCouleurs(S, 170)}</div>
     </div>
-    <div class="grille-deux">
+    <div class="grille-3 stats-roles">
       <div class="panneau"><h3>Cartes par type</h3>${hbarres(S.types.map(([t, l]) => ({ label: esc(t), valeur: nbCartes(l), bulle: nomsBulle(`${t} : ${nbCartes(l)}`, l) })))}</div>
+      <div class="panneau"><h3>Fonctions</h3>${hbarres(lignesFonctions)}</div>
       <div class="panneau"><h3>Tags</h3>${lignesTags.length ? hbarres(lignesTags) : `<p class="muet petit">Aucun tag.</p>`}</div>
     </div>
     <div class="panneau">
