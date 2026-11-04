@@ -373,7 +373,7 @@ button.puce-dispo:hover { border-color: var(--accent); color: var(--accent); }
 /* ---- statistiques */
 .grille-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
 .grille-deux { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; }
-.grille-deux + .grille-deux, .grille-deux + .panneau { margin-top: 1rem; }
+.grille-deux + .grille-deux, .grille-deux + .panneau, .grille-deux + .grille-3, .grille-3 + .panneau { margin-top: 1rem; }
 .grille-deux .panneau { margin-top: 0; }
 @media (max-width: 760px) { .grille-deux { grid-template-columns: 1fr; } }
 .grille-3 .panneau, .grille-2 .panneau { margin-top: 0; }
