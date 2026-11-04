@@ -1088,5 +1088,385 @@
     "Chauffeur de charbon"
    ]
   ]
+ },
+ "Deck Sefris": {
+  "slug": "sefris",
+  "date": 1793802193.085852,
+  "resume": {
+   "alertes": {},
+   "art": "https://cards.scryfall.io/art_crop/front/d/3/d30255f6-e058-476a-b377-2ee4c9178ed1.jpg?1783926260",
+   "commandant": "Sefris of the Hidden Ways",
+   "commandants": [
+    "Sefris of the Hidden Ways"
+   ],
+   "gc": [],
+   "id": "Deck Sefris",
+   "identite": [
+    "B",
+    "U",
+    "W"
+   ],
+   "image_cmd": "https://cards.scryfall.io/normal/front/d/3/d30255f6-e058-476a-b377-2ee4c9178ed1.jpg?1783926260",
+   "maybe": 0,
+   "modifie": 1793291424.363468,
+   "note": "",
+   "prix_total": 70.45,
+   "titre": "Sefris",
+   "total": 100,
+   "trop_cher": [
+    "Bone Miser",
+    "Monument to Endurance"
+   ]
+  },
+  "cartes": [
+   [
+    "Sefris of the Hidden Ways",
+    "Sefris des Voies Secrètes"
+   ],
+   [
+    "Street Wraith",
+    "Apparition des rues"
+   ],
+   [
+    "Winged Shepherd",
+    "Berger ailé"
+   ],
+   [
+    "Glassdust Hulk",
+    "Carcasse de poussière de verre"
+   ],
+   [
+    "Architects of Will",
+    "Architectes de la Volonté"
+   ],
+   [
+    "Splendor Mare",
+    "Jument de splendeur"
+   ],
+   [
+    "River Serpent",
+    "Serpent du fleuve"
+   ],
+   [
+    "Windcaller Aven",
+    "Avemain meneur de vent"
+   ],
+   [
+    "Troll of Khazad-dûm",
+    "Troll de Khazad-dûm"
+   ],
+   [
+    "Imposing Vantasaur",
+    "Miradosaure imposant"
+   ],
+   [
+    "Lurching Rotbeast",
+    "Bête putréfiée vacillante"
+   ],
+   [
+    "Striped Riverwinder",
+    "Crotale des rivières tigré"
+   ],
+   [
+    "Angel of the God-Pharaoh",
+    "Ange du Dieu-Pharaon"
+   ],
+   [
+    "Hollow One",
+    "Celui-qui-est-creux"
+   ],
+   [
+    "Gloomfang Mauler",
+    "Meurtrisseur crassecroc"
+   ],
+   [
+    "Eldrazi Ravager",
+    "Ravageur eldrazi"
+   ],
+   [
+    "Yoked Plowbeast",
+    "Labourin attelé"
+   ],
+   [
+    "Primoc Escapee",
+    "Évadé primoc"
+   ],
+   [
+    "Drownyard Lurker",
+    "Guetteur du cimetière marin"
+   ],
+   [
+    "Oketra's Attendant",
+    "Suivante d'Oketra"
+   ],
+   [
+    "Void Beckoner",
+    "Mandeur du vide"
+   ],
+   [
+    "Scion of Darkness",
+    "Scion des ténèbres"
+   ],
+   [
+    "Chitin Gravestalker",
+    "Pisteur des tombes chitineux"
+   ],
+   [
+    "Waxen Shapethief",
+    "Voleforme cireux"
+   ],
+   [
+    "Wasteland Scorpion",
+    "Scorpion des terres dévastées"
+   ],
+   [
+    "Shefet Archfiend",
+    "Archifielleux de Shefet"
+   ],
+   [
+    "Angel of the Ruins",
+    "Ange des ruines"
+   ],
+   [
+    "Alabaster Host Intercessor",
+    "Intercesseur de la milice d'albâtre"
+   ],
+   [
+    "Flourishing Fox",
+    "Renard prospère"
+   ],
+   [
+    "Drannith Healer",
+    "Guérisseur de Drannith"
+   ],
+   [
+    "Valiant Rescuer",
+    "Sauveteur valeureux"
+   ],
+   [
+    "Scrounging Skyray",
+    "Raie céleste fouineuse"
+   ],
+   [
+    "Horror of the Broken Lands",
+    "Horreur des terres brisées"
+   ],
+   [
+    "Curator of Mysteries",
+    "Conservateur de mystères"
+   ],
+   [
+    "Archfiend of Ifnir",
+    "Archifielleux d'Ifnir"
+   ],
+   [
+    "Bone Miser",
+    "Avare aux ossements"
+   ],
+   [
+    "Monument to Endurance",
+    "Monument à la résilience"
+   ],
+   [
+    "Feast of Sanity",
+    "Festin de sanité"
+   ],
+   [
+    "Fluctuator",
+    "Fluctuateur"
+   ],
+   [
+    "Astral Slide",
+    "Glissement astral"
+   ],
+   [
+    "Astral Drift",
+    "Dérive astrale"
+   ],
+   [
+    "Living Death",
+    "Mort vivante"
+   ],
+   [
+    "Herald of the Forgotten",
+    "Héraut des oubliés"
+   ],
+   [
+    "Bringer of the Last Gift",
+    "Annonciateur de la dernière offrande"
+   ],
+   [
+    "Mulldrifter",
+    "Vagabond des pensées"
+   ],
+   [
+    "New Perspectives",
+    "Nouvelles perspectives"
+   ],
+   [
+    "Teferi's Ageless Insight",
+    "Perspicacité sans âge de Téfeiri"
+   ],
+   [
+    "Trade Routes",
+    "Routes marchandes"
+   ],
+   [
+    "Fellwar Stone",
+    "Pierre de Guermont"
+   ],
+   [
+    "Arcane Signet",
+    "Cachet d'ésotérisme"
+   ],
+   [
+    "Azorius Signet",
+    "Cachet d'Azorius"
+   ],
+   [
+    "Dimir Signet",
+    "Cachet de Dimir"
+   ],
+   [
+    "Orzhov Signet",
+    "Cachet d'Orzhov"
+   ],
+   [
+    "Talisman of Progress",
+    "Talisman de progrès"
+   ],
+   [
+    "Talisman of Dominance",
+    "Talisman de dominance"
+   ],
+   [
+    "Talisman of Hierarchy",
+    "Talisman de hiérarchie"
+   ],
+   [
+    "Ornithopter of Paradise",
+    "Ornithoptère de paradis"
+   ],
+   [
+    "Shriekmaw",
+    "Hurlegueule"
+   ],
+   [
+    "Cathar Commando",
+    "Commando cathare"
+   ],
+   [
+    "Cast Out",
+    "Proscription"
+   ],
+   [
+    "Miscalculation",
+    "Erreur de calcul"
+   ],
+   [
+    "Decree of Pain",
+    "Décret de souffrance"
+   ],
+   [
+    "Command Tower",
+    "Tour de commandement"
+   ],
+   [
+    "Exotic Orchard",
+    "Verger exotique"
+   ],
+   [
+    "Arcane Sanctum",
+    "Sanctuaire ésotérique"
+   ],
+   [
+    "Esper Panorama",
+    "Panorama d'Esper"
+   ],
+   [
+    "Contaminated Landscape",
+    "Paysage contaminé"
+   ],
+   [
+    "Evolving Wilds",
+    "Étendues sauvages en évolution"
+   ],
+   [
+    "Terramorphic Expanse",
+    "Immensité terramorphe"
+   ],
+   [
+    "Ash Barrens",
+    "Landes cendreuses"
+   ],
+   [
+    "Desolate Mire",
+    "Bourbier abandonné"
+   ],
+   [
+    "Darkwater Catacombs",
+    "Catacombes de Sombreau"
+   ],
+   [
+    "Skycloud Expanse",
+    "Immensité de Cielcouvert"
+   ],
+   [
+    "Port Town",
+    "Ville portuaire"
+   ],
+   [
+    "Choked Estuary",
+    "Estuaire asphyxié"
+   ],
+   [
+    "Sunken Hollow",
+    "Dépression engloutie"
+   ],
+   [
+    "Prairie Stream",
+    "Prairie ruisselante"
+   ],
+   [
+    "Irrigated Farmland",
+    "Terres arables irriguées"
+   ],
+   [
+    "Fetid Pools",
+    "Bassins fétides"
+   ],
+   [
+    "Barren Moor",
+    "Lande stérile"
+   ],
+   [
+    "Polluted Mire",
+    "Fondrière polluée"
+   ],
+   [
+    "Drifting Meadow",
+    "Prairie dérivante"
+   ],
+   [
+    "Remote Isle",
+    "Île lointaine"
+   ],
+   [
+    "Lonely Sandbar",
+    "Banc de sable isolé"
+   ],
+   [
+    "Plains",
+    "Plaine"
+   ],
+   [
+    "Swamp",
+    "Marais"
+   ],
+   [
+    "Island",
+    "Île"
+   ]
+  ]
  }
 }
