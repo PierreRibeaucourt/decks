@@ -936,6 +936,7 @@ const TITRE_ALERTE = {
   "interdite": "Carte bannie en Commander",
   "non légale": "Carte non légale en Commander (carte Un-, Alchimie…)",
 };
+const AFFICHAGE = PARTAGE ? "visuel" : "liste";          // affichage par défaut d'un deck : les images sur une page partagée
 const ORDRE_TYPES = ["Créatures", "Planeswalkers", "Batailles", "Éphémères", "Rituels", "Artefacts", "Enchantements", "Terrains", "Autres"];
 const ABREV = { "Créatures": "Cré", "Planeswalkers": "PW", "Batailles": "Bat", "Éphémères": "Éph", "Rituels": "Rit", "Artefacts": "Art",
   "Enchantements": "Ench", "Terrains": "Ter", "Autres": "?" };
@@ -1001,7 +1002,7 @@ function ongletListe(el, d) {
     ${d.erreur_sim ? `<p class="erreur petit">Le simulateur n'a pas pu lire ce deck : ${esc(d.erreur_sim.non_lu[0])}</p>` : ""}
     ${!d.cartes.length ? `<div class="panneau vide"><p>Ce deck est vide.</p><button class="btn btn-accent ecrit" id="vide-ajouter">${ico("plus")}Ajouter des cartes</button></div>` : `
     <div class="barre-outils">
-      ${segments("affichage", [["liste", "Liste", "liste"], ["visuel", "Visuel", "cartes"]], "liste")}
+      ${segments("affichage", [["liste", "Liste", "liste"], ["visuel", "Visuel", "cartes"]], AFFICHAGE)}
       <span class="outil"><span class="petit muet">Ranger par</span>${segments("rangement", [["type", "type"], ["tags", "tags"]], "type")}</span>
       <label class="outil petit muet">Trier par
         <select class="champ champ-petit" id="tri">${[["cout", "coût"], ["nom", "nom"], ["prix", "prix"]].map(([v, l]) =>
@@ -1041,7 +1042,7 @@ function ongletListe(el, d) {
 }
 
 function rendreGroupes(zone, d) {
-  const visuel = PREF.get("affichage", "liste") === "visuel";
+  const visuel = PREF.get("affichage", AFFICHAGE) === "visuel";
   const rangement = PREF.get("rangement", "type");
   const tri = TRIS[PREF.get("tri", "cout")] || TRIS.cout;
   const groupes = grouper(d.cartes.filter((c) => correspond(c, etat.filtre)), rangement);
