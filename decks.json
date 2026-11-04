@@ -1105,10 +1105,14 @@
  },
  "Deck Sefris": {
   "slug": "sefris",
-  "date": 1793802193.085852,
+  "date": 1793814386.8623064,
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/d/3/d30255f6-e058-476a-b377-2ee4c9178ed1.jpg?1783926260",
+   "bracket": 2,
+   "bracket_raisons": [
+    "aucun Game Changer, aucune combo infinie à 2 cartes : bracket 2 (ou 1 si le deck est très décontracté)"
+   ],
    "commandant": "Sefris of the Hidden Ways",
    "commandants": [
     "Sefris of the Hidden Ways"
