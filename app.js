@@ -699,13 +699,15 @@ async function vueAccueil() {
   }));
 }
 
-function chiffresDeck(d) {
+// accueil : sans le Maybeboard ; en-tête d'un deck : avec
+function chiffresDeck(d, accueil = false) {
   const complet = d.total === 100;
   const al = Object.entries(d.alertes || {});
   return `
     <span class="badge ${complet ? "badge-ok" : "badge-alerte"}">${d.total} / 100 cartes</span>
-    ${d.maybe ? `<span class="badge">${d.maybe} en Maybeboard</span>` : ""}
+    ${d.maybe && !accueil ? `<span class="badge">${d.maybe} en Maybeboard</span>` : ""}
     <span class="badge">${euros(d.prix_total)}</span>
+    ${d.bracket ? `<span class="badge badge-bracket" title="${esc((d.bracket_raisons || []).join("\n"))}">${ico("bracket")}Bracket ${d.bracket}</span>` : ""}
     <span class="badge ${d.gc.length ? "badge-gc" : ""}" title="${esc(d.gc.join(", "))}">${d.gc.length} Game Changer${d.gc.length > 1 ? "s" : ""}</span>
     ${!d.commandant ? `<span class="badge badge-alerte">pas de commandant</span>` : ""}
     ${al.length ? `<span class="badge badge-alerte" title="${esc(al.map(([n, a]) => `${n} : ${a.join(", ")}`).join("\n"))}">${al.length} carte${al.length > 1 ? "s" : ""} hors règles</span>` : ""}`;
@@ -722,7 +724,7 @@ function carteDeck(d, noms) {
       <div class="corps">
         <div class="titre">${esc(d.titre)} <span class="identite">${identiteHtml(d.identite)}</span></div>
         <div class="muet petit">${esc(nomsCommandants(d) || "pas encore de commandant")}</div>
-        <div class="chiffres">${chiffresDeck(d)}</div>
+        <div class="chiffres">${chiffresDeck(d, true)}</div>
         ${d.note ? `<div class="petit muet">${esc(d.note)}</div>` : ""}
         ${contientHtml(noms)}
       </div>
@@ -747,12 +749,13 @@ function rendreDecks(zone, cartes) {
   const noms = (d) => sansAccent(`${d.titre} ${nomsCommandants(d)}`).includes(q) ? null : cartes[d.id];
   if (PREF.get("vue-decks", "grille") === "liste") {
     zone.innerHTML = `<table class="tableau tableau-decks">
-      <thead><tr><th>Deck</th><th>Couleurs</th><th class="num">Cartes</th><th class="num">Prix</th><th class="num">Game Changers</th><th class="num">Modifié</th></tr></thead>
+      <thead><tr><th>Deck</th><th>Couleurs</th><th class="num">Cartes</th><th class="num">Prix</th><th class="num">Bracket</th><th class="num">Game Changers</th><th class="num">Modifié</th></tr></thead>
       <tbody>${ds.map((d) => `<tr data-deck="${esc(d.id)}">
         <td><a href="${esc(lienDeck(d.id))}"><strong>${esc(d.titre)}</strong></a><div class="muet petit">${esc(nomsCommandants(d) || "pas encore de commandant")}</div>${contientHtml(noms(d))}</td>
         <td><span class="identite">${identiteHtml(d.identite)}</span></td>
-        <td class="num ${d.total === 100 ? "" : "alerte-texte"}">${d.total}${d.maybe ? `<div class="muet petit">+${d.maybe} maybe</div>` : ""}</td>
+        <td class="num ${d.total === 100 ? "" : "alerte-texte"}">${d.total}</td>
         <td class="num">${euros(d.prix_total)}</td>
+        <td class="num" title="${esc((d.bracket_raisons || []).join("\n"))}">${d.bracket || ""}</td>
         <td class="num">${d.gc.length || ""}</td>
         <td class="num muet">${dateCourte(d.modifie)}</td></tr>`).join("")}</tbody></table>`;
   } else {
@@ -1470,19 +1473,19 @@ function rechercheCarte(zone, { surChoix, surAjout = null, deck = () => etat.dec
       choisir(Math.max(0, actif));
     }
   });
+  const vider = () => { numero++; clearTimeout(minuteur); champ.value = ""; liste = []; actif = -1; res.innerHTML = ""; champ.focus(); };
   res.addEventListener("click", async (ev) => {
     const p = ev.target.closest("button.res-plus");
     if (p) {
       p.disabled = true;
-      if (await surAjout(liste[+p.dataset.plus])) res.innerHTML = liste.map(ligne).join("");     // « déjà dans le deck »
-      else p.disabled = false;
-      champ.focus();
+      if (await surAjout(liste[+p.dataset.plus])) vider();         // carte ajoutée : le champ est prêt pour la suivante
+      else { p.disabled = false; champ.focus(); }
       return;
     }
     const b = ev.target.closest(".res-carte");
     if (b) choisir(+b.dataset.i);
   });
-  return { champ, vider() { numero++; champ.value = ""; liste = []; res.innerHTML = ""; champ.focus(); } };
+  return { champ, vider };
 }
 
 // surVersion : la fiche propose « Changer la version (visuel) » et rend la fiche de l'impression choisie
@@ -1553,7 +1556,19 @@ function modaleAjout() {
       return res;
     };
     const rech = rechercheCarte($("#rech", b), {
-      surAjout: (x) => ajouter(x.nom, null),
+      surAjout: async (x) => {
+        const res = await ajouter(x.nom, null);
+        if (res) {
+          $("#qte-ajout", b).value = 1;
+          if (choix && choix.nom === x.nom) {                 // la fiche affichée était celle de cette carte
+            choix = null;
+            $("#fiche", b).innerHTML = "";
+            $("#ok", b).disabled = true;
+            $("#ok span", b).textContent = "Ajouter au deck";
+          }
+        }
+        return res;
+      },
       surChoix: async (x) => {
         choix = null;
         $("#ok", b).disabled = true;
