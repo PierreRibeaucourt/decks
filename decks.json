@@ -383,5 +383,361 @@
     "Foi des dévoués"
    ]
   ]
+ },
+ "Deck Kels": {
+  "slug": "kels",
+  "date": 1793802180.463096,
+  "resume": {
+   "alertes": {},
+   "art": "https://cards.scryfall.io/art_crop/front/b/7/b70d445b-d3d6-4f7c-b9ea-bed6a26d4a2a.jpg?1783930505",
+   "commandant": "Kels, Fight Fixer",
+   "commandants": [
+    "Kels, Fight Fixer"
+   ],
+   "gc": [
+    "Demonic Tutor"
+   ],
+   "id": "Deck Kels",
+   "identite": [
+    "B",
+    "U"
+   ],
+   "image_cmd": "https://cards.scryfall.io/normal/front/b/7/b70d445b-d3d6-4f7c-b9ea-bed6a26d4a2a.jpg?1783930505",
+   "maybe": 0,
+   "modifie": 1793305148.5471895,
+   "note": "",
+   "prix_total": 172.62,
+   "titre": "Kels",
+   "total": 100,
+   "trop_cher": [
+    "Sheoldred, Whispering One",
+    "Demonic Tutor",
+    "Sidisi, Undead Vizier",
+    "Sheoldred // The True Scriptures",
+    "Attrition",
+    "Bitterblossom",
+    "Baleful Strix",
+    "Damnation",
+    "Clearwater Pathway"
+   ]
+  },
+  "cartes": [
+   [
+    "Kels, Fight Fixer",
+    ""
+   ],
+   [
+    "Dawn of the Dead",
+    "Aube des morts"
+   ],
+   [
+    "Mimic Vat",
+    "Cuve de mimétisme"
+   ],
+   [
+    "God-Pharaoh's Gift",
+    "Don du Dieu-Pharaon"
+   ],
+   [
+    "Demon of Dark Schemes",
+    "Démon aux noirs desseins"
+   ],
+   [
+    "Sheoldred, Whispering One",
+    "Sheoldred la Susurrante"
+   ],
+   [
+    "Demonic Tutor",
+    "Précepteur diabolique"
+   ],
+   [
+    "Gate to the Afterlife",
+    "Portail vers l'au-delà"
+   ],
+   [
+    "Trophy Mage",
+    "Mage des trophées"
+   ],
+   [
+    "Treasure Mage",
+    "Mage au trésor"
+   ],
+   [
+    "Sidisi, Undead Vizier",
+    "Sidisi, vizir morte-vivante"
+   ],
+   [
+    "Fleshbag Marauder",
+    "Maraudeur sacpeau"
+   ],
+   [
+    "Merciless Executioner",
+    "Exécuteur impitoyable"
+   ],
+   [
+    "Plaguecrafter",
+    "Façonneur de peste"
+   ],
+   [
+    "Demon's Disciple",
+    "Disciple du démon"
+   ],
+   [
+    "Gravelighter",
+    "Illuminateur de tombe"
+   ],
+   [
+    "Accursed Marauder",
+    "Maraudeur maudit"
+   ],
+   [
+    "Chain Devil",
+    "Diable à chaînes"
+   ],
+   [
+    "Merchant of Venom",
+    "Marchand de venin"
+   ],
+   [
+    "Winter, Tormented Loner",
+    "Frimas, solitaire tourmenté"
+   ],
+   [
+    "Sheoldred // The True Scriptures",
+    "Sheoldred // Les Vraies Saintes Écritures"
+   ],
+   [
+    "Wasteland Raider",
+    "Pillard des terres désolées"
+   ],
+   [
+    "Lokhust Heavy Destroyer",
+    "Destroyer lourd Lokhust"
+   ],
+   [
+    "Syr Konrad, the Grim",
+    "Syr Konrad, le Sinistre"
+   ],
+   [
+    "Gray Merchant of Asphodel",
+    "Marchand gris d'Asphodèle"
+   ],
+   [
+    "Bastion of Remembrance",
+    "Bastion du souvenir"
+   ],
+   [
+    "Massacre Wurm",
+    "Guivre du massacre"
+   ],
+   [
+    "Butcher of Malakir",
+    "Boucher de Malakir"
+   ],
+   [
+    "Reaper from the Abyss",
+    "Faucheur de l'abysse"
+   ],
+   [
+    "Morbid Opportunist",
+    "Opportuniste morbide"
+   ],
+   [
+    "Attrition",
+    ""
+   ],
+   [
+    "Vampiric Rites",
+    "Sacres vampiriques"
+   ],
+   [
+    "Village Rites",
+    "Rites du village"
+   ],
+   [
+    "Deadly Dispute",
+    "Dispute mortelle"
+   ],
+   [
+    "Perilous Research",
+    "Recherche périlleuse"
+   ],
+   [
+    "Reassembling Skeleton",
+    "Squelette réassemblable"
+   ],
+   [
+    "Stitcher's Supplier",
+    "Approvisionneuse du raccommodeur"
+   ],
+   [
+    "Ophiomancer",
+    "Ophiomancienne"
+   ],
+   [
+    "Bitterblossom",
+    "Âpre fleur"
+   ],
+   [
+    "Mulldrifter",
+    "Vagabond des pensées"
+   ],
+   [
+    "Baleful Strix",
+    "Sinistre strix"
+   ],
+   [
+    "Fell Stinger",
+    "Piqueur sinistre"
+   ],
+   [
+    "Shriekmaw",
+    "Hurlegueule"
+   ],
+   [
+    "Nevermaker",
+    "Fabronques"
+   ],
+   [
+    "Ravenous Chupacabra",
+    "Chupacabra vorace"
+   ],
+   [
+    "Nekrataal",
+    ""
+   ],
+   [
+    "Venser, Shaper Savant",
+    "Venser, forgeur savant"
+   ],
+   [
+    "Feed the Swarm",
+    "Nourrir l'essaim"
+   ],
+   [
+    "Counterspell",
+    "Contresort"
+   ],
+   [
+    "Damnation",
+    ""
+   ],
+   [
+    "Solemn Simulacrum",
+    "Simulacre solennel"
+   ],
+   [
+    "Mind Stone",
+    "Pierre de l'esprit"
+   ],
+   [
+    "Arcane Signet",
+    "Cachet d'ésotérisme"
+   ],
+   [
+    "Dimir Signet",
+    "Cachet de Dimir"
+   ],
+   [
+    "Talisman of Dominance",
+    "Talisman de dominance"
+   ],
+   [
+    "Fellwar Stone",
+    "Pierre de Guermont"
+   ],
+   [
+    "Thought Vessel",
+    "Urne de pensée"
+   ],
+   [
+    "Sky Diamond",
+    "Diamant du ciel"
+   ],
+   [
+    "Charcoal Diamond",
+    "Diamant du charbon"
+   ],
+   [
+    "Silver Myr",
+    "Myr argenté"
+   ],
+   [
+    "Leaden Myr",
+    "Myr de plomb"
+   ],
+   [
+    "Ornithopter of Paradise",
+    "Ornithoptère de paradis"
+   ],
+   [
+    "Command Tower",
+    "Tour de commandement"
+   ],
+   [
+    "Drowned Catacomb",
+    "Catacombes noyées"
+   ],
+   [
+    "Clearwater Pathway",
+    "Passage d'Eauclaire // Passage d'Eaunoire"
+   ],
+   [
+    "Sunken Hollow",
+    "Dépression engloutie"
+   ],
+   [
+    "Choked Estuary",
+    "Estuaire asphyxié"
+   ],
+   [
+    "Shipwreck Marsh",
+    "Marécage aux épaves"
+   ],
+   [
+    "Underground River",
+    "Rivière souterraine"
+   ],
+   [
+    "Tainted Isle",
+    "Île souillée"
+   ],
+   [
+    "Darkwater Catacombs",
+    "Catacombes de Sombreau"
+   ],
+   [
+    "Sunken Ruins",
+    "Ruines englouties"
+   ],
+   [
+    "Academy Ruins",
+    "Ruines de l'académie"
+   ],
+   [
+    "Buried Ruin",
+    "Ruine ensevelie"
+   ],
+   [
+    "Sequestered Stash",
+    "Réserve séquestrée"
+   ],
+   [
+    "Evolving Wilds",
+    "Étendues sauvages en évolution"
+   ],
+   [
+    "Terramorphic Expanse",
+    "Immensité terramorphe"
+   ],
+   [
+    "Swamp",
+    "Marais"
+   ],
+   [
+    "Island",
+    "Île"
+   ]
+  ]
  }
 }
