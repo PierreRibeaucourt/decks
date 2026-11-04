@@ -739,5 +739,354 @@
     "Île"
    ]
   ]
+ },
+ "Deck Greven Elemental": {
+  "slug": "greven-elemental",
+  "date": 1793802186.5882761,
+  "resume": {
+   "alertes": {},
+   "art": "https://cards.scryfall.io/art_crop/front/b/d/bda22fc3-31a5-451a-9a8b-372884f7bc61.jpg?1783932799",
+   "commandant": "Greven, Predator Captain",
+   "commandants": [
+    "Greven, Predator Captain"
+   ],
+   "gc": [
+    "Jeska's Will"
+   ],
+   "id": "Deck Greven Elemental",
+   "identite": [
+    "B",
+    "R"
+   ],
+   "image_cmd": "https://cards.scryfall.io/normal/front/b/d/bda22fc3-31a5-451a-9a8b-372884f7bc61.jpg?1783932799",
+   "maybe": 4,
+   "modifie": 1793713659.6196554,
+   "note": "",
+   "prix_total": 142.74,
+   "titre": "Greven Elemental",
+   "total": 100,
+   "trop_cher": [
+    "Sneak Attack",
+    "Molten Echoes",
+    "Terror of the Peaks",
+    "Jeska's Will",
+    "Ruby Medallion",
+    "Tibalt's Trickery"
+   ]
+  },
+  "cartes": [
+   [
+    "Greven, Predator Captain",
+    "Grêvën, capitaine du Prédateur"
+   ],
+   [
+    "Ball Lightning",
+    "Boule fulgurante"
+   ],
+   [
+    "Lightning Skelemental",
+    "Squelémental d'éclair"
+   ],
+   [
+    "Blistering Firecat",
+    "Chatfeu incandescent"
+   ],
+   [
+    "Nova Chaser",
+    "Chasse-nova"
+   ],
+   [
+    "Thunderblust",
+    "Ragefoudre"
+   ],
+   [
+    "Spitebellows",
+    "Soufflaigreur"
+   ],
+   [
+    "Igneous Pouncer",
+    "Bondisseur ignescent"
+   ],
+   [
+    "Arc Runner",
+    "Coureur d'arc"
+   ],
+   [
+    "Scorchwalker",
+    "Marcheur incendiaire"
+   ],
+   [
+    "Lightning Elemental",
+    "Élémental d'éclair"
+   ],
+   [
+    "Spark Elemental",
+    "Élémental d'étincelles"
+   ],
+   [
+    "Hellspark Elemental",
+    "Élémental d'étincelles de l'enfer"
+   ],
+   [
+    "Glarewielder",
+    "Porteur de coruscation"
+   ],
+   [
+    "Lightning Serpent",
+    "Serpent d'éclairs"
+   ],
+   [
+    "Heartlash Cinder",
+    "Scoriacé fouettecœur"
+   ],
+   [
+    "Mimic Vat",
+    "Cuve de mimétisme"
+   ],
+   [
+    "Thunderkin Awakener",
+    "Éveilleur sangfoudre"
+   ],
+   [
+    "Footsteps of the Goryo",
+    "Bruits de pas du goryo"
+   ],
+   [
+    "Sneak Attack",
+    "Attaque furtive"
+   ],
+   [
+    "Incandescent Soulstoke",
+    "Chauffeur d'âme incandescent"
+   ],
+   [
+    "Berserkers' Onslaught",
+    "Carnage des berserkers"
+   ],
+   [
+    "Molten Echoes",
+    "Échos en fusion"
+   ],
+   [
+    "Pandemonium",
+    ""
+   ],
+   [
+    "Gratuitous Violence",
+    "Violence gratuite"
+   ],
+   [
+    "Terror of the Peaks",
+    "Terreur des pics"
+   ],
+   [
+    "Champion of the Path",
+    "Champion de la voie"
+   ],
+   [
+    "Sparkspitter",
+    "Cracheur d'étincelles"
+   ],
+   [
+    "Scampering Scorcher",
+    "Brûleur gambadant"
+   ],
+   [
+    "Elemental Appeal",
+    "Sollicitation élémentale"
+   ],
+   [
+    "Rite of the Raging Storm",
+    "Rituel de l'orage en furie"
+   ],
+   [
+    "Swiftfoot Boots",
+    "Bottes de piedagile"
+   ],
+   [
+    "Lightning Greaves",
+    "Jambières d'éclair"
+   ],
+   [
+    "Inner-Flame Acolyte",
+    "Acolyte de la Flamme intérieure"
+   ],
+   [
+    "Thud",
+    "Splaf !"
+   ],
+   [
+    "Fling",
+    "Jet"
+   ],
+   [
+    "Temur Battle Rage",
+    "Rage de bataille temurienne"
+   ],
+   [
+    "Flamekin Harbinger",
+    "Annonciatrice sangpyre"
+   ],
+   [
+    "Jeska's Will",
+    "Volonté de Jeska"
+   ],
+   [
+    "Skullclamp",
+    "Pincecrâne"
+   ],
+   [
+    "Heirloom Blade",
+    "Lame d'héritage"
+   ],
+   [
+    "Smokebraider",
+    "Natteuse de fumée"
+   ],
+   [
+    "Flamebraider",
+    "Tresseuse de flammes"
+   ],
+   [
+    "Generator Servant",
+    "Servant du générateur"
+   ],
+   [
+    "Ruby Medallion",
+    "Médaillon de rubis"
+   ],
+   [
+    "Arcane Signet",
+    "Cachet d'ésotérisme"
+   ],
+   [
+    "Rakdos Signet",
+    "Cachet de Rakdos"
+   ],
+   [
+    "Talisman of Indulgence",
+    "Talisman d'indulgence"
+   ],
+   [
+    "Thought Vessel",
+    "Urne de pensée"
+   ],
+   [
+    "Fire Diamond",
+    "Diamant du feu"
+   ],
+   [
+    "Wayfarer's Bauble",
+    "Babiole du voyageur"
+   ],
+   [
+    "Mana Geyser",
+    "Geyser de mana"
+   ],
+   [
+    "Chaos Warp",
+    "Distorsion chaotique"
+   ],
+   [
+    "Terminate",
+    "Terminaison"
+   ],
+   [
+    "Feed the Swarm",
+    "Nourrir l'essaim"
+   ],
+   [
+    "Shriekmaw",
+    "Hurlegueule"
+   ],
+   [
+    "Lightning Bolt",
+    "Foudre"
+   ],
+   [
+    "Tibalt's Trickery",
+    "Tromperie selon Tibalt"
+   ],
+   [
+    "Last One Standing",
+    ""
+   ],
+   [
+    "Blasphemous Act",
+    "Acte blasphématoire"
+   ],
+   [
+    "Hour of Devastation",
+    "L'Âge de la Destruction"
+   ],
+   [
+    "Chain Reaction",
+    "Réaction en chaîne"
+   ],
+   [
+    "Command Tower",
+    "Tour de commandement"
+   ],
+   [
+    "Eclipsed Realms",
+    "Royaumes éclipsés"
+   ],
+   [
+    "Foreboding Ruins",
+    "Ruines angoissantes"
+   ],
+   [
+    "Hanweir Battlements",
+    "Remparts de Hanweir"
+   ],
+   [
+    "Flamekin Village",
+    "Village sangpyre"
+   ],
+   [
+    "Graven Cairns",
+    "Cairns sculptés"
+   ],
+   [
+    "Smoldering Marsh",
+    "Marécage fumant"
+   ],
+   [
+    "Dragonskull Summit",
+    "Sommet du Crânedragon"
+   ],
+   [
+    "Sulfurous Springs",
+    "Sources sulfureuses"
+   ],
+   [
+    "Shadowblood Ridge",
+    "Contreforts d'Ombresang"
+   ],
+   [
+    "Mountain",
+    "Montagne"
+   ],
+   [
+    "Swamp",
+    "Marais"
+   ],
+   [
+    "Maze Rusher",
+    "Traceur du labyrinthe"
+   ],
+   [
+    "Quaketusk Boar",
+    "Sanglier sismivoire"
+   ],
+   [
+    "Skizzik Surger",
+    "Ondulateur skizzik"
+   ],
+   [
+    "Coal Stoker",
+    "Chauffeur de charbon"
+   ]
+  ]
  }
 }
