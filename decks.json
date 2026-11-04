@@ -742,10 +742,15 @@
  },
  "Deck Greven Elemental": {
   "slug": "greven-elemental",
-  "date": 1793802186.5882761,
+  "date": 1793814365.8471017,
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/b/d/bda22fc3-31a5-451a-9a8b-372884f7bc61.jpg?1783932799",
+   "bracket": 3,
+   "bracket_raisons": [
+    "1 Game Changer : Jeska's Will",
+    "1 combo infinie à 2 cartes : à ne pas sortir en début de partie"
+   ],
    "commandant": "Greven, Predator Captain",
    "commandants": [
     "Greven, Predator Captain"
