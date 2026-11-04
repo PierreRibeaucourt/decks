@@ -1468,5 +1468,428 @@
     "Île"
    ]
   ]
+ },
+ "Deck Forgeur de soleil": {
+  "slug": "forgeur-de-soleil",
+  "date": 1793813327.7911127,
+  "resume": {
+   "alertes": {},
+   "art": "https://cards.scryfall.io/art_crop/front/5/5/557fcd17-6cb3-414a-b2b1-ea9ae32e5aec.jpg?1783937084",
+   "commandant": "Kraum, Ludevic's Opus",
+   "commandants": [
+    "Kraum, Ludevic's Opus",
+    "Ardenn, Intrepid Archaeologist"
+   ],
+   "gc": [
+    "Smothering Tithe",
+    "Enlightened Tutor"
+   ],
+   "id": "Deck Forgeur de soleil",
+   "identite": [
+    "R",
+    "U",
+    "W"
+   ],
+   "image_cmd": "https://cards.scryfall.io/normal/front/5/5/557fcd17-6cb3-414a-b2b1-ea9ae32e5aec.jpg?1783937084",
+   "maybe": 0,
+   "modifie": 1793812929.1649096,
+   "note": "",
+   "prix_total": 378.98,
+   "titre": "Forgeur de soleil",
+   "total": 100,
+   "trop_cher": [
+    "Steam Vents",
+    "Sword of Fire and Ice",
+    "Sacred Foundry",
+    "Smothering Tithe",
+    "Olórin's Searing Light",
+    "Minamo, School at Water's Edge",
+    "Stoneforge Mystic",
+    "Maze of Ith",
+    "Inventors' Fair",
+    "Fighter Class",
+    "Raugrin Triome",
+    "Enlightened Tutor",
+    "Sea of Clouds",
+    "Esper Sentinel",
+    "Training Center",
+    "Spectator Seating",
+    "Sword of Feast and Famine"
+   ]
+  },
+  "cartes": [
+   [
+    "Kraum, Ludevic's Opus",
+    "Kraum, opus de Ludevic"
+   ],
+   [
+    "Ardenn, Intrepid Archaeologist",
+    "Ardenn, archéologue intrépide"
+   ],
+   [
+    "Izzet Signet",
+    "Cachet d'Izzet"
+   ],
+   [
+    "Mistveil Plains",
+    "Plaine de Voilebrume"
+   ],
+   [
+    "Steam Vents",
+    "Conduits de vapeur"
+   ],
+   [
+    "Helm of the Host",
+    "Heaume de la multitude"
+   ],
+   [
+    "Sword of Fire and Ice",
+    "Épée d'Eau et de Feu"
+   ],
+   [
+    "Suffocating Blast",
+    "Salve suffocante"
+   ],
+   [
+    "Boros Charm",
+    "Charme de Boros"
+   ],
+   [
+    "Buried Ruin",
+    "Ruine ensevelie"
+   ],
+   [
+    "Sacred Foundry",
+    "Fonderie sacrée"
+   ],
+   [
+    "Smothering Tithe",
+    "Dîme étouffante"
+   ],
+   [
+    "Batterskull",
+    "Battecrâne"
+   ],
+   [
+    "Aurelia, the Warleader",
+    "Aurélia, la Meneuse de guerre"
+   ],
+   [
+    "Island",
+    "Île"
+   ],
+   [
+    "Orim's Thunder",
+    "Tonnerre selon Orime"
+   ],
+   [
+    "Talisman of Creativity",
+    "Talisman de créativité"
+   ],
+   [
+    "Blind with Anger",
+    "Aveuglé par la colère"
+   ],
+   [
+    "Olórin's Searing Light",
+    ""
+   ],
+   [
+    "Adarkar Wastes",
+    "Landes d'Adarkar"
+   ],
+   [
+    "Seat of the Synod",
+    "Siège du Synode"
+   ],
+   [
+    "Ojutai's Command",
+    "Commandement d'Ojutaï"
+   ],
+   [
+    "Talisman of Progress",
+    "Talisman de progrès"
+   ],
+   [
+    "Wild Ricochet",
+    "Ricochet incontrôlé"
+   ],
+   [
+    "Astor, Bearer of Blades",
+    "Astor, porteur de lames"
+   ],
+   [
+    "Kazuul's Toll Collector",
+    "Percepteur de Kazuul"
+   ],
+   [
+    "Academy Ruins",
+    "Ruines de l'académie"
+   ],
+   [
+    "Azorius Signet",
+    "Cachet d'Azorius"
+   ],
+   [
+    "Sunforger",
+    "Forgeur de soleil"
+   ],
+   [
+    "Mystic Monastery",
+    "Monastère mystique"
+   ],
+   [
+    "Deflecting Palm",
+    "Paume déflectrice"
+   ],
+   [
+    "Shivan Reef",
+    "Brisants shivâns"
+   ],
+   [
+    "Chaos Warp",
+    "Distorsion chaotique"
+   ],
+   [
+    "Command Tower",
+    "Tour de commandement"
+   ],
+   [
+    "Ornithopter of Paradise",
+    "Ornithoptère de paradis"
+   ],
+   [
+    "Swords to Plowshares",
+    "Retour au pays"
+   ],
+   [
+    "Minamo, School at Water's Edge",
+    "Minamo, École de la cascade"
+   ],
+   [
+    "Fervent Champion",
+    "Champion fervent"
+   ],
+   [
+    "Supreme Verdict",
+    "Verdict suprême"
+   ],
+   [
+    "Render Silent",
+    "Réduire au silence"
+   ],
+   [
+    "Forge Anew",
+    "Reforgeage"
+   ],
+   [
+    "Stoneforge Mystic",
+    "Mystique forgepierre"
+   ],
+   [
+    "Battlefield Forge",
+    "Forge de campagne"
+   ],
+   [
+    "Nahiri, Heir of the Ancients",
+    "Nahiri, héritière des ancêtres"
+   ],
+   [
+    "Settle the Wreckage",
+    "Aménagement des décombres"
+   ],
+   [
+    "Sulfur Falls",
+    "Chutes de soufre"
+   ],
+   [
+    "Blasphemous Act",
+    "Acte blasphématoire"
+   ],
+   [
+    "Talisman of Conviction",
+    "Talisman de conviction"
+   ],
+   [
+    "Maze of Ith",
+    "Labyrinthe d'Ith"
+   ],
+   [
+    "Kellan, the Fae-Blooded // Birthright Boon",
+    "Kellan, au sang de fæ // Faveur du droit de naissance"
+   ],
+   [
+    "Ionize",
+    "Ionisation"
+   ],
+   [
+    "Ancient Den",
+    "Ancienne tanière"
+   ],
+   [
+    "Godo, Bandit Warlord",
+    "Godo, seigneur de guerre bandit"
+   ],
+   [
+    "Boros Signet",
+    "Cachet de Boros"
+   ],
+   [
+    "Inventors' Fair",
+    "Foire des inventeurs"
+   ],
+   [
+    "Fighter Class",
+    "Classe : guerrier"
+   ],
+   [
+    "Raugrin Triome",
+    "Triome de Raugrin"
+   ],
+   [
+    "Mind Stone",
+    "Pierre de l'esprit"
+   ],
+   [
+    "Evolving Wilds",
+    "Étendues sauvages en évolution"
+   ],
+   [
+    "Enlightened Tutor",
+    "Préceptrice éclairée"
+   ],
+   [
+    "Umezawa's Jitte",
+    "Jitte d'Umezawa"
+   ],
+   [
+    "Sea of Clouds",
+    "Mer de nuages"
+   ],
+   [
+    "Brass Squire",
+    "Écuyer d'airain"
+   ],
+   [
+    "Clifftop Retreat",
+    "Rectorat du haut des falaises"
+   ],
+   [
+    "Steelshaper's Gift",
+    "Don du forge-acier"
+   ],
+   [
+    "Chromatic Lantern",
+    "Lanterne chromatique"
+   ],
+   [
+    "Wrath of God",
+    "Colère de Dieu"
+   ],
+   [
+    "Arcane Signet",
+    "Cachet d'ésotérisme"
+   ],
+   [
+    "Lightning Helix",
+    "Hélice d'éclairs"
+   ],
+   [
+    "Esper Sentinel",
+    "Sentinelle d'Esper"
+   ],
+   [
+    "Training Center",
+    "Centre d'entraînement"
+   ],
+   [
+    "Ash Barrens",
+    "Landes cendreuses"
+   ],
+   [
+    "Terramorphic Expanse",
+    "Immensité terramorphe"
+   ],
+   [
+    "Leonin Shikari",
+    "Shikari léonine"
+   ],
+   [
+    "Bruenor Battlehammer",
+    "Bruenor Marteaudeguerre"
+   ],
+   [
+    "Glacial Fortress",
+    "Forteresse glaciaire"
+   ],
+   [
+    "Puresteel Paladin",
+    "Paladin de puracier"
+   ],
+   [
+    "Path to Exile",
+    "Chemin vers l'exil"
+   ],
+   [
+    "Spectator Seating",
+    "Gradins de spectateurs"
+   ],
+   [
+    "Sulfurous Blast",
+    "Salve sulfureuse"
+   ],
+   [
+    "Great Furnace",
+    "Grand Fourneau"
+   ],
+   [
+    "Rolling Earthquake",
+    "Tremblement de terre agressif"
+   ],
+   [
+    "Armored Skyhunter",
+    "Chasseciel cuirassée"
+   ],
+   [
+    "Quintorius, Loremaster",
+    "Quintorius, maître docte"
+   ],
+   [
+    "Jeskai Charm",
+    "Charme de Jeskaï"
+   ],
+   [
+    "Unexplained Absence",
+    "Absence inexpliquée"
+   ],
+   [
+    "Exotic Orchard",
+    "Verger exotique"
+   ],
+   [
+    "Wandering Fumarole",
+    "Fumerolle vagabonde"
+   ],
+   [
+    "Return to Dust",
+    "Rendre à la poussière"
+   ],
+   [
+    "Warleader's Helix",
+    "Hélice de la Meneuse de guerre"
+   ],
+   [
+    "Sword of Feast and Famine",
+    "Épée de Festin et de Famine"
+   ],
+   [
+    "Plains",
+    "Plaine"
+   ],
+   [
+    "Mountain",
+    "Montagne"
+   ]
+  ]
  }
 }
