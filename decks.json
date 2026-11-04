@@ -1471,10 +1471,16 @@
  },
  "Deck Forgeur de soleil": {
   "slug": "forgeur-de-soleil",
-  "date": 1793813327.7911127,
+  "date": 1793814358.1086147,
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/5/5/557fcd17-6cb3-414a-b2b1-ea9ae32e5aec.jpg?1783937084",
+   "bracket": 3,
+   "bracket_raisons": [
+    "2 Game Changers : Smothering Tithe, Enlightened Tutor",
+    "2 combos infinies à 2 cartes : à ne pas sortir en début de partie",
+    "8 tuteurs : beaucoup pour un bracket 1-2"
+   ],
    "commandant": "Kraum, Ludevic's Opus",
    "commandants": [
     "Kraum, Ludevic's Opus",
