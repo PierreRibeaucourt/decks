@@ -126,6 +126,7 @@ const ICONES = {
   crayon: '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
   effacer: '<path d="M20 20H9L4 15a2 2 0 0 1 0-2.8L13.2 3a2 2 0 0 1 2.8 0l4 4a2 2 0 0 1 0 2.8L11 19"/><path d="m8 9 7 7"/>',
   partager: '<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 13.3 7.6 4.4M15.8 6.3l-7.6 4.4"/>',
+  compacter: '<path d="M4 14h6v6M20 10h-6V4"/><path d="m14 10 7-7M3 21l7-7"/>',
   ouvrir: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/>',
 };
 if (PARTAGE) $(".logo").href = PARTAGE.accueil === true ? "#/" : PARTAGE.accueil;
@@ -548,10 +549,27 @@ function fermerModale() { $("#modale").hidden = true; $("#modale").innerHTML = "
 document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") { fermerModale(); fermerMenu(); } });
 
 // ------------------------------------------------------------------ navigation
+// titre de l'onglet du navigateur, la page d'abord : « Kels · Statistiques », « Recherche · « dragon » · Kels »
+function majTitre() {
+  if (PARTAGE) return;                             // page partagée : le titre écrit par partage.py
+  const [chemin, qs] = location.hash.replace(/^#\/?/, "").split(/\?(.*)/s);
+  const parts = chemin.split("/");
+  let t = "Mes decks";
+  if (parts[0] === "deck" && parts[1]) {
+    const o = ONGLETS.find(([k]) => k === (parts[2] || "liste"));
+    t = decodeURIComponent(parts[1]).replace(/^Deck /, "") + (o ? " · " + o[1] : "");
+  } else if (parts[0] === "recherche") {
+    const p = new URLSearchParams(qs || "");
+    t = ["Recherche", p.get("nom") && `« ${p.get("nom")} »`, (p.get("deck") || "").replace(/^Deck /, "")].filter(Boolean).join(" · ");
+  }
+  document.title = t + " — Atelier MTG";
+}
+
 async function route() {
   fermerMenu();
   if (!$("#modale").hidden) fermerModale();
   cacherApercu();
+  majTitre();
   const [chemin, qs] = location.hash.replace(/^#\/?/, "").split(/\?(.*)/s);
   const parts = chemin.split("/");
   $("#lien-recherche").classList.toggle("actif", parts[0] === "recherche");
@@ -565,6 +583,7 @@ async function route() {
   } catch (e) {
     vue.innerHTML = `<p class="erreur">${esc(e.message || e)}</p>`;
   }
+  majTitre();                                      // l'adresse a pu être complétée (dernière recherche reprise)
 }
 window.addEventListener("hashchange", route);
 
@@ -1669,6 +1688,10 @@ function nomsBulle(titre, cartes) {
   return titre + (noms.length ? "\n" + noms.slice(0, 30).join("\n") + (noms.length > 30 ? `\n… et ${noms.length - 30} autres` : "") : "");
 }
 
+// symboles de la couleur x dans le coût d'une carte ({W/U} compte pour les deux)
+const pipsDe = (c, x) => ((c.info.cout || "").match(/\{[^}]+\}/g) || []).filter((s) => s.includes(x)).length;
+const BASIQUES = { W: "Plains", U: "Island", B: "Swamp", R: "Mountain", G: "Forest" };
+
 function calculStats(d) {
   const jeu = d.cartes.filter((c) => c.cat !== "Maybeboard");
   const bib = jeu.filter((c) => c.cat !== "Commander");            // les 99 : ce qu'on pioche
@@ -1678,12 +1701,22 @@ function calculStats(d) {
   const mdfc = sorts.filter((c) => c.info.dos && /\bLand\b/.test(c.info.dos.type || ""));
   const types = ORDRE_TYPES.map((t) => [t, bib.filter((c) => typeCarte(c.info.type) === t)]).filter(([, l]) => l.length);
   const courbe = Array.from({ length: 8 }, (_, k) => sorts.filter((c) => Math.min(7, Math.floor(c.info.mv || 0)) === k));
-  const pips = (c, x) => ((c.info.cout || "").match(/\{[^}]+\}/g) || []).filter((s) => s.includes(x)).length;
+  const pips = pipsDe;
+  const cmds = jeu.filter((c) => c.cat === "Commander");
+  // terrains qui vont chercher un terrain (Évolution sauvage, fetchlands…) : sources des couleurs qu'ils peuvent trouver
+  const basiques = Object.keys(BASIQUES).filter((x) => terrains.some((t) => /\bBasic\b/.test(t.info.type || "") && new RegExp(`\\b${BASIQUES[x]}\\b`).test(t.info.type || "")));
+  const trouve = (t) => {
+    const s = t.info.texte || "";
+    if (!/search your library for/i.test(s)) return [];
+    const nommes = Object.keys(BASIQUES).filter((x) => new RegExp(`\\b${BASIQUES[x]}\\b`).test(s));
+    return nommes.length ? nommes : /basic land/i.test(s) ? basiques : [];
+  };
   const couleurs = COULEURS.map(([x, nom]) => ({
     x, nom,
     cartes: sorts.filter((c) => pips(c, x) > 0),
     symboles: sorts.reduce((s, c) => s + pips(c, x) * c.n, 0),
-    sources: terrains.filter((c) => (c.info.produit || []).includes(x)),
+    symbolesCmd: cmds.reduce((s, c) => s + pips(c, x), 0),          // les commandants : on les lance encore et encore
+    sources: terrains.filter((c) => (c.info.produit || []).includes(x) || trouve(c).includes(x)),
     autres: sorts.filter((c) => (c.info.produit || []).includes(x)),
   }));
   const incolores = sorts.filter((c) => !COULEURS.some(([x]) => pips(c, x) > 0));
@@ -1739,7 +1772,8 @@ function resumeStats(d) {
     <div class="panneau"><h3>Cartes par type</h3>${colonnes(S.types.map(([t, l]) => ({ label: esc(ABREV[t]), valeur: nbCartes(l), bulle: nomsBulle(`${t} : ${nbCartes(l)}`, l) })))}</div>
     <div class="panneau"><h3>Cartes par couleur</h3>${grapheCouleurs(S)}</div>
     <div class="panneau"><h3>Courbe de mana</h3>${grapheCourbe(S)}<div class="muet petit" style="margin-top:.4rem">coût moyen ${virgule(S.mvMoy, 2)}</div></div>
-  </div>`;
+  </div>
+  <div class="panneau"><h3>Base de mana</h3>${tableauBaseMana(S, d)}</div>`;
 }
 
 function comb(n, k) {
@@ -1749,9 +1783,75 @@ function comb(n, k) {
   return r;
 }
 const hyper = (N, K, n, k) => (comb(K, k) * comb(N - K, n - k)) / comb(N, n);
+// chance d'avoir au moins k succès en tirant n cartes parmi N, dont K succès
+const auMoins = (N, K, n, k) => Math.max(0, 1 - Array.from({ length: k }, (_, i) => hyper(N, K, Math.min(n, N), i)).reduce((s, p) => s + p, 0));
+
+// confort d'une couleur, à la manière de Frank Karsten : pour chaque sort qui la demande, la chance d'avoir assez de
+// sources de cette couleur au tour où on le lance (sa valeur de mana). En multijoueur, chacun pioche dès son 1er tour :
+// au tour N, on a vu 7 + N cartes. Moyenne sur les sorts, le plus dur à part.
+function confortCouleur(lanceurs, N, x, sources) {
+  let tot = 0, poids = 0, pire = null;
+  for (const c of lanceurs) {
+    const k = pipsDe(c, x);
+    if (!k) continue;
+    const p = auMoins(N, sources, 7 + Math.max(1, Math.ceil(c.info.mv || 0)), k);
+    tot += p * c.n;
+    poids += c.n;
+    if (!pire || p < pire.p) pire = { c, p };
+  }
+  return poids ? { p: tot / poids, pire } : null;
+}
+// 90 % : l'objectif de Karsten pour lancer un sort à son tour
+const NIVEAUX_MANA = [[0.95, "très confortable", "bon"], [0.9, "confortable", "bon"], [0.8, "juste", "juste"], [0, "insuffisant", "alerte"]];
+const niveauMana = (p) => NIVEAUX_MANA.find(([s]) => p >= s);
 
 function tuile(lib, val, sous = "") {
   return `<div class="tuile"><div class="lib">${lib}</div><div class="val">${val}</div>${sous ? `<div class="sous">${sous}</div>` : ""}</div>`;
+}
+
+// base de mana : un tableau par couleur, avec la jauge de confort (onglet Statistiques et sous la liste)
+function tableauBaseMana(S, d) {
+  const N = nbCartes(S.bib);
+  // couleurs du commandant (sinon celles que demandent les cartes) : Command Tower « produit » les 5, ça ne compte pas
+  const coul = S.couleurs.filter((c) => d.identite ? d.identite.includes(c.x) : c.cartes.length);
+  // base de mana. Demande : les symboles des sorts et des commandants. Offre : toutes les sources (terrains, cailloux,
+  // créatures). La jauge : le confort de chaque couleur (confortCouleur). Seul le manque est un défaut ; quand une couleur
+  // manque, la piste : les terrains d'une seule couleur (de base surtout) qu'une autre a en trop d'après ses symboles,
+  // sans passer elle-même sous les 90 %.
+  const ids = coul.map((k) => k.x);
+  const demande = (c) => c.symboles + c.symbolesCmd;
+  const totD = coul.reduce((s, c) => s + demande(c), 0) || 1;
+  const monoDe = (x) => S.terrains.filter((t) => { const p = (t.info.produit || []).filter((y) => ids.includes(y)); return p.length === 1 && p[0] === x; });
+  const totMono = coul.reduce((s, c) => s + nbCartes(monoDe(c.x)), 0);
+  const lanceurs = [...S.sorts, ...S.jeu.filter((c) => c.cat === "Commander")];
+  const baseMana = coul.map((c) => {
+    const pd = demande(c) / totD, src = nbCartes(c.sources) + nbCartes(c.autres), mono = monoDe(c.x);
+    const conf = confortCouleur(lanceurs, N, c.x, src);
+    let cederait = Math.floor(nbCartes(mono) - totMono * pd + 1e-9);
+    while (cederait > 0 && conf && confortCouleur(lanceurs, N, c.x, src - cederait).p < 0.9) cederait--;
+    return { c, pd, src, mono, conf, cederait };
+  });
+  return `<div class="defile"><table class="tableau petit">
+        <thead><tr><th>Couleur</th><th class="num">Cartes</th><th class="num">Symboles</th><th class="num">Terrains</th><th class="num">Autres sources</th><th>Confort</th></tr></thead>
+        <tbody>${baseMana.map(({ c, pd, src, conf }) => {
+          if (!conf) return `<tr><td>${symbole(c.x)} ${c.nom}</td><td class="num">0</td><td class="num">0</td>
+            <td class="num">${nbCartes(c.sources)}</td><td class="num">${nbCartes(c.autres)}</td><td class="muet">—</td></tr>`;
+          const niv = niveauMana(conf.p), manque = conf.p < 0.9;
+          const pistes = manque ? baseMana.filter((m) => m.conf && m.conf.p >= 0.9 && m.cederait >= 1)
+            .map((m) => `${m.cederait} terrain${m.cederait > 1 ? "s" : ""} ${m.c.nom.toLowerCase()}${m.cederait > 1 ? "s" : ""} (${[...new Set(m.mono.map(nomAffiche))].join(", ")})`) : [];
+          const detail = `${c.nom} : ${Math.floor(conf.p * 100)} % de chances en moyenne d'avoir assez de sources au tour où tu lances le sort`
+            + ` (${src} sources sur ${N} cartes)\nLe plus dur : ${nomAffiche(conf.pire.c)} ${conf.pire.c.info.cout || ""}, ${Math.floor(conf.pire.p * 100)} %`
+            + (pistes.length ? `\nPiste : remplacer ${pistes.join(" ou ")} par des terrains ${c.nom.toLowerCase()}s` : "");
+          const eq = `<span class="jauge"><span class="jauge-piste"><span class="jauge-barre jauge-${niv[2]}" style="width:${Math.max(0.03, Math.min(1, (conf.p - 0.5) / 0.5)) * 100}%"></span>`
+            + `<span class="jauge-cible"></span></span><span class="jauge-val">${Math.floor(conf.p * 100)} %</span><span class="badge badge-${niv[2] === "bon" ? "ok" : niv[2]}">${niv[1]}</span></span>`;
+          return `<tr><td>${symbole(c.x)} ${c.nom}</td>
+            <td class="num" data-bulle="${esc(nomsBulle(`${c.nom} : ${nbCartes(c.cartes)} cartes`, c.cartes))}">${nbCartes(c.cartes)}</td>
+            <td class="num" data-bulle="${esc(`${c.symboles} dans les sorts, ${c.symbolesCmd} dans les commandants`)}">${demande(c)} · ${pct(pd, 0)}</td>
+            <td class="num" data-bulle="${esc(nomsBulle(`Terrains qui produisent du ${c.nom.toLowerCase()} : ${nbCartes(c.sources)}`, c.sources))}">${nbCartes(c.sources)}</td>
+            <td class="num" data-bulle="${esc(nomsBulle(`Autres sources (cailloux, créatures) : ${nbCartes(c.autres)}`, c.autres))}">${nbCartes(c.autres)}</td>
+            <td data-bulle="${esc(detail)}">${eq}</td></tr>`;
+        }).join("")}</tbody>
+      </table></div>`;
 }
 
 function ongletStats(el, d) {
@@ -1768,11 +1868,6 @@ function ongletStats(el, d) {
     .map((f) => [f, S.sorts.filter((c) => (f === "Autres" ? !(c.fonctions || []).length : (c.fonctions || []).includes(f)))])
     .filter(([, l]) => l.length)
     .map(([f, l]) => ({ label: esc(f), valeur: nbCartes(l), bulle: nomsBulle(`${f} : ${nbCartes(l)}`, l), repere: repere(f) }));
-  // couleurs du commandant (sinon celles que demandent les cartes) : Command Tower « produit » les 5, ça ne compte pas
-  const coul = S.couleurs.filter((c) => d.identite ? d.identite.includes(c.x) : c.cartes.length);
-  const colorees = S.sorts.filter((c) => coul.some((k) => k.cartes.includes(c)));
-  const totC = nbCartes(colorees) || 1;         // part des sorts colorés qui demandent la couleur
-  const totS = K || 1;                          // part des terrains qui la produisent
   const chers = S.jeu.filter((c) => c.info.prix).sort((a, b) => b.info.prix - a.info.prix).slice(0, 10);
   el.innerHTML = `
     <div class="tuiles">
@@ -1793,21 +1888,7 @@ function ongletStats(el, d) {
     </div>
     <div class="panneau">
       <h3 style="margin-top:0">Base de mana</h3>
-      <table class="tableau petit">
-        <thead><tr><th>Couleur</th><th class="num">Cartes</th><th class="num">Symboles</th><th class="num">Terrains</th><th class="num">Autres sources</th><th></th></tr></thead>
-        <tbody>${coul.map((c) => {
-          const pc = nbCartes(c.cartes) / totC, ps = nbCartes(c.sources) / totS;
-          const eq = coul.length < 2 ? `<span class="muet">—</span>`
-            : ps < pc * 0.8 ? `<span class="badge badge-alerte">peu de terrains</span>`
-            : ps > pc * 1.5 + 0.05 ? `<span class="badge">beaucoup de terrains</span>` : `<span class="badge badge-ok">équilibré</span>`;
-          return `<tr><td>${symbole(c.x)} ${c.nom}</td>
-            <td class="num" data-bulle="${esc(nomsBulle(`${c.nom} : ${nbCartes(c.cartes)} cartes`, c.cartes))}">${nbCartes(c.cartes)} · ${pct(pc, 0)}</td>
-            <td class="num">${c.symboles}</td>
-            <td class="num" data-bulle="${esc(nomsBulle(`Terrains qui produisent du ${c.nom.toLowerCase()} : ${nbCartes(c.sources)}`, c.sources))}">${nbCartes(c.sources)} · ${pct(ps, 0)}</td>
-            <td class="num" data-bulle="${esc(nomsBulle(`Autres sources (cailloux, créatures) : ${nbCartes(c.autres)}`, c.autres))}">${nbCartes(c.autres)}</td>
-            <td>${eq}</td></tr>`;
-        }).join("")}</tbody>
-      </table>
+      ${tableauBaseMana(S, d)}
     </div>
     <div class="panneau">
       <h3 style="margin-top:0">Main de départ</h3>
@@ -3490,11 +3571,14 @@ $("#btn-rafraichir").addEventListener("click", async () => {
 // Une discussion par deck (son historique et son propre contexte Claude), plus une discussion générale.
 // On choisit la discussion dans l'en-tête du panneau, depuis n'importe quelle page ; ouvrir un deck (ou le choisir
 // comme cible de la recherche) passe à sa discussion. Ailleurs, la discussion choisie reste celle qui était là.
-// Les réponses tournent sur le serveur (tâche de fond) : fermer le panneau, changer de page ou recharger ne les perd pas,
-// et plusieurs decks peuvent attendre une réponse.
-const chat = { ouvert: false, charge: false, cle: "", contexte: null, suivi: false, bulle: null, nbOutils: 0 };
-const ETAT_CHAT = "";
+// Les réponses tournent sur le serveur (tâche de fond) : fermer le panneau, changer de page ou d'onglet, ou recharger
+// ne les perd pas, et plusieurs decks peuvent attendre une réponse.
+// Une réponse se lit comme dans VS Code : le premier message de Claude, puis le détail de son travail dans l'ordre
+// (outils et messages intermédiaires, replié une fois la réponse finie), puis sa réponse finale.
+const chat = { ouvert: false, charge: false, cle: "", contexte: null, suivi: false, reponse: null, signature: "",
+  detailOuvert: true, actif: false, session: false, colle: true, nbMessages: -1 };
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
+const kTokens = (n) => (n >= 1000 ? Math.round(n / 1000) + " k" : String(n || 0));
 
 function texteRiche(t) {
   // texte simple : on échappe, puis **gras**, `code` et retours à la ligne
@@ -3544,29 +3628,71 @@ async function choisirDiscussion(cle) {
   if (chat.charge) { try { await afficheHistorique(); } catch (e) { ajouteMessage("outil", "Erreur : " + (e.message || e)); } }
 }
 
-function ajouteMessage(role, texte) {
+// le fil reste collé en bas tant qu'on y est (nouveaux messages, symboles de mana qui se chargent)
+function enBas(forcer) {
   const fil = $("#chat-fil");
+  if (!fil) return;
+  if (forcer) chat.colle = true;
+  if (chat.colle) fil.scrollTop = fil.scrollHeight;
+}
+
+function ajouteMessage(role, texte) {
   const div = document.createElement("div");
   div.className = "msg msg-" + role;
   div.innerHTML = role === "claude" ? texteRiche(texte) : esc(texte);
-  fil.appendChild(div);
-  fil.scrollTop = fil.scrollHeight;
+  $("#chat-fil").appendChild(div);
+  enBas();
   return div;
 }
 
-function ajouteOutil(texte, avant = null) {
-  const o = document.createElement("div");
-  o.className = "msg msg-outil";
-  o.textContent = "· " + texte;
-  if (avant) avant.before(o); else $("#chat-fil").appendChild(o);
+// les réponses d'avant les étapes : leurs outils, puis leur texte
+const etapesDe = (m) => m.etapes
+  || [...(m.outils || []).map((texte) => ({ type: "outil", texte })), ...(m.texte ? [{ type: "texte", texte: m.texte }] : [])];
+
+// « 3 lectures · 2 commandes · 1 modification · 2 messages »
+function resumeEtapes(es) {
+  const n = {};
+  for (const e of es) {
+    const k = e.type === "texte" ? "message" : /^lit /.test(e.texte) ? "lecture" : /^(modifie|écrit) /.test(e.texte) ? "modification"
+      : /^lance/.test(e.texte) ? "commande" : /^cherche/.test(e.texte) ? "recherche" : /^consulte/.test(e.texte) ? "page web" : "action";
+    n[k] = (n[k] || 0) + 1;
+  }
+  return ["lecture", "recherche", "page web", "commande", "modification", "action", "message"].filter((k) => n[k])
+    .map((k) => `${n[k]} ${(n[k] > 1 ? k.replace(/^(\S+)/, "$1s") : k).replace(" ", " ")}`).join(" · ");
+}
+
+// une réponse : le texte avant le premier outil, le détail (du premier au dernier outil), le texte après le dernier outil
+function htmlReponse(etapes, actif = false, mode = "") {
+  const es = etapes.filter((e) => e.type === "outil" || (e.texte || "").trim());
+  const i = es.findIndex((e) => e.type === "outil");
+  const j = es.length - 1 - [...es].reverse().findIndex((e) => e.type === "outil");
+  const debut = i < 0 ? [] : es.slice(0, i), milieu = i < 0 ? [] : es.slice(i, j + 1), fin = i < 0 ? es : es.slice(j + 1);
+  const bulle = (e) => `<div class="msg msg-claude">${texteRiche(e.texte.trim())}</div>`;
+  const refus = milieu.filter((e) => e.refus).length;       // outils que Claude Code lui a refusés
+  return debut.map(bulle).join("")
+    + (milieu.length ? `<details class="etapes"${actif && chat.detailOuvert ? " open" : ""}><summary>${esc(resumeEtapes(milieu))}`
+      + `${refus ? ` · <span class="etape-refus">${refus} refusé${refus > 1 ? "s" : ""}</span>` : ""}</summary>`
+      + `<div class="etapes-corps">${milieu.map((e) => e.type === "outil"
+        ? `<div class="etape-outil${e.refus ? " etape-refus" : ""}">${esc(e.texte)}${e.refus ? " — refusé" : ""}</div>`
+        : `<div class="etape-texte">${texteRiche(e.texte.trim())}</div>`).join("")}</div></details>` : "")
+    + fin.map(bulle).join("")
+    + (actif ? `<div class="msg-attente">${mode === "compact" ? "Compactage…" : "Claude réfléchit…"}</div>` : "");
+}
+
+function blocReponse(etapes) {
+  const div = document.createElement("div");
+  div.className = "reponse";
+  div.innerHTML = htmlReponse(etapes);
+  return div;
 }
 
 function boutonEnvoyer(enCours) {
+  chat.actif = enCours;
   const b = $("#chat-envoyer");
   if (!b) return;
   b.innerHTML = enCours ? ico("arreter") + "Arrêter" : ico("envoyer") + "Envoyer";
   b.classList.toggle("btn-accent", !enCours);
-  if (!enCours) $("#chat-etat").textContent = ETAT_CHAT;
+  $("#chat-compacter").disabled = enCours || !chat.session;
 }
 
 async function afficheHistorique() {
@@ -3582,15 +3708,20 @@ async function afficheHistorique() {
   remplirChoixDiscussion(ds || etat.decks);
   const fil = $("#chat-fil");
   fil.innerHTML = "";
+  chat.reponse = null;
   if (!h.disponible) ajouteMessage("outil", "Claude Code est introuvable sur ce PC : la discussion ne marchera pas (installe l'extension Claude Code de VS Code).");
   for (const m of h.messages) {
-    if (m.role === "moi") { ajouteMessage("moi", m.texte); continue; }
-    for (const o of m.outils || []) ajouteOutil(o);
-    if (m.texte) ajouteMessage("claude", m.texte);
+    if (m.role === "moi") ajouteMessage("moi", m.texte);
+    else if (m.role === "compact") ajouteMessage("compact", `Discussion compactée · ${kTokens(m.avant)} → ${kTokens(m.apres)} tokens`);
+    else fil.appendChild(blocReponse(etapesDe(m)));
   }
-  chat.bulle = null;
+  chat.session = h.session;
+  chat.nbMessages = h.messages.length;
+  $("#chat-contexte").textContent = h.contexte ? `· ${kTokens(h.contexte)} tokens` : "";
   boutonEnvoyer(h.en_cours.actif);
   if (h.en_cours.actif) { afficheEnCours(h.en_cours); suivreChat(); }
+  enBas(true);
+  requestAnimationFrame(() => requestAnimationFrame(() => enBas()));   // après la pose des symboles de mana
   return h;
 }
 
@@ -3601,6 +3732,27 @@ async function changerDiscussion() {
   chat.contexte = ctx;
   if (arrivee && ctx !== chat.cle) await choisirDiscussion(ctx);
   else if (chat.charge) listeDecks().then(remplirChoixDiscussion).catch(() => {});   // un deck a pu être créé ou supprimé
+}
+
+// retour sur cet onglet du navigateur : le panneau reprend l'état ouvert ou fermé des autres onglets, la discussion du
+// deck affiché, et ce qui a été dit ou lancé depuis un autre onglet. Les réponses en cours ailleurs continuent.
+async function retourOnglet() {
+  if (document.hidden || retourOnglet.enCours) return;
+  retourOnglet.enCours = true;
+  try {
+    let ouvert = chat.ouvert;
+    try { ouvert = !!localStorage.getItem("chat-ouvert"); } catch (_) {}
+    chat.contexte = null;
+    await changerDiscussion();
+    if (ouvert !== chat.ouvert) await basculeChat(ouvert);
+    else if (chat.charge) {
+      const h = await api("/api/discussion" + qDeck(chat.cle));
+      if (h.messages.length !== chat.nbMessages || h.en_cours.actif !== chat.actif) await afficheHistorique();
+    }
+    const s = await api("/api/discussion/en-cours");
+    if (s.actives.length) suivreChat();
+  } catch (_) {
+  } finally { retourOnglet.enCours = false; }
 }
 
 async function montageChat() {
@@ -3620,7 +3772,7 @@ async function montageChat() {
     <div class="chat-saisie">
       <textarea id="chat-saisie" placeholder="Ton message…"></textarea>
       <div class="form-ligne" style="margin:0;justify-content:space-between">
-        <span class="muet petit" id="chat-etat">${ETAT_CHAT}</span>
+        <button class="btn btn-petit btn-discret" id="chat-compacter" title="/compact">${ico("compacter")}Compacter <span class="muet" id="chat-contexte"></span></button>
         <button class="btn btn-accent" id="chat-envoyer">${ico("envoyer")}Envoyer</button>
       </div>
     </div>`;
@@ -3635,26 +3787,35 @@ async function montageChat() {
       await afficheHistorique();
     } catch (e) { erreur(e); }
   };
-  $("#chat-envoyer").onclick = () => ($("#chat-envoyer").textContent === "Arrêter" ? arreterChat() : envoyerChat());
-  $("#chat-saisie").addEventListener("keydown", (ev) => { if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) envoyerChat(); });
+  $("#chat-envoyer").onclick = () => (chat.actif ? arreterChat() : envoyerChat());
+  $("#chat-compacter").onclick = compacterChat;
+  $("#chat-saisie").addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); envoyerChat(); }
+  });
+  const fil = $("#chat-fil");
+  fil.addEventListener("scroll", () => { chat.colle = fil.scrollHeight - fil.scrollTop - fil.clientHeight < 60; }, { passive: true });
+  fil.addEventListener("load", () => enBas(), true);              // une image (symbole de mana) vient d'arriver
+  fil.addEventListener("toggle", (ev) => { if (chat.reponse && chat.reponse.contains(ev.target)) chat.detailOuvert = ev.target.open; }, true);
   chat.charge = true;
   await afficheHistorique();
 }
 
-// réponse en cours dans la discussion affichée : outils utilisés au fur et à mesure, puis le texte
+// réponse en cours dans la discussion affichée, redessinée à chaque nouveauté
 function afficheEnCours(s) {
   if (!chat.charge) return;
-  const fil = $("#chat-fil");
-  const enBas = fil.scrollHeight - fil.scrollTop - fil.clientHeight < 60;
-  if (!chat.bulle || !chat.bulle.isConnected) {
-    chat.bulle = ajouteMessage("claude", "");
-    chat.nbOutils = 0;
+  if (!chat.reponse || !chat.reponse.isConnected) {
+    chat.reponse = document.createElement("div");
+    chat.reponse.className = "reponse";
+    chat.signature = "";
+    $("#chat-fil").appendChild(chat.reponse);
   }
-  while (chat.nbOutils < s.outils.length) ajouteOutil(s.outils[chat.nbOutils++], chat.bulle);
-  chat.bulle.innerHTML = s.texte ? texteRiche(s.texte) : `<span class="muet">Claude réfléchit…</span>`;
-  $("#chat-etat").textContent = s.outils.length && !s.texte ? "Claude travaille : " + s.outils[s.outils.length - 1] : "Claude écrit…";
+  const sig = s.mode + JSON.stringify(s.etapes);
+  if (sig !== chat.signature) {
+    chat.signature = sig;
+    chat.reponse.innerHTML = htmlReponse(s.etapes, true, s.mode);
+  }
   boutonEnvoyer(true);
-  if (enBas) fil.scrollTop = fil.scrollHeight;
+  enBas();
 }
 
 function boutonDiscussion(actives) {
@@ -3674,7 +3835,7 @@ async function reponseFinie(cle) {
   }
   if (!chat.ouvert || cle !== chat.cle) {
     $("#btn-chat").classList.add("nouveau");
-    toast(`Claude a répondu dans la discussion ${nomDiscussion(cle)}.`, 5000);
+    toast(s.mode === "compact" ? `Discussion ${nomDiscussion(cle)} compactée.` : `Claude a répondu dans la discussion ${nomDiscussion(cle)}.`, 5000);
   }
   if ((s.outils || []).some((o) => /^(modifie|écrit|lance)/.test(o))) { etat.decks = []; route(); }   // un deck a peut-être changé
 }
@@ -3708,6 +3869,7 @@ async function basculeChat(ouvrir) {
   if (chat.ouvert) $("#btn-chat").classList.remove("nouveau");
   try { localStorage.setItem("chat-ouvert", chat.ouvert ? "1" : ""); } catch (_) {}
   if (chat.ouvert && !chat.charge) await montageChat();
+  else if (chat.ouvert) enBas(true);
 }
 
 async function ouvrirChat(texte) {
@@ -3722,13 +3884,29 @@ async function ouvrirChat(texte) {
 async function envoyerChat() {
   const t = $("#chat-saisie");
   const message = t.value.trim();
-  if (!message || $("#chat-envoyer").textContent === "Arrêter") return;
+  if (!message || chat.actif) return;
   try {
     const s = await api("/api/discussion", { method: "POST", body: { message, page: pageCourante(), modele: $("#chat-modele").value, deck: chat.cle } });
     t.value = "";
     ajouteMessage("moi", message);
-    chat.bulle = null;
+    chat.reponse = null;
+    chat.detailOuvert = true;
+    chat.nbMessages++;
     afficheEnCours(s);
+    enBas(true);
+    suivreChat();
+  } catch (e) {
+    ajouteMessage("outil", "Erreur : " + (e.message || e));
+  }
+}
+
+async function compacterChat() {
+  if (chat.actif || !chat.session) return;
+  try {
+    const s = await api("/api/discussion/compacter", { method: "POST", body: { deck: chat.cle, modele: $("#chat-modele").value } });
+    chat.reponse = null;
+    afficheEnCours(s);
+    enBas(true);
     suivreChat();
   } catch (e) {
     ajouteMessage("outil", "Erreur : " + (e.message || e));
@@ -3745,6 +3923,8 @@ if (!PARTAGE) {
   chat.contexte = deckDeLaPage();
   chat.cle = chat.contexte ?? PREF.get("chat-discussion", "");
   window.addEventListener("hashchange", changerDiscussion);
+  document.addEventListener("visibilitychange", retourOnglet);
+  window.addEventListener("focus", retourOnglet);
   try { if (localStorage.getItem("chat-ouvert")) basculeChat(true); } catch (_) {}
   api("/api/discussion/en-cours").then((s) => { if (s.actives.length) suivreChat(); }).catch(() => {});   // une réponse tournait déjà
 }
