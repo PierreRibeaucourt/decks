@@ -1489,7 +1489,7 @@
  },
  "Deck Forgeur de soleil": {
   "slug": "forgeur-de-soleil",
-  "date": 1793818987.8534331,
+  "date": 1793876368.8900623,
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/5/5/557fcd17-6cb3-414a-b2b1-ea9ae32e5aec.jpg?1783937084",
@@ -1516,9 +1516,9 @@
    ],
    "image_cmd": "https://cards.scryfall.io/normal/front/5/5/557fcd17-6cb3-414a-b2b1-ea9ae32e5aec.jpg?1783937084",
    "maybe": 0,
-   "modifie": 1793812929.1649096,
+   "modifie": 1793823226.4562619,
    "note": "",
-   "prix_total": 378.98,
+   "prix_total": 378.37,
    "titre": "Forgeur de soleil",
    "total": 100,
    "trop_cher": [
