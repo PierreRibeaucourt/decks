@@ -13,6 +13,10 @@ const etat = { decks: [], deck: null, filtre: "" };
 // et tout ce qui modifie (classe « ecrit »), la recherche et la discussion sont masqués
 const PARTAGE = window.PARTAGE || null;
 if (PARTAGE) document.documentElement.classList.add("partage");
+// budget par carte (reglages.json, 5 € par défaut, 0 = pas d'alerte) : les cartes plus chères sont signalées
+const REGLAGES = (PARTAGE && PARTAGE.reglages) || window.REGLAGES || {};
+const BUDGET = REGLAGES.budget === undefined ? 5 : REGLAGES.budget > 0 ? REGLAGES.budget : Infinity;
+const BUDGET_TXT = String(BUDGET).replace(".", ",") + " €";
 
 // préférences d'affichage gardées d'une visite à l'autre (si le navigateur le permet)
 const PREF = {
@@ -184,9 +188,10 @@ function cacherApercu() {
 let survolCarte = null;
 
 // textes français de Scryfall : symboles collés ou entre parenthèses (« {2BB} », « {(u/p)} », « {(}b/r)} ») → {2}{B}{B}, {U/P}, {B/R}
+const SYMBOLE = /^(\d+|[WUBRGCXYZSTQEPHDL½∞]|[WUBRGC2]\/[WUBRGCP](\/P)?|CHAOS|TK|PW|A)$/;
 function symbolesTexte(s) {
   const t = s.toUpperCase().replace(/[()]/g, "");
-  if (/^(\d+|[WUBRGCXYZSTQEPHDL½∞]|[WUBRGC2]\/[WUBRGCP](\/P)?|CHAOS|TK|PW|A)$/.test(t)) return [t];
+  if (SYMBOLE.test(t)) return [t];
   const m = t.match(/\d+|[WUBRGCXYZS]\/[WUBRGCP](?:\/P)?|[WUBRGCXYZS]/g);
   return m && m.join("") === t ? m : [s];            // forme inconnue : laissée telle quelle
 }
@@ -197,17 +202,63 @@ function normaliserSymboles(t) {
     .replace(/\{([^}]+)\}/g, (_, s) => symbolesTexte(s).map((y) => `{${y}}`).join(""));
 }
 
+const urlSymbole = (y) => `https://svgs.scryfall.io/card-symbols/${enc(y === "½" ? "HALF" : y === "∞" ? "INFINITY" : y.replace(/\//g, ""))}.svg`;
+
 function texteMana(ligne) {
   return esc(normaliserSymboles(ligne))
     .replace(/\(([^)]*)\)/g, '<i class="rappel">($1)</i>')                 // texte de rappel en italique
-    .replace(/\{([^}]+)\}/g, (_, s) => `<img class="sym-t" src="https://svgs.scryfall.io/card-symbols/${enc(s.replace(/\//g, ""))}.svg" alt="{${esc(s)}}">`);
+    .replace(/\{([^}]+)\}/g, (_, s) => `<img class="sym-t" src="${urlSymbole(s)}" alt="{${esc(s)}}">`);
+}
+
+// partout ailleurs (discussion avec Claude, combos, bulles, modales, rapports…) : chaque texte affiché est relu, et
+// « {R}{W} », « {2BB} », « {T} » deviennent des symboles. Une accolade qui n'est pas un symbole reste du texte.
+const JETON = /\{\(\}[a-z]\/[a-z]\)\}|\{[^{}\s]{1,9}\}/gi;
+const SANS_SYMBOLES = "script, style, textarea, input, select, option, svg, [contenteditable]";
+
+function remplacerSymboles(n) {
+  const t = n.nodeValue;
+  let m, k = 0, frag = null;
+  JETON.lastIndex = 0;
+  while ((m = JETON.exec(t))) {
+    const ys = (normaliserSymboles(m[0]).match(/\{[^}]+\}/g) || []).map((x) => x.slice(1, -1));
+    if (!ys.length || !ys.every((y) => SYMBOLE.test(y))) continue;
+    frag = frag || document.createDocumentFragment();
+    frag.append(t.slice(k, m.index));
+    for (const y of ys) {
+      const img = document.createElement("img");
+      img.className = "sym-t";
+      img.src = urlSymbole(y);
+      img.alt = `{${y}}`;
+      frag.append(img);
+    }
+    k = m.index + m[0].length;
+  }
+  if (!frag) return;
+  frag.append(t.slice(k));
+  n.replaceWith(frag);
+}
+
+function symbolesDans(racine) {
+  if (racine.nodeType === Node.TEXT_NODE) {
+    const p = racine.parentElement;
+    if (p && racine.nodeValue.includes("{") && !p.closest(SANS_SYMBOLES)) remplacerSymboles(racine);
+    return;
+  }
+  if (racine.nodeType !== Node.ELEMENT_NODE || !racine.isConnected || !racine.textContent.includes("{") || racine.closest(SANS_SYMBOLES)) return;
+  const w = document.createTreeWalker(racine, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) => n.nodeType === Node.TEXT_NODE ? (n.nodeValue.includes("{") ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP)
+      : n.matches(SANS_SYMBOLES) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP,
+  });
+  const textes = [];
+  while (w.nextNode()) textes.push(w.currentNode);
+  textes.forEach(remplacerSymboles);
 }
 
 function ficheSurvol(c) {
   const f = c.info || {};
   const nom = f.fr || c.nom;
   const texte = f.fr_texte || f.texte || "";
-  const cher = (f.prix || 0) > 5;
+  const cher = (f.prix || 0) > BUDGET;
   return `
     <div class="fs-tete"><span class="fs-nom">${esc(nom)}</span>${mana(f.cout)}</div>
     ${nom !== c.nom ? `<div class="fs-en">${esc(c.nom)}</div>` : ""}
@@ -305,7 +356,7 @@ function apercuCite(el) {
     const autre = sansAccent(el.textContent.trim()) === sansAccent(f.fr) ? f.nom : f.fr || f.nom;     // l'autre langue
     el.dataset.image = f.image;
     el.dataset.legende = `${autre} — ${prixRch(f)}`;
-    if ((f.prix || 0) > 5) el.dataset.cher = "1";
+    if ((f.prix || 0) > BUDGET) el.dataset.cher = "1";
   };
   const c = etat.deck && etat.deck.cartes.find((x) => x.nom === nom);        // carte du deck : la version choisie
   if (c && c.info && c.info.image) { remplir({ nom: c.nom, fr: c.info.fr, image: c.info.image, prix: c.info.prix }); return Promise.resolve(); }
@@ -422,8 +473,13 @@ function passeCites() {
   lierCites.prevu = false;
   const rs = [...aLier];
   aLier.clear();
-  rs.forEach((r) => lierCites(r));
-  observateur.takeRecords();                       // les noms qu'on vient d'entourer
+  rs.forEach((r) => {
+    const p = r.parentNode;
+    symbolesDans(r);                               // d'abord les symboles de mana, puis les noms de cartes
+    const q = r.isConnected ? r : p;               // texte remplacé par ses morceaux : on relit son parent
+    if (q && q.isConnected) lierCites(q);
+  });
+  observateur.takeRecords();                       // les symboles et les noms qu'on vient de poser
 }
 
 async function chargerCites() {
@@ -440,6 +496,7 @@ async function chargerCites() {
 }
 
 observateur.observe(document.body, { childList: true, subtree: true, characterData: true });
+symbolesDans(document.body);
 chargerCites();
 
 // ------------------------------------------------------------------ menu contextuel et modale
@@ -515,12 +572,8 @@ window.addEventListener("hashchange", route);
 const nomsCommandants = (d) => ((d.commandants && d.commandants.length) ? d.commandants : d.commandant ? [d.commandant] : []).join(" + ");
 const identiteHtml = (ident) => ident == null ? "" : (ident.length ? ident.map(symbole).join("") : symbole("C"));
 
-// decks ouverts récemment (gardés dans ce navigateur) : en tête du sélecteur et du tri « récents »
-const RECENTS = {
-  lire() { try { return JSON.parse(localStorage.getItem("decks-recents") || "{}"); } catch (_) { return {}; } },
-  noter(id) { try { const r = RECENTS.lire(); r[id] = Date.now(); localStorage.setItem("decks-recents", JSON.stringify(r)); } catch (_) {} },
-};
-const recence = (d) => Math.max(RECENTS.lire()[d.id] || 0, (d.modifie || 0) * 1000);
+// « récent » = liste modifiée récemment (ouvrir un deck sans le modifier ne le fait pas remonter)
+const recence = (d) => (d.modifie || 0) * 1000;
 
 async function listeDecks() {
   if (!etat.decks.length) etat.decks = await api("/api/decks");
@@ -557,7 +610,7 @@ function deckDeLaPage() {
     items = [...cartes.map((c, i) => ({ carte: c, i, cartes })), ...decksTrouves.map((d) => ({ deck: d }))];
     actif = 0;
     const ligneCarte = (it, n) => {
-      const c = it.carte, cher = (c.prix || 0) > 5;
+      const c = it.carte, cher = (c.prix || 0) > BUDGET;
       return `<button type="button" class="aller-item aller-carte ${n === actif ? "choisi" : ""}" data-n="${n}" role="option"
           data-image="${esc(c.image)}" data-legende="${esc(`${c.fr || c.nom} — ${prixRch(c)}`)}" ${cher ? 'data-cher="1"' : ""}>
         <span class="aller-cout">${mana(c.cout)}</span>
@@ -817,7 +870,6 @@ async function vueDeck(id, onglet, extra = null, donnees = null) {
   }
   const d = donnees || await api("/api/decks/" + enc(id));
   etat.deck = d;
-  RECENTS.noter(id);
   const cmdsEntete = d.cartes.filter((c) => c.cat === "Commander" && c.info.image);      // deux partenaires : en éventail
   vue.innerHTML = `
     <nav class="fil" aria-label="Fil d'Ariane"><a href="${PARTAGE ? esc(PARTAGE.accueil) : "#/"}">Mes decks</a><span aria-hidden="true">›</span><span aria-current="page">${esc(d.titre)}</span></nav>
@@ -1081,7 +1133,7 @@ function ligneCarte(c, rangement) {
   const f = c.info || {};
   const tags = c.tags.filter((t) => t !== "Maybeboard" && t !== "Commander" && !(rangement === "tags" && t === c.cat));
   const sim = c.sim && LIBELLE_SIM[c.sim.classe];
-  const cher = (f.prix || 0) > 5;
+  const cher = (f.prix || 0) > BUDGET;
   return `<div class="ligne ligne-carte" data-carte="${c.index}">
     <span class="qte">${c.n > 1 ? c.n + "×" : ""}</span>
     <span class="nom"><span class="en" data-image="${esc(f.image)}" data-legende="${esc(legendeCarte(c))}" ${cher ? 'data-cher="1"' : ""}>${esc(c.nom)}</span>${f.fr && f.fr !== c.nom ? `<span class="fr" data-image="${esc(f.image)}" data-legende="${esc(legendeCarte(c))}" ${cher ? 'data-cher="1"' : ""}>${esc(f.fr)}</span>` : ""}
@@ -1090,7 +1142,7 @@ function ligneCarte(c, rangement) {
     <span class="badges">
       ${badgesAlerte(c)}
       ${f.gc ? `<span class="badge badge-gc" title="Game Changer : compte dans le bracket (3 maximum en bracket 3)">Game Changer</span>` : ""}
-      ${cher ? `<span class="badge badge-cher" title="Au-dessus de ton budget de 5 € par carte">&gt; 5 €</span>` : ""}
+      ${cher ? `<span class="badge badge-cher" title="Au-dessus de ton budget de ${BUDGET_TXT} par carte">&gt; ${BUDGET_TXT}</span>` : ""}
       ${sim ? `<span class="badge badge-sim" title="${esc(sim[1] + (c.sim.non_lu.length ? " :\n• " + c.sim.non_lu.join("\n• ") : ""))}">${sim[0]}</span>` : ""}
     </span>
     ${f.prix_lien ? `<a class="prix ${cher ? "cher" : ""}" href="${esc(f.prix_lien)}" target="_blank" rel="noopener" title="${esc(f.prix_edition ? `Le moins cher : ${f.prix_edition}. ` : "")}Voir sur Cardmarket">${euros(f.prix)}</a>` : `<span class="prix muet">${euros(f.prix)}</span>`}
@@ -1109,7 +1161,7 @@ function imageCarte(f, cls, style = "") {
 function carteVisuelle(c) {
   const f = c.info || {};
   const nb = Math.min(c.n, 4);
-  const cher = (f.prix || 0) > 5;
+  const cher = (f.prix || 0) > BUDGET;
   const couches = [];
   for (let k = nb - 1; k >= 1; k--) couches.push(imageCarte(f, "couche", `style="--k:${k}"`));
   const marques = [
@@ -1165,7 +1217,7 @@ function ouvrirCarte(c) {
     : /Legendary Creature|Background/.test(f.type || "") || /can be your commander/i.test(f.texte || "");
   const second = !cmd && (d.commandants || []).length === 1;              // il y a déjà un commandant : celle-ci serait le second
   const sim = c.sim && LIBELLE_SIM[c.sim.classe];
-  const cher = (f.prix || 0) > 5;
+  const cher = (f.prix || 0) > BUDGET;
   const tags = c.tags.filter((t) => t !== "Maybeboard" && t !== "Commander");
   ouvrirModale(`
     <div class="fiche-carte">
@@ -1419,7 +1471,7 @@ function rechercheCarte(zone, { surChoix, surAjout = null, deck = () => etat.dec
     const d = deck();
     const deja = d && d.cartes.some((c) => c.nom === x.nom);
     const hors = d && d.identite && (x.couleurs || []).some((k) => !d.identite.includes(k));
-    const cher = (x.prix || 0) > 5;
+    const cher = (x.prix || 0) > BUDGET;
     const plus = !surAjout ? "" : deja && !/Basic/.test(x.type || "") ? `<span class="res-plus"></span>`
       : `<button type="button" class="res-plus" data-plus="${i}" title="Ajouter au deck" aria-label="Ajouter ${esc(x.nom)} au deck">${ico("plus")}</button>`;
     return `<div class="res-ligne"><button type="button" class="res-carte ${i === actif ? "choisi" : ""}" data-i="${i}" role="option"
@@ -1438,7 +1490,7 @@ function rechercheCarte(zone, { surChoix, surAjout = null, deck = () => etat.dec
       x.prix = q.prix;
       x.prixFait = true;
       x.fr = x.fr || q.fr;
-      const cher = (x.prix || 0) > 5;
+      const cher = (x.prix || 0) > BUDGET;
       el.dataset.legende = legende(x);
       if (cher) el.dataset.cher = "1";
       $(".res-nom", el).innerHTML = nomHtml(x);
@@ -1772,7 +1824,7 @@ function ongletStats(el, d) {
       ${chers.map((c) => `<div class="ligne ligne-3">
         <span class="nom"><span class="en" data-image="${esc(c.info.image)}" data-legende="${esc(legendeCarte(c))}">${esc(c.nom)}</span>${c.info.fr && c.info.fr !== c.nom ? `<span class="fr" data-image="${esc(c.info.image)}" data-legende="${esc(legendeCarte(c))}">${esc(c.info.fr)}</span>` : ""}</span>
         ${mana(c.info.cout)}
-        ${c.info.prix_lien ? `<a class="prix ${c.info.prix > 5 ? "cher" : ""}" href="${esc(c.info.prix_lien)}" target="_blank" rel="noopener">${euros(c.info.prix)}</a>` : `<span class="prix">${euros(c.info.prix)}</span>`}
+        ${c.info.prix_lien ? `<a class="prix ${c.info.prix > BUDGET ? "cher" : ""}" href="${esc(c.info.prix_lien)}" target="_blank" rel="noopener">${euros(c.info.prix)}</a>` : `<span class="prix">${euros(c.info.prix)}</span>`}
       </div>`).join("")}
     </div>`;
   // fonctions ou tags : la même question (ce que font les cartes), un seul panneau avec son sélecteur
@@ -1941,7 +1993,7 @@ async function afficheComparaison(zone, d, fa, fb) {
       return `<div class="ligne" style="grid-template-columns:minmax(0,1fr) auto 4.6rem">
         <span class="nom" data-image="${esc(f.image)}"><span class="en">${esc(n)}</span>${f.fr && f.fr !== n ? `<span class="fr">${esc(f.fr)}</span>` : ""}
           ${f.gc ? `<span class="badge badge-gc">Game Changer</span>` : ""}</span>
-        ${mana(f.cout)}<span class="prix ${(f.prix || 0) > 5 ? "cher" : ""}">${euros(f.prix)}</span></div>`;
+        ${mana(f.cout)}<span class="prix ${(f.prix || 0) > BUDGET ? "cher" : ""}">${euros(f.prix)}</span></div>`;
     };
     const colonne = (v, cartes) => `<div>
       <h3>Seulement dans « ${esc(v.nom)} » <span class="muet">(${cartes.length})</span></h3>
@@ -2044,7 +2096,7 @@ const SOURCES = { mtgpics: "MTGPics", spellbook: "Spellbook", claude: "Claude" }
 function nomCombo(f) {
   const leg = `${f.fr && f.fr !== f.nom ? f.nom + " · " : ""}${f.prix != null ? euros(f.prix) : "prix inconnu"}${f.dans ? " · dans le deck" : ""}`;
   return `<button type="button" class="cc ${f.dans ? "cc-dans" : ""}" data-nom="${esc(f.nom)}" data-image="${esc(f.image)}" data-legende="${esc(leg)}"
-    ${(f.prix || 0) > 5 ? 'data-cher="1"' : ""}>${esc(f.fr || f.nom)}</button>`;
+    ${(f.prix || 0) > BUDGET ? 'data-cher="1"' : ""}>${esc(f.fr || f.nom)}</button>`;
 }
 
 function ligneCombo(c, carte = null) {
@@ -2061,7 +2113,7 @@ function ligneCombo(c, carte = null) {
     else {
       const maybe = manque.length === 1 ? ((c.maybe || []).includes(manque[0].nom) ? ` <span class="badge">au Maybeboard</span>`
         : ` <button type="button" class="btn btn-petit ecrit" data-maybe="${esc(manque[0].nom)}">${ico("maybe")}Maybeboard</button>`) : "";
-      etatCarte = `Pas dans le deck : ${manque.map((f) => `${nc(f.nom, f.fr || f.nom)} <span class="${(f.prix || 0) > 5 ? "cher" : "muet"}">${euros(f.prix)}</span>`).join(" · ")}${maybe}`;
+      etatCarte = `Pas dans le deck : ${manque.map((f) => `${nc(f.nom, f.fr || f.nom)} <span class="${(f.prix || 0) > BUDGET ? "cher" : "muet"}">${euros(f.prix)}</span>`).join(" · ")}${maybe}`;
     }
   }
   return `<div class="combo">
@@ -2648,7 +2700,7 @@ function formulaireRecherche(c) {
         <div class="rch-nombres">
           <label>Prix max ${rchChamp("prixmax", c, 'inputmode="decimal" size="4"')} €</label>
           <label>Prix min ${rchChamp("prixmin", c, 'inputmode="decimal" size="4"')} €</label>
-          <button type="button" class="btn btn-petit" data-act="budget">≤ 5 €</button>
+          ${BUDGET < Infinity ? `<button type="button" class="btn btn-petit" data-act="budget">≤ ${BUDGET_TXT}</button>` : ""}
         </div>
         ${rchSelect("gc", RCH_GC, c)}
         ${rchSelect("cmd", RCH_CMD, c)}
@@ -2733,10 +2785,12 @@ function resumeCrit(c) {
 
 // ---- la page
 async function vueRecherche(params) {
-  // la page sans critère (lien du haut, bouton d'un deck) : le formulaire, avec les critères de la dernière recherche
-  const deckDemande = params.get("deck");
+  // la page sans critère : le formulaire, avec les critères de la dernière recherche du même genre. Lien du haut : la
+  // dernière recherche sans deck ; bouton « Chercher des cartes » d'un deck : la dernière recherche pour ce deck
+  const deckDemande = params.get("deck") || "";
   if ([...params.keys()].every((k) => k === "deck")) {
-    const derniere = new URLSearchParams(PREF.get(cleDerniere(deckDemande || ""), ""));
+    let derniere = new URLSearchParams(PREF.get(cleDerniere(deckDemande), ""));
+    if ((derniere.get("deck") || "") !== deckDemande) derniere = new URLSearchParams();   // mémorisée pour un autre deck
     derniere.delete("r");                          // le formulaire, prérempli, sans relancer la recherche
     derniere.delete("page");
     if ([...derniere.keys()].length) {
@@ -2747,7 +2801,7 @@ async function vueRecherche(params) {
   const neuve = [...params.keys()].every((k) => k === "deck");
   scrollTo(0, 0);
   const c = critDepuis(params);
-  if (!params.has("deck")) c.deck = PREF.get("rch-deck", "");
+  c.deck = c.deck || "";                           // pas de deck dans l'adresse : recherche sans deck
   etat.deck = null;
   let [ds, fonctions] = await Promise.all([listeDecks(), rch.fonctions ? rch.fonctions : api("/api/recherche/fonctions").catch(() => [])]);
   rch.fonctions = fonctions;
@@ -2758,7 +2812,6 @@ async function vueRecherche(params) {
   if (c.deck && !ds.some((d) => d.id === c.deck)) c.deck = "";
   rch.deck = c.deck ? await api(`/api/decks/${enc(c.deck)}/apercu`).catch(() => null) : null;
   if (!rch.deck) c.deck = "";
-  if (deckDemande) PREF.set("rch-deck", c.deck);
   if (neuve && rch.deck && rch.deck.identite) Object.assign(c, critIdentite(rch.deck));    // nouvelle recherche pour un deck : ses couleurs
   rch.crit = c;
   rch.eds = new Set((c.eds || "").split(",").filter(Boolean));
@@ -2783,7 +2836,7 @@ async function vueRecherche(params) {
   majInfosDeck();
   $("#rch-deck").onchange = async (ev) => {
     const id = ev.target.value;
-    PREF.set("rch-deck", id);
+    if (id) choisirDiscussion(id);                 // chercher pour un autre deck : sa discussion suit
     const nc = { ...rch.crit, deck: id };
     if (!id) delete nc.horsdeck;
     const form = $("#moteur");
@@ -2840,7 +2893,7 @@ function rendreFormulaire() {
     const a = ev.target.closest("[data-act]");
     if (!a) return;
     if (a.dataset.act === "raz") return nouvelleRecherche();
-    if (a.dataset.act === "budget") { form.elements.prixmax.value = "5"; form.elements.prixmax.focus(); return; }
+    if (a.dataset.act === "budget") { form.elements.prixmax.value = String(BUDGET); form.elements.prixmax.focus(); return; }
     if (a.dataset.act === "identite" && rch.deck) {
       const id = critIdentite(rch.deck);
       $$('.rch-symboles[data-groupe="coul"] .rch-sym', form).forEach((b) => { const on = id.coul.includes(b.dataset.k); b.classList.toggle("actif", on); b.setAttribute("aria-pressed", on); });
@@ -3011,11 +3064,9 @@ async function lancerRecherche() {
   rendreResultats(z, r);
 }
 
-// la dernière recherche : celle du lien du haut, et celle de chaque deck (bouton « Chercher des cartes » du deck)
+// la dernière recherche : sans deck pour le lien du haut, et celle de chaque deck (bouton « Chercher des cartes » du deck)
 function memoriser() {
-  const qs = critVersHash(rch.crit);
-  PREF.set(cleDerniere(""), qs);
-  if (rch.crit.deck) PREF.set(cleDerniere(rch.crit.deck), qs);
+  PREF.set(cleDerniere(rch.crit.deck || ""), critVersHash(rch.crit));
 }
 
 async function attendreBase(z) {
@@ -3165,7 +3216,7 @@ function texteCarteRch(x) {
 }
 
 function ligneRch(x, i) {
-  const cher = (x.prix || 0) > 5;
+  const cher = (x.prix || 0) > BUDGET;
   const typeAff = rch.crit.fr !== "" && x.type_fr ? x.type_fr : x.type;
   return `<article class="rch-carte" data-i="${i}">
     <button type="button" class="rch-vignette" data-act="ouvrir" data-image="${esc(x.image)}" data-legende="${esc(`${x.fr || x.nom} — ${prixRch(x)}`)}" ${cher ? 'data-cher="1"' : ""} aria-label="Fiche de ${esc(x.nom)}">
@@ -3187,7 +3238,7 @@ function ligneRch(x, i) {
 }
 
 function carteImageRch(x, i) {
-  const cher = (x.prix || 0) > 5;
+  const cher = (x.prix || 0) > BUDGET;
   const marques = [
     x.gc ? `<span class="marque marque-gc" title="Game Changer">GC</span>` : "",
     horsCouleurs(x) ? `<span class="marque marque-alerte">hors couleurs</span>` : "",
@@ -3301,7 +3352,7 @@ function ficheRecherche(i, ctx = null) {
   const d = ctx ? ctx.deck : rch.deck;
   const v = x.versionChoisie || null;
   const image = (v && v.image) || x.image;
-  const cher = (x.prix || 0) > 5;
+  const cher = (x.prix || 0) > BUDGET;
   const texte = (t) => (t || "").split("\n").map((l) => l.trim() === "//" ? "<hr>" : l.trim() ? `<p>${texteMana(l)}</p>` : "").join("");
   ouvrirModale(`
     <div class="fiche-carte">
@@ -3376,7 +3427,7 @@ function ficheRecherche(i, ctx = null) {
     x.prix = f.prix;
     const el = $("#rf-prix-badge");
     el.textContent = `${euros(f.prix)}${f.prix_edition ? " · " + f.prix_edition : ""}`;
-    el.classList.toggle("badge-cher", f.prix > 5);
+    el.classList.toggle("badge-cher", f.prix > BUDGET);
   }).catch(() => {});
 }
 
@@ -3436,10 +3487,12 @@ $("#btn-rafraichir").addEventListener("click", async () => {
 });
 
 // ------------------------------------------------------------------ discussion avec Claude
-// Une discussion par deck (son historique et son propre contexte Claude), plus une discussion générale sur « Mes decks ».
-// Le panneau suit la page : changer de deck change de discussion. Les réponses tournent sur le serveur (tâche de fond) :
-// fermer le panneau, changer de deck ou recharger la page ne les perd pas, et plusieurs decks peuvent attendre une réponse.
-const chat = { ouvert: false, charge: false, cle: null, suivi: false, bulle: null, nbOutils: 0 };
+// Une discussion par deck (son historique et son propre contexte Claude), plus une discussion générale.
+// On choisit la discussion dans l'en-tête du panneau, depuis n'importe quelle page ; ouvrir un deck (ou le choisir
+// comme cible de la recherche) passe à sa discussion. Ailleurs, la discussion choisie reste celle qui était là.
+// Les réponses tournent sur le serveur (tâche de fond) : fermer le panneau, changer de page ou recharger ne les perd pas,
+// et plusieurs decks peuvent attendre une réponse.
+const chat = { ouvert: false, charge: false, cle: "", contexte: null, suivi: false, bulle: null, nbOutils: 0 };
 const ETAT_CHAT = "";
 const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -3469,6 +3522,28 @@ function cleCourante() {
 const nomDiscussion = (cle) => (cle ? cle.replace(/^Deck /, "") : "générale");
 const qDeck = (cle) => "?deck=" + enc(cle || "");
 
+// le deck de la page de deck affichée, sinon null
+function deckDeLaPage() {
+  const parts = location.hash.replace(/^#\/?/, "").split("/");
+  return parts[0] === "deck" && parts[1] ? decodeURIComponent(parts[1]) : null;
+}
+
+function remplirChoixDiscussion(ds) {
+  const s = $("#chat-discussion");
+  if (!s) return;
+  const tri = [...ds].sort((a, b) => recence(b) - recence(a) || a.titre.localeCompare(b.titre));
+  s.innerHTML = `<option value="">Générale</option>` + tri.map((d) => `<option value="${esc(d.id)}">${esc(d.titre)}</option>`).join("")
+    + (chat.cle && !ds.some((d) => d.id === chat.cle) ? `<option value="${esc(chat.cle)}">${esc(nomDiscussion(chat.cle))}</option>` : "");
+  s.value = chat.cle;
+}
+
+async function choisirDiscussion(cle) {
+  if (cle === chat.cle) return;
+  chat.cle = cle;
+  PREF.set("chat-discussion", cle);
+  if (chat.charge) { try { await afficheHistorique(); } catch (e) { ajouteMessage("outil", "Erreur : " + (e.message || e)); } }
+}
+
 function ajouteMessage(role, texte) {
   const fil = $("#chat-fil");
   const div = document.createElement("div");
@@ -3495,10 +3570,16 @@ function boutonEnvoyer(enCours) {
 }
 
 async function afficheHistorique() {
+  let ds = await listeDecks().catch(() => null);
+  if (ds && chat.cle && !ds.some((d) => d.id === chat.cle)) {     // deck tout juste créé, ou supprimé depuis
+    etat.decks = [];
+    ds = await listeDecks().catch(() => null);
+    if (ds && !ds.some((d) => d.id === chat.cle)) { chat.cle = ""; PREF.set("chat-discussion", ""); }
+  }
   const cle = chat.cle;
   const h = await api("/api/discussion" + qDeck(cle));
-  if (cle !== chat.cle) return h;                 // on a changé de deck entre-temps
-  $("#chat-titre").textContent = cle ? `Discussion · ${nomDiscussion(cle)}` : "Discussion générale";
+  if (cle !== chat.cle) return h;                 // on a changé de discussion entre-temps
+  remplirChoixDiscussion(ds || etat.decks);
   const fil = $("#chat-fil");
   fil.innerHTML = "";
   if (!h.disponible) ajouteMessage("outil", "Claude Code est introuvable sur ce PC : la discussion ne marchera pas (installe l'extension Claude Code de VS Code).");
@@ -3513,19 +3594,20 @@ async function afficheHistorique() {
   return h;
 }
 
-// la page a changé : le panneau passe à la discussion du deck affiché
+// la page a changé : en arrivant sur un deck, le panneau passe à sa discussion ; ailleurs, il garde celle choisie
 async function changerDiscussion() {
-  const cle = cleCourante();
-  if (cle === chat.cle) return;
-  chat.cle = cle;
-  if (chat.charge) { try { await afficheHistorique(); } catch (e) { ajouteMessage("outil", "Erreur : " + (e.message || e)); } }
+  const ctx = deckDeLaPage();
+  const arrivee = ctx !== null && ctx !== chat.contexte;
+  chat.contexte = ctx;
+  if (arrivee && ctx !== chat.cle) await choisirDiscussion(ctx);
+  else if (chat.charge) listeDecks().then(remplirChoixDiscussion).catch(() => {});   // un deck a pu être créé ou supprimé
 }
 
 async function montageChat() {
   const a = $("#chat");
   a.innerHTML = `
     <div class="chat-tete">
-      <strong id="chat-titre">Discussion</strong>
+      <select id="chat-discussion" class="btn btn-petit chat-choix" aria-label="Discussion"></select>
       <div>
         <select id="chat-modele" class="btn btn-petit" title="Modèle">
           <option value="opus">Opus</option><option value="sonnet">Sonnet</option><option value="haiku">Haiku</option>
@@ -3545,6 +3627,7 @@ async function montageChat() {
   try { $("#chat-modele").value = localStorage.getItem("chat-modele") || "opus"; } catch (_) { $("#chat-modele").value = "opus"; }
   $("#chat-modele").onchange = (ev) => { try { localStorage.setItem("chat-modele", ev.target.value); } catch (_) {} };
   $("#chat-fermer").onclick = () => basculeChat(false);
+  $("#chat-discussion").onchange = (ev) => choisirDiscussion(ev.target.value);
   $("#chat-nouvelle").onclick = async () => {
     if (!confirm(`Effacer la discussion ${nomDiscussion(chat.cle)} ?`)) return;
     try {
@@ -3554,7 +3637,6 @@ async function montageChat() {
   };
   $("#chat-envoyer").onclick = () => ($("#chat-envoyer").textContent === "Arrêter" ? arreterChat() : envoyerChat());
   $("#chat-saisie").addEventListener("keydown", (ev) => { if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) envoyerChat(); });
-  chat.cle = cleCourante();
   chat.charge = true;
   await afficheHistorique();
 }
@@ -3605,7 +3687,7 @@ async function suivreChat() {
   try {
     for (;;) {
       let s;
-      try { s = await api("/api/discussion/en-cours" + qDeck(chat.cle ?? cleCourante())); echecs = 0; }
+      try { s = await api("/api/discussion/en-cours" + qDeck(chat.cle)); echecs = 0; }
       catch (_) { if (++echecs > 10) break; await attendre(2000); continue; }
       for (const k of avant) if (!s.actives.includes(k)) await reponseFinie(k);
       avant = s.actives;
@@ -3629,6 +3711,8 @@ async function basculeChat(ouvrir) {
 }
 
 async function ouvrirChat(texte) {
+  const ctx = deckDeLaPage();
+  if (ctx !== null) await choisirDiscussion(ctx);      // « Expliquer avec Claude » : la discussion du deck affiché
   await basculeChat(true);
   const t = $("#chat-saisie");
   t.value = texte || "";
@@ -3658,6 +3742,8 @@ async function arreterChat() {
 
 $("#btn-chat").addEventListener("click", () => basculeChat());
 if (!PARTAGE) {
+  chat.contexte = deckDeLaPage();
+  chat.cle = chat.contexte ?? PREF.get("chat-discussion", "");
   window.addEventListener("hashchange", changerDiscussion);
   try { if (localStorage.getItem("chat-ouvert")) basculeChat(true); } catch (_) {}
   api("/api/discussion/en-cours").then((s) => { if (s.actives.length) suivreChat(); }).catch(() => {});   // une réponse tournait déjà
