@@ -741,6 +741,21 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
 .bandeau-partage { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .45rem 1rem; padding: .5rem 1rem;
   background: var(--accent-doux); border-bottom: 1px solid var(--bord); font-size: .9rem; text-align: center; }
 .bandeau-partage p { margin: 0; }
+.bandeau-partage p a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.pied-partage { border-top: 1px solid var(--bord); padding: 1.2rem 1rem 1.6rem; text-align: center; font-size: .82rem; color: var(--texte-2); }
+.pied-partage nav { display: flex; flex-wrap: wrap; justify-content: center; gap: .3rem 1.4rem; margin-bottom: .5rem; }
+.pied-partage nav a { color: var(--texte); }
+.pied-partage p { margin: 0 auto; max-width: 720px; }
+/* « C'est quoi, l'Atelier MTG ? » */
+.a-propos { max-width: 720px; margin: 0 auto; line-height: 1.6; }
+.a-propos h1 { font-size: 1.8rem; line-height: 1.25; margin: .6rem 0 .6rem; }
+.a-propos h2 { font-size: 1.15rem; margin: 2rem 0 .5rem; }
+.a-propos .chapeau { font-size: 1.08rem; color: var(--texte-2); margin: 0; }
+.a-propos .histoire { border-left: 3px solid var(--accent); padding: .1rem 0 .1rem 1.1rem; }
+.a-propos .histoire p, .a-propos .histoire ul { margin: .5rem 0; }
+.a-propos ul { padding-left: 1.2rem; }
+.a-propos-liste li { margin: .3rem 0; }
+.a-propos a:not(.btn) { color: var(--accent); }
 /* page partagée : la recherche et la discussion en vitrine, grisées, avec le lien pour installer l'Atelier */
 .vitrine { position: relative; }
 .vitrine-fond { opacity: .35; filter: grayscale(1); pointer-events: none; user-select: none; }
