@@ -135,11 +135,22 @@ const ICONES = {
 if (PARTAGE) $(".logo").href = PARTAGE.accueil === true ? "#/" : PARTAGE.accueil;
 const ico = (nom) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONES[nom] || ""}</svg>`;
 $$("[data-ico]").forEach((el) => el.insertAdjacentHTML("afterbegin", ico(el.dataset.ico)));
-// page partagée : à qui est la page, et l'Atelier à télécharger pour faire pareil avec ses decks
-if (PARTAGE) $(".barre").insertAdjacentHTML("afterend", `<div class="bandeau-partage">
-  <p>Page ${PARTAGE.auteur ? `de <strong>${esc(PARTAGE.auteur)}</strong>, ` : ""}partagée avec l'Atelier MTG. Pour gérer, tester et partager tes propres decks Commander, l'Atelier est gratuit.</p>
-  ${PARTAGE.atelier ? `<a class="btn btn-accent btn-petit" href="${esc(PARTAGE.atelier)}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a>` : ""}
-</div>`);
+// page partagée : à qui est la page, et l'Atelier à télécharger pour faire pareil avec ses decks ;
+// en bas, la licence, le code source et la page « C'est quoi, l'Atelier MTG ? » (#/a-propos)
+const TITRE_PARTAGE = document.title;
+if (PARTAGE) {
+  const depot = PARTAGE.atelier ? esc(PARTAGE.atelier) : "";
+  $(".barre").insertAdjacentHTML("afterend", `<div class="bandeau-partage">
+    <p>Page ${PARTAGE.auteur ? `de <strong>${esc(PARTAGE.auteur)}</strong>, ` : ""}partagée avec <a href="#/a-propos">l'Atelier MTG</a>. Pour gérer, tester et partager tes propres decks Commander, l'Atelier est gratuit.</p>
+    ${depot ? `<a class="btn btn-accent btn-petit" href="${depot}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a>` : ""}
+  </div>`);
+  $(".cadre").insertAdjacentHTML("afterend", `<footer class="pied-partage">
+    <nav><a href="#/a-propos">C'est quoi, l'Atelier MTG ?</a>${depot ? `<a href="${depot}" target="_blank" rel="noopener">Code source sur GitHub</a>
+      <a href="${depot}/blob/main/LICENSE" target="_blank" rel="noopener">Licence MIT</a>` : ""}</nav>
+    <p>Magic: The Gathering est une marque de Wizards of the Coast. L'Atelier MTG n'est ni affilié à Wizards of the Coast ni approuvé par elle.
+      Données des cartes : Scryfall.</p>
+  </footer>`);
+}
 
 // hauteur de la barre du haut : les onglets d'un deck se collent juste dessous
 const hauteurBarre = () => document.documentElement.style.setProperty("--haut-barre", $(".barre").offsetHeight + "px");
@@ -559,7 +570,10 @@ document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") { fermer
 // ------------------------------------------------------------------ navigation
 // titre de l'onglet du navigateur, la page d'abord : « Kels · Statistiques », « Recherche · « dragon » · Kels »
 function majTitre() {
-  if (PARTAGE) return;                             // page partagée : le titre écrit par partage.py
+  if (PARTAGE) {                                   // page partagée : le titre écrit par partage.py
+    document.title = location.hash.startsWith("#/a-propos") ? "C'est quoi, l'Atelier MTG ?" : TITRE_PARTAGE;
+    return;
+  }
   const [chemin, qs] = location.hash.replace(/^#\/?/, "").split(/\?(.*)/s);
   const parts = chemin.split("/");
   let t = "Mes decks";
@@ -583,7 +597,8 @@ async function route() {
   $("#lien-recherche").classList.toggle("actif", parts[0] === "recherche");
   vue.classList.toggle("vue-large", parts[0] === "recherche");
   try {
-    if (PARTAGE && parts[0] === "recherche") vueRechercheVitrine();
+    if (parts[0] === "a-propos") vueAPropos();
+    else if (PARTAGE && parts[0] === "recherche") vueRechercheVitrine();
     else if (PARTAGE && PARTAGE.deck) await vueDeck(PARTAGE.deck, (parts[0] === "deck" && parts[2]) || "liste");
     else if (PARTAGE && parts[0] === "deck" && parts[1]) location.replace(lienDeck(decodeURIComponent(parts[1])));
     else if (parts[0] === "recherche") await vueRecherche(new URLSearchParams(qs || ""));
@@ -3074,6 +3089,77 @@ function vueRechercheVitrine() {
       <div class="vitrine-fond" inert aria-hidden="true">${formulaireRecherche(rch.crit)}</div>
       ${invitation("Recherche de cartes", "Disponible dans l'Atelier MTG, à installer gratuitement sur son ordinateur.")}
     </div>`;
+}
+
+// « C'est quoi, l'Atelier MTG ? » : la page qui présente l'outil aux visiteurs d'une page partagée (bandeau et pied de page).
+// L'histoire est celle de l'auteur de l'Atelier, pas forcément celle de la personne qui partage ses decks.
+const AUTEUR_ATELIER = "PierreRibeaucourt";
+const DEPOT_ATELIER = "https://github.com/PierreRibeaucourt/atelier-mtg";
+
+function vueAPropos() {
+  scrollTo(0, 0);
+  etat.deck = null;
+  const depot = esc((PARTAGE && PARTAGE.atelier) || DEPOT_ATELIER);
+  const retour = PARTAGE ? `<a href="${esc(PARTAGE.accueil === true ? "#/" : PARTAGE.accueil)}">${esc(MES_DECKS)}</a><span aria-hidden="true">›</span>`
+    + (PARTAGE.deck ? `<a href="#/">${esc(PARTAGE.deck.replace(/^Deck /, ""))}</a><span aria-hidden="true">›</span>` : "")
+    : `<a href="#/">Mes decks</a><span aria-hidden="true">›</span>`;
+  vue.innerHTML = `
+    <article class="a-propos">
+      <nav class="fil" aria-label="Fil d'Ariane">${retour}<span aria-current="page">L'Atelier MTG</span></nav>
+      <h1>C'est quoi, l'Atelier MTG ?</h1>
+      <p class="chapeau">Un outil gratuit pour construire, tester et partager ses decks Magic au format Commander.
+        Il s'installe sur ton ordinateur : pas de compte, pas de publicité, et tes decks restent chez toi.</p>
+
+      <h2>D'où il vient</h2>
+      <p class="muet">Raconté par ${esc(AUTEUR_ATELIER)}, qui l'a créé :</p>
+      <div class="histoire">
+        <p>J'avais noté mes decks dans un fichier texte. Je l'ai donné à Claude, l'assistant d'Anthropic, avec quelques articles
+          d'experts : comment régler une base de mana, combien de cartes de pioche, quelles conditions de victoire… Ensemble, on a
+          cherché des modèles pour simuler des parties, sorti des statistiques pour chaque deck, suivi les prix Cardmarket et
+          vérifié les brackets.</p>
+        <p>Puis j'en ai eu assez de tout faire dans un éditeur de code. Je voulais <em>voir</em> mes decks et l'effet de mes
+          changements, les importer facilement, les modifier, tout en gardant Claude sous la main pour ranger les cartes, affiner
+          les simulations, chercher et analyser.</p>
+        <p>Il me fallait une interface. Je l'ai construite presque sans le faire exprès, et j'y ai mis peu à peu ce que je
+          préférais sur chaque site :</p>
+        <ul>
+          <li>la table de jeu d'Archidekt, pour tester un deck tout seul ;</li>
+          <li>la recherche avancée de Magic-Ville ;</li>
+          <li>les prix de Cardmarket ;</li>
+          <li>les combos de Magic-Ville et de Commander Spellbook ;</li>
+          <li>les brackets et la liste officielle des Game Changers.</li>
+        </ul>
+        <p>Le tout relié à Claude, qui lit et modifie les decks avec moi : il range les cartes par catégorie, aide à faire le cut,
+          propose des idées, challenge mes choix, sort des statistiques et fait tourner des simulations.</p>
+      </div>
+
+      <h2>Ce qu'on y fait</h2>
+      <ul class="a-propos-liste">
+        <li><strong>Ses decks</strong> : importés depuis Archidekt, Moxfield ou MTG Arena, en liste ou en images, rangés par type, par tag ou par fonction.</li>
+        <li><strong>Les chiffres</strong> : courbe de mana, couleurs, base de mana, main de départ, prix du jour avec une alerte de budget.</li>
+        <li><strong>Les règles</strong> : identité de couleur, cartes interdites, bracket et Game Changers.</li>
+        <li><strong>Les combos</strong> du deck et celles d'une carte.</li>
+        <li><strong>Les versions</strong> : garder l'historique, comparer deux listes.</li>
+        <li><strong>Les tests</strong> : des centaines de parties simulées à quatre joueurs, ou une table pour jouer seul.</li>
+        <li><strong>La recherche de cartes</strong>, en français et en anglais, avec tous les filtres.</li>
+        <li><strong>La discussion avec Claude</strong>, en option.</li>
+        <li><strong>Le partage</strong> : une page comme celle-ci, à envoyer à ses amis.</li>
+      </ul>
+
+      <h2>Gratuit, ouvert, chez toi</h2>
+      <ul class="a-propos-liste">
+        <li>L'Atelier est gratuit, et son code est public, sous <a href="${depot}/blob/main/LICENSE" target="_blank" rel="noopener">licence MIT</a> :
+          chacun peut l'utiliser, le lire, le modifier et le partager.</li>
+        <li>Il tourne sur ton ordinateur. Rien n'est publié, sauf les pages de deck que tu choisis de partager.</li>
+        <li>La discussion avec Claude est facultative : elle passe par Claude Code, avec ton propre abonnement Claude.</li>
+        <li>Les cartes et leurs images viennent de Scryfall, les prix de Cardmarket (via Scryfall), les combos de MTGPics et de Commander Spellbook.</li>
+      </ul>
+
+      <h2>L'installer</h2>
+      <p>Le plus simple : demande à ton assistant IA (Claude Code, Codex, Cursor, Copilot…) « Installe l'Atelier MTG depuis
+        ${depot.replace("https://", "")} ». Sinon, le mode d'emploi est sur la page GitHub. Testé sous Windows.</p>
+      <p><a class="btn btn-accent" href="${depot}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a></p>
+    </article>`;
 }
 
 function critIdentite(d) {
