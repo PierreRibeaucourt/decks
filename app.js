@@ -141,7 +141,7 @@ const TITRE_PARTAGE = document.title;
 if (PARTAGE) {
   const depot = PARTAGE.atelier ? esc(PARTAGE.atelier) : "";
   $(".barre").insertAdjacentHTML("afterend", `<div class="bandeau-partage">
-    <p>Page ${PARTAGE.auteur ? `de <strong>${esc(PARTAGE.auteur)}</strong>, ` : ""}partagée avec <a href="#/a-propos">l'Atelier MTG</a>. Pour gérer, tester et partager tes propres decks Commander, l'Atelier est gratuit.</p>
+    <p>Page ${PARTAGE.auteur ? `de <strong>${esc(PARTAGE.auteur)}</strong>, ` : ""}partagée avec <a href="#/a-propos">l'Atelier MTG</a>. Pour gérer, tester et partager vos propres decks Commander, l'Atelier est gratuit.</p>
     ${depot ? `<a class="btn btn-accent btn-petit" href="${depot}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a>` : ""}
   </div>`);
   $(".cadre").insertAdjacentHTML("afterend", `<footer class="pied-partage">
@@ -571,7 +571,7 @@ document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") { fermer
 // titre de l'onglet du navigateur, la page d'abord : « Kels · Statistiques », « Recherche · « dragon » · Kels »
 function majTitre() {
   if (PARTAGE) {                                   // page partagée : le titre écrit par partage.py
-    document.title = location.hash.startsWith("#/a-propos") ? "C'est quoi, l'Atelier MTG ?" : TITRE_PARTAGE;
+    document.title = location.hash.startsWith("#/a-propos") ? "L'Atelier MTG" : TITRE_PARTAGE;
     return;
   }
   const [chemin, qs] = location.hash.replace(/^#\/?/, "").split(/\?(.*)/s);
@@ -3103,63 +3103,66 @@ function vueAPropos() {
   const retour = PARTAGE ? `<a href="${esc(PARTAGE.accueil === true ? "#/" : PARTAGE.accueil)}">${esc(MES_DECKS)}</a><span aria-hidden="true">›</span>`
     + (PARTAGE.deck ? `<a href="#/">${esc(PARTAGE.deck.replace(/^Deck /, ""))}</a><span aria-hidden="true">›</span>` : "")
     : `<a href="#/">Mes decks</a><span aria-hidden="true">›</span>`;
+  const consigne = `Installe et lance l'Atelier MTG depuis ${(PARTAGE && PARTAGE.atelier || DEPOT_ATELIER).replace("https://", "")}`;
+  const fonction = (titre, texte) => `<div class="ap-carte"><h3>${titre}</h3><p>${texte}</p></div>`;
   vue.innerHTML = `
     <article class="a-propos">
       <nav class="fil" aria-label="Fil d'Ariane">${retour}<span aria-current="page">L'Atelier MTG</span></nav>
-      <h1>C'est quoi, l'Atelier MTG ?</h1>
-      <p class="chapeau">Un outil gratuit pour construire, tester et partager ses decks Magic au format Commander.
-        Il s'installe sur ton ordinateur : pas de compte, pas de publicité, et tes decks restent chez toi.</p>
+      <h1>L'Atelier MTG</h1>
+      <p class="chapeau">Le gestionnaire de decks Commander local, sans compte et taillé pour le deckbuilding assisté.</p>
+      <p>L'Atelier est une application locale, qui s'ouvre dans votre navigateur, pensée pour concevoir, tester et faire évoluer
+        des decks Magic: The Gathering en Commander. Pas de publicité, aucun compte en ligne, pas de données hébergées sur un
+        serveur distant : tout s'exécute directement sur votre ordinateur.</p>
 
-      <h2>D'où il vient</h2>
-      <p class="muet">Raconté par ${esc(AUTEUR_ATELIER)}, qui l'a créé :</p>
-      <div class="histoire">
-        <p>J'avais noté mes decks dans un fichier texte. Je l'ai donné à Claude, l'assistant d'Anthropic, avec quelques articles
-          d'experts : comment régler une base de mana, combien de cartes de pioche, quelles conditions de victoire… Ensemble, on a
-          cherché des modèles pour simuler des parties, sorti des statistiques pour chaque deck, suivi les prix Cardmarket et
-          vérifié les brackets.</p>
-        <p>Puis j'en ai eu assez de tout faire dans un éditeur de code. Je voulais <em>voir</em> mes decks et l'effet de mes
-          changements, les importer facilement, les modifier, tout en gardant Claude sous la main pour ranger les cartes, affiner
-          les simulations, chercher et analyser.</p>
-        <p>Il me fallait une interface. Je l'ai construite presque sans le faire exprès, et j'y ai mis peu à peu ce que je
-          préférais sur chaque site :</p>
-        <ul>
-          <li>la table de jeu d'Archidekt, pour tester un deck tout seul ;</li>
-          <li>la recherche avancée de Magic-Ville ;</li>
-          <li>les prix de Cardmarket ;</li>
-          <li>les combos de Magic-Ville et de Commander Spellbook ;</li>
-          <li>les brackets et la liste officielle des Game Changers.</li>
-        </ul>
-        <p>Le tout relié à Claude, qui lit et modifie les decks avec moi : il range les cartes par catégorie, aide à faire le cut,
-          propose des idées, challenge mes choix, sort des statistiques et fait tourner des simulations.</p>
+      <h2>Genèse du projet</h2>
+      <p class="ap-signature">Par ${esc(AUTEUR_ATELIER)}, créateur de l'Atelier</p>
+      <p>À l'origine, mes listes tenaient sur de simples fichiers texte que j'analysais en ligne de commande avec un LLM et
+        quelques ressources théoriques (ratios de mana, moteurs de pioche, conditions de victoire).</p>
+      <p>Manipuler du code brut a vite montré ses limites. Pour ajuster un <em>cut</em> ou évaluer instantanément l'impact d'une
+        modification, il me fallait une vraie interface graphique qui réunisse les points forts des outils de référence :</p>
+      <ul class="ap-sources">
+        <li><strong>Archidekt</strong> pour la table d'essai et les tests en solitaire ;</li>
+        <li><strong>Magic-Ville et Commander Spellbook</strong> pour la recherche multicritère et les combos ;</li>
+        <li><strong>Cardmarket</strong> pour les cotations du jour ;</li>
+        <li><strong>les règles officielles</strong> pour le contrôle direct des cartes interdites, des brackets et des Game Changers.</li>
+      </ul>
+      <p>L'Atelier est né de cette synthèse : une interface locale fluide pour gérer ses cartes, connectable à la demande à un
+        assistant IA pour auditer un deck, automatiser le classement ou simuler des parties.</p>
+
+      <h2>Fonctionnalités principales</h2>
+      <div class="ap-grille">
+        ${fonction("Gestion et import de decks", "Import d'une liste copiée depuis Moxfield, Archidekt ou MTG Arena. Affichage en vue grille ou texte, tri par type, par tag ou par fonction stratégique.")}
+        ${fonction("Statistiques et budget", "Courbe de mana réelle, mains de départ tirées au hasard, équilibrage des sources de mana et prix Cardmarket du jour, avec une alerte au-delà de votre budget par carte.")}
+        ${fonction("Banc d'essai et simulations", "Simulateur multijoueur pour évaluer la régularité d'un deck sur des centaines de parties, ou table virtuelle pour s'entraîner en solo.")}
+        ${fonction("Moteur de synergies", "Repérage automatique des combos présentes dans la liste, et des cartes qui combotent avec une carte donnée.")}
+        ${fonction("Gestion des versions", "Historique complet des modifications et comparaison avant / après chaque ajustement.")}
+        ${fonction("Copilote IA optionnel", "Connexion directe à Claude Code, avec vos propres accès, pour obtenir des retours critiques, affiner une stratégie ou réorganiser une liste.")}
+        ${fonction("Partage simplifié", "Publication en un clic d'une page de présentation légère, comme celle-ci, à partager avec votre groupe de jeu.")}
       </div>
 
-      <h2>Ce qu'on y fait</h2>
-      <ul class="a-propos-liste">
-        <li><strong>Ses decks</strong> : importés depuis Archidekt, Moxfield ou MTG Arena, en liste ou en images, rangés par type, par tag ou par fonction.</li>
-        <li><strong>Les chiffres</strong> : courbe de mana, couleurs, base de mana, main de départ, prix du jour avec une alerte de budget.</li>
-        <li><strong>Les règles</strong> : identité de couleur, cartes interdites, bracket et Game Changers.</li>
-        <li><strong>Les combos</strong> du deck et celles d'une carte.</li>
-        <li><strong>Les versions</strong> : garder l'historique, comparer deux listes.</li>
-        <li><strong>Les tests</strong> : des centaines de parties simulées à quatre joueurs, ou une table pour jouer seul.</li>
-        <li><strong>La recherche de cartes</strong>, en français et en anglais, avec tous les filtres.</li>
-        <li><strong>La discussion avec Claude</strong>, en option.</li>
-        <li><strong>Le partage</strong> : une page comme celle-ci, à envoyer à ses amis.</li>
+      <h2>Philosophie : local, ouvert et transparent</h2>
+      <ul class="ap-principes">
+        <li><strong>Open source et gratuit.</strong> Le code est publié sous <a href="${depot}/blob/main/LICENSE" target="_blank" rel="noopener">licence MIT</a> :
+          accessible, vérifiable et modifiable par tous sur GitHub.</li>
+        <li><strong>Données souveraines.</strong> Vos decks restent sur votre disque dur et rien n'est collecté. Seules sortent les
+          requêtes nécessaires : données, images et prix des cartes (Scryfall), combos et bracket (Commander Spellbook, MTGPics),
+          la discussion avec Claude si vous l'utilisez, et les pages que vous choisissez de partager.</li>
+        <li><strong>IA strictement modulaire.</strong> Tri, statistiques, simulations et jeu en solo restent 100 % opérationnels
+          sans aucune configuration IA.</li>
       </ul>
 
-      <h2>Gratuit, ouvert, chez toi</h2>
-      <ul class="a-propos-liste">
-        <li>L'Atelier est gratuit, et son code est public, sous <a href="${depot}/blob/main/LICENSE" target="_blank" rel="noopener">licence MIT</a> :
-          chacun peut l'utiliser, le lire, le modifier et le partager.</li>
-        <li>Il tourne sur ton ordinateur. Rien n'est publié, sauf les pages de deck que tu choisis de partager.</li>
-        <li>La discussion avec Claude est facultative : elle passe par Claude Code, avec ton propre abonnement Claude.</li>
-        <li>Les cartes et leurs images viennent de Scryfall, les prix de Cardmarket (via Scryfall), les combos de MTGPics et de Commander Spellbook.</li>
-      </ul>
-
-      <h2>L'installer</h2>
-      <p>Le plus simple : demande à ton assistant IA (Claude Code, Codex, Cursor, Copilot…) « Installe l'Atelier MTG depuis
-        ${depot.replace("https://", "")} ». Sinon, le mode d'emploi est sur la page GitHub. Testé sous Windows.</p>
-      <p><a class="btn btn-accent" href="${depot}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a></p>
+      <h2>Installation</h2>
+      <p>Le dépôt de code et les instructions détaillées sont sur GitHub, testés et validés sous Windows.</p>
+      <p><a class="btn btn-accent" href="${depot}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a>
+        <a class="ap-depot" href="${depot}" target="_blank" rel="noopener">${depot.replace("https://", "")}</a></p>
+      <h3>Démarrage rapide, avec un assistant IA</h3>
+      <p>Si vous utilisez un agent de développement (Claude Code, Cursor, Copilot…), collez simplement cette consigne :</p>
+      <div class="ap-consigne"><code>${esc(consigne)}</code>
+        <button type="button" class="btn btn-petit btn-discret" id="ap-copier">${ico("copier")}Copier</button></div>
     </article>`;
+  $("#ap-copier").onclick = async () => {
+    try { await navigator.clipboard.writeText(consigne); toast("Consigne copiée."); } catch (e) { erreur(e); }
+  };
 }
 
 function critIdentite(d) {
