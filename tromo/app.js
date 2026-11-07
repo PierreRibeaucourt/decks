@@ -3065,7 +3065,7 @@ function vueRechercheVitrine() {
     </div>
     <div class="vitrine">
       <div class="vitrine-fond" inert aria-hidden="true">${formulaireRecherche(rch.crit)}</div>
-      ${invitation("Recherche de cartes", "Disponible dans l'Atelier MTG, à installer sur son ordinateur.")}
+      ${invitation("Recherche de cartes", "Disponible dans l'Atelier MTG, à installer gratuitement sur son ordinateur.")}
     </div>`;
 }
 
@@ -3920,7 +3920,7 @@ async function montageChat() {
   if (PARTAGE) {                                   // page partagée : le panneau en vitrine, grisé
     $$(".chat-tete select, #chat-nouvelle, #chat-fil, .chat-saisie", a).forEach((x) => { x.classList.add("vitrine-fond"); x.inert = true; });
     a.insertAdjacentHTML("beforeend", invitation("Discussion avec Claude",
-      "Disponible dans l'Atelier MTG, à installer sur son ordinateur, avec Claude Code."));
+      "Disponible dans l'Atelier MTG, à installer gratuitement sur son ordinateur. Il faut aussi Claude Code (abonnement Claude)."));
     $("#chat-fermer").onclick = () => basculeChat(false);
     chat.charge = true;
     return;
