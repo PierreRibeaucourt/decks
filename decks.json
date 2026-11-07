@@ -1919,5 +1919,339 @@
     "Montagne"
    ]
   ]
+ },
+ "Deck Tromo": {
+  "slug": "tromo",
+  "date": 1794069357.9009013,
+  "resume": {
+   "alertes": {},
+   "art": "https://cards.scryfall.io/art_crop/front/f/4/f40ad933-ddd9-4975-a222-21fe3305137c.jpg?1783915686",
+   "bracket": 3,
+   "bracket_raisons": [
+    "1 Game Changer : Cyclonic Rift"
+   ],
+   "commandant": "Tromokratis",
+   "commandants": [
+    "Tromokratis"
+   ],
+   "gc": [
+    "Cyclonic Rift"
+   ],
+   "id": "Deck Tromo",
+   "identite": [
+    "U"
+   ],
+   "image_cmd": "https://cards.scryfall.io/normal/front/f/4/f40ad933-ddd9-4975-a222-21fe3305137c.jpg?1783915686",
+   "maybe": 5,
+   "modifie": 1794069303.300217,
+   "note": "",
+   "prix_total": 114.37,
+   "titre": "Tromo",
+   "total": 100,
+   "trop_cher": [
+    "Sapphire Medallion",
+    "Cyclonic Rift",
+    "Minamo, School at Water's Edge",
+    "Maze of Ith"
+   ]
+  },
+  "cartes": [
+   [
+    "Tromokratis",
+    ""
+   ],
+   [
+    "Sol Ring",
+    "Anneau solaire"
+   ],
+   [
+    "Arcane Signet",
+    "Cachet d'ésotérisme"
+   ],
+   [
+    "Mind Stone",
+    "Pierre de l'esprit"
+   ],
+   [
+    "Fellwar Stone",
+    "Pierre de Guermont"
+   ],
+   [
+    "Thought Vessel",
+    "Urne de pensée"
+   ],
+   [
+    "Prismatic Lens",
+    "Lentille prismatique"
+   ],
+   [
+    "Wayfarer's Bauble",
+    "Babiole du voyageur"
+   ],
+   [
+    "Coldsteel Heart",
+    "Cœur de froidacier"
+   ],
+   [
+    "Sapphire Medallion",
+    "Médaillon de saphir"
+   ],
+   [
+    "Kefnet's Monument",
+    "Monument de Kefnet"
+   ],
+   [
+    "Worn Powerstone",
+    "Lithoforce usée"
+   ],
+   [
+    "Thran Dynamo",
+    "Dynamo thran"
+   ],
+   [
+    "Misleading Signpost",
+    "Poteau indicateur fallacieux"
+   ],
+   [
+    "Apprentice Wizard",
+    "Apprenti sorcier"
+   ],
+   [
+    "Palladium Myr",
+    "Myr de palladium"
+   ],
+   [
+    "Bubble Snare",
+    "Collet à bulles"
+   ],
+   [
+    "Infinite Coursework",
+    "Devoirs infinis"
+   ],
+   [
+    "Fall from Favor",
+    "Perdre les bonnes grâces"
+   ],
+   [
+    "Impede Momentum",
+    "Bloquer le mouvement"
+   ],
+   [
+    "Freeze in Place",
+    "Congelé sur place"
+   ],
+   [
+    "Floodpits Drowner",
+    "Noyeur de Fossecrue"
+   ],
+   [
+    "Hylda's Crown of Winter",
+    "Couronne d'hiver de Hylda"
+   ],
+   [
+    "Quiet Contemplation",
+    "Contemplation silencieuse"
+   ],
+   [
+    "Opposition",
+    ""
+   ],
+   [
+    "Flood",
+    "Inondation"
+   ],
+   [
+    "Dreamshackle Geist",
+    "Geist enchaîne-rêve"
+   ],
+   [
+    "Guardian of Tazeem",
+    "Vigile de Tazeem"
+   ],
+   [
+    "Juvenile Mist Dragon",
+    "Dragon des brumes juvénile"
+   ],
+   [
+    "Frost Titan",
+    "Titan de givre"
+   ],
+   [
+    "Tamiyo, the Moon Sage",
+    "Tamiyo, le sage de la lune"
+   ],
+   [
+    "Sleep",
+    "Sommeil"
+   ],
+   [
+    "Cryptic Command",
+    "Commandement cryptique"
+   ],
+   [
+    "Time of Ice",
+    "Temps des glaces"
+   ],
+   [
+    "Kang Dynasty",
+    "Dynastie Kang"
+   ],
+   [
+    "Scroll of Isildur",
+    "Parchemin d'Isildur"
+   ],
+   [
+    "Lost in the Maze",
+    "Perdu dans le labyrinthe"
+   ],
+   [
+    "Wall of Frost",
+    "Mur de gel"
+   ],
+   [
+    "Propaganda",
+    "Propagande"
+   ],
+   [
+    "Bloodthirsty Blade",
+    "Lame assoiffée de sang"
+   ],
+   [
+    "Psychic Impetus",
+    "Impetus psychique"
+   ],
+   [
+    "Bident of Thassa",
+    "Bident de Thassa"
+   ],
+   [
+    "Maeve, Insidious Singer",
+    "Maeve, chanteuse insidieuse"
+   ],
+   [
+    "Sly Instigator",
+    "Instigateur sournois"
+   ],
+   [
+    "Angler Turtle",
+    "Tortue pêcheuse"
+   ],
+   [
+    "Curse of Verbosity",
+    "Malédiction de loquacité"
+   ],
+   [
+    "Fealty to the Realm",
+    "Allégeance au royaume"
+   ],
+   [
+    "Borrowing 100,000 Arrows",
+    "Emprunt de 100 000 flèches"
+   ],
+   [
+    "Verity Circle",
+    "Cercle de vérité"
+   ],
+   [
+    "Archivist of Gondor",
+    "Archiviste du Gondor"
+   ],
+   [
+    "Pongify",
+    "Pongidification"
+   ],
+   [
+    "Rapid Hybridization",
+    "Hybridation rapide"
+   ],
+   [
+    "Observed Stasis",
+    "Stase observée"
+   ],
+   [
+    "Counterspell",
+    "Contresort"
+   ],
+   [
+    "Stubborn Denial",
+    "Déni obstiné"
+   ],
+   [
+    "Disallow",
+    "Refus"
+   ],
+   [
+    "Whelming Wave",
+    "Vague de submersion"
+   ],
+   [
+    "Engulf the Shore",
+    "Engloutissement du littoral"
+   ],
+   [
+    "Scourge of Fleets",
+    "Fléau des flottes"
+   ],
+   [
+    "Cyclonic Rift",
+    "Faille cyclonique"
+   ],
+   [
+    "Illusionist's Gambit",
+    "Pari de l'illusionniste"
+   ],
+   [
+    "Portal Mage",
+    "Mage du portail"
+   ],
+   [
+    "Swiftfoot Boots",
+    "Bottes de piedagile"
+   ],
+   [
+    "O-Naginata",
+    ""
+   ],
+   [
+    "Fireshrieker",
+    "Hurlefeu"
+   ],
+   [
+    "Island",
+    "Île"
+   ],
+   [
+    "Minamo, School at Water's Edge",
+    "Minamo, École de la cascade"
+   ],
+   [
+    "Mystifying Maze",
+    "Labyrinthe mystificateur"
+   ],
+   [
+    "Maze of Ith",
+    "Labyrinthe d'Ith"
+   ],
+   [
+    "Crashing Wave",
+    "Vague déferlante"
+   ],
+   [
+    "Trap the Trespassers",
+    "Piéger les intrus"
+   ],
+   [
+    "Grappling Kraken",
+    "Kraken accrocheur"
+   ],
+   [
+    "Mjölnir, Storm Hammer",
+    "Mjölnir, marteau du Tonnerre"
+   ],
+   [
+    "Everflowing Chalice",
+    "Calice toujours ruisselant"
+   ]
+  ]
  }
 }

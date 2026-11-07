@@ -214,7 +214,7 @@ function texteMana(ligne) {
 // partout ailleurs (discussion avec Claude, combos, bulles, modales, rapports…) : chaque texte affiché est relu, et
 // « {R}{W} », « {2BB} », « {T} » deviennent des symboles. Une accolade qui n'est pas un symbole reste du texte.
 const JETON = /\{\(\}[a-z]\/[a-z]\)\}|\{[^{}\s]{1,9}\}/gi;
-const SANS_SYMBOLES = "script, style, textarea, input, select, option, svg, [contenteditable]";
+const SANS_SYMBOLES = "script, style, textarea, input, select, option, svg, [contenteditable], .brut";     // .brut : {c} à taper tel quel
 
 function remplacerSymboles(n) {
   const t = n.nodeValue;
@@ -904,6 +904,7 @@ async function vueDeck(id, onglet, extra = null, donnees = null) {
           <div class="chiffres" style="margin-top:.5rem">${chiffresDeck(d)}</div>
         </div>
         <div class="actions">
+          <a class="btn ecrit" href="/jouer?deck=${enc(id)}" target="_blank" rel="noopener">${ico("lancer")}Jouer</a>
           <a class="btn ecrit" href="#/recherche?deck=${enc(id)}">${ico("chercher")}Chercher des cartes</a>
           <button class="btn btn-icone ouvre-menu" id="btn-deck-menu" aria-label="Autres actions sur le deck" title="Autres actions">${ico("plus_de")}</button>
         </div>
@@ -1081,6 +1082,8 @@ function ongletListe(el, d) {
     ${!d.cartes.length ? `<div class="panneau vide"><p>Ce deck est vide.</p><button class="btn btn-accent ecrit" id="vide-ajouter">${ico("plus")}Ajouter des cartes</button></div>` : `
     <div class="barre-outils">
       ${segments("affichage", [["liste", "Liste", "liste"], ["visuel", "Visuel", "cartes"]], AFFICHAGE)}
+      <label class="outil petit muet" id="outil-taille" ${PREF.get("affichage", AFFICHAGE) === "visuel" ? "" : "hidden"}>Taille
+        <input type="range" id="taille" min="80" max="220" step="5" value="${tailleCartes()}" aria-label="Taille des cartes"></label>
       <label class="outil petit muet">Ranger par
         <select class="champ champ-petit" id="rangement">${[["type", "type"], ["tags", "tags"], ["fonction", "fonction"]].map(([v, l]) =>
           `<option value="${v}" ${PREF.get("rangement", "type") === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
@@ -1103,8 +1106,18 @@ function ongletListe(el, d) {
       x.classList.toggle("actif", x === b);
       x.setAttribute("aria-pressed", x === b);
     });
+    $("#outil-taille", el).hidden = PREF.get("affichage", AFFICHAGE) !== "visuel";
     rendre();
   }));
+  // la taille change en direct ; les images sont rechoisies (petite ou grande) au relâcher
+  $("#taille", el).oninput = (ev) => {
+    $$(".flot", zone).forEach((g) => {
+      g.style.setProperty("--l", ev.target.value + "px");
+      g.classList.toggle("serre", +ev.target.value < SERRE);
+    });
+    ajusterTitres(zone);
+  };
+  $("#taille", el).onchange = (ev) => { PREF.set("taille-cartes", ev.target.value); rendre(); };
   $("#tri", el).onchange = (ev) => { PREF.set("tri", ev.target.value); rendre(); };
   $("#rangement", el).onchange = (ev) => { PREF.set("rangement", ev.target.value); rendre(); };
   $("#filtre", el).oninput = (ev) => { etat.filtre = ev.target.value; rendre(); };
@@ -1130,19 +1143,52 @@ function rendreGroupes(zone, d) {
   if (!groupes.length) { etat.ordre = []; zone.innerHTML = `<p class="muet">Aucune carte ne correspond à « ${esc(etat.filtre)} ».</p>`; return; }
   groupes.forEach((g) => g.cartes.sort(tri));
   etat.ordre = groupes.flatMap((g) => g.cartes.map((c) => c.index));     // pour « carte précédente / suivante » dans la fiche
-  zone.innerHTML = groupes.map((g) => {
-    // vue Visuel : les commandants sont dans l'en-tête du deck (sauf s'ils n'ont pas d'image)
-    const cartes = visuel && g.cat === "Commandant" ? g.cartes.filter((c) => !c.info.image) : g.cartes;
-    if (!cartes.length) return "";
+  const entete = (g, cartes) => {
     const n = cartes.reduce((s, c) => s + c.n, 0);
     const prix = cartes.reduce((s, c) => s + (c.info.prix || 0) * c.n, 0);
-    return `<div class="groupe">
-      <div class="groupe-titre"><span class="nb-groupe">${n}</span> ${esc(g.cat)} <span class="muet petit">${euros(prix)}</span></div>
-      ${visuel ? `<div class="etale ${cartes.some((c) => c.n > 1) ? "avec-piles" : ""}">${cartes.map(carteVisuelle).join("")}</div>`
-        : cartes.map((c) => ligneCarte(c, rangement)).join("")}
-    </div>`;
-  }).join("");
+    return [`<span class="nb-groupe">${n}</span> ${esc(g.cat)} <span class="muet petit">${euros(prix)}</span>`, `${n} ${g.cat} · ${euros(prix)}`];
+  };
+  if (visuel) {
+    // vue Visuel façon Magic-Ville : les catégories s'enchaînent sans changer de ligne, le titre au-dessus de la première carte ;
+    // le Maybeboard à part, sous le deck
+    const t = tailleCartes();
+    const flot = (gs, cls = "") => !gs.length ? "" : `<div class="flot ${cls} ${t < SERRE ? "serre" : ""}" style="--l:${t}px">${gs.map((g) => {
+      // les commandants sont dans l'en-tête du deck (sauf s'ils n'ont pas d'image)
+      const cartes = g.cat === "Commandant" ? g.cartes.filter((c) => !c.info.image) : g.cartes;
+      if (!cartes.length) return "";
+      const [html, titre] = entete(g, cartes);
+      const tete = `<span class="flot-titre" style="--n:${cartes.length}" title="${esc(titre)}">${html}</span>`;
+      return cartes.map((c, i) => carteVisuelle(c, i ? "" : tete, i === cartes.length - 1, t)).join("");
+    }).join("")}</div>`;
+    zone.innerHTML = flot(groupes.filter((g) => g.cat !== "Maybeboard"))
+      + flot(groupes.filter((g) => g.cat === "Maybeboard"), "flot-maybe");
+    ajusterTitres(zone);
+    return;
+  }
+  zone.innerHTML = groupes.map((g) => `<div class="groupe ${g.cat === "Maybeboard" ? "groupe-maybe" : ""}">
+      <div class="groupe-titre">${entete(g, g.cartes)[0]}</div>
+      ${g.cartes.map((c) => ligneCarte(c, rangement)).join("")}
+    </div>`).join("");
 }
+
+const SERRE = 130;                       // en dessous, la légende garde le nom et seuls les prix au-dessus du budget
+function tailleCartes() {
+  const t = +PREF.get("taille-cartes", 115);
+  return t >= 80 && t <= 220 ? t : 115;
+}
+
+// un titre de catégorie qui commence en fin de ligne s'arrête au bord (avec « … ») au lieu d'être coupé net
+function ajusterTitres(zone) {
+  $$(".flot", zone).forEach((g) => {
+    const droite = g.getBoundingClientRect().right;
+    $$(".flot-titre", g).forEach((x) => x.style.setProperty("--reste", Math.max(0, droite - x.getBoundingClientRect().left) + "px"));
+  });
+}
+let ajustement = 0;
+addEventListener("resize", () => {
+  cancelAnimationFrame(ajustement);
+  ajustement = requestAnimationFrame(() => { const z = $("#groupes"); if (z) ajusterTitres(z); });
+});
 
 function badgesAlerte(c) {
   return (c.alertes || []).map((a) => `<span class="badge badge-alerte" title="${esc(TITRE_ALERTE[a] || "")}">${esc(a)}</span>`).join("");
@@ -1170,25 +1216,27 @@ function ligneCarte(c, rangement) {
 }
 
 // vue « étalée » façon Magic-Ville : les images, empilées quand il y a plusieurs exemplaires
-function imageCarte(f, cls, style = "") {
+function imageCarte(f, cls, style = "", taille = 170) {
   const src = f.petite || f.image;
   if (!src) return `<span class="${cls} sans-image" ${style}>${esc(f.nom || "?")}</span>`;
-  const srcset = f.petite && f.image ? `srcset="${esc(f.petite)} 146w, ${esc(f.image)} 488w" sizes="170px"` : "";
+  const srcset = f.petite && f.image ? `srcset="${esc(f.petite)} 146w, ${esc(f.image)} 488w" sizes="${taille}px"` : "";
   return `<img class="${cls}" ${style} src="${esc(src)}" ${srcset} alt="" loading="lazy">`;
 }
 
-function carteVisuelle(c) {
+// tete : titre de la catégorie (sur sa première carte) ; fin : dernière carte de la catégorie
+function carteVisuelle(c, tete = "", fin = false, taille = 170) {
   const f = c.info || {};
   const nb = Math.min(c.n, 4);
   const cher = (f.prix || 0) > BUDGET;
+  const t = Math.round(taille * 1.1);
   const couches = [];
-  for (let k = nb - 1; k >= 1; k--) couches.push(imageCarte(f, "couche", `style="--k:${k}"`));
+  for (let k = nb - 1; k >= 1; k--) couches.push(imageCarte(f, "couche", `style="--k:${k}"`, t));
   const marques = [
     f.gc ? `<span class="marque marque-gc" title="Game Changer">GC</span>` : "",
     ...(c.alertes || []).map((a) => `<span class="marque marque-alerte" title="${esc(TITRE_ALERTE[a] || "")}">${esc(a)}</span>`),
   ].join("");
-  return `<div class="carte-v">
-    <button type="button" class="pile" data-carte="${c.index}" data-survol="${c.index}" aria-label="${esc(c.nom)} : fiche et actions">${couches.join("")}${imageCarte(f, "recto")}${marques ? `<span class="marques">${marques}</span>` : ""}</button>
+  return `<div class="carte-v ${tete ? "debut" : ""} ${fin ? "fin" : ""} ${nb > 1 ? "empile" : ""}">${tete}
+    <button type="button" class="pile" data-carte="${c.index}" data-survol="${c.index}" aria-label="${esc(c.nom)} : fiche et actions">${couches.join("")}${imageCarte(f, "recto", "", t)}${marques ? `<span class="marques">${marques}</span>` : ""}</button>
     <div class="legende-v" title="${esc(c.nom + (f.fr && f.fr !== c.nom ? " — " + f.fr : ""))}">
       ${c.n > 1 ? `<span class="qte-v">${c.n}</span>` : ""}<span class="nom-v">${esc(nomAffiche(c))}</span>
       <span class="prix-v ${cher ? "cher" : ""}">${euros(f.prix)}</span>
@@ -2737,6 +2785,68 @@ function rchNombres(titre, cle, x, c) {
   </section>`;
 }
 
+// pense-bête du champ Texte (bouton « ? ») : la syntaxe de recherche._termes, les symboles, des exemples à cliquer
+const PB_SYNTAXE = [
+  ["pioch carte", "Tous les mots, dans n'importe quel ordre. Un bout de mot suffit : « pioch » trouve piochez, piocher, pioche."],
+  ['"draw a card"', "Cette expression exacte : ces mots, dans cet ordre, espaces et ponctuation compris."],
+  ["!additio", "Exclut les cartes qui contiennent ce mot ou ce bout de mot (additional, additionnel…)."],
+  ['!"additional cost"', "Exclut les cartes qui contiennent cette expression."],
+  ['sacrifice !"additional cost"', "Se combinent : les cartes qui parlent de sacrifier, sauf en coût additionnel."],
+];
+const PB_SYMBOLES = [
+  ["{t}", "{T} engager"], ["{q}", "{Q} dégager"], ["{w} {u} {b} {r} {g}", "{W}{U}{B}{R}{G} blanc, bleu, noir, rouge, vert"],
+  ["{c}", "{C} incolore"], ["{1} {2} {3}…", "{2} mana générique"], ["{x}", "{X} X"], ["{w/u}", "{W/U} hybride"], ["{2/w}", "{2/W} hybride à 2"],
+  ["{w/p}", "{W/P} phyrexian"], ["{s}", "{S} neige"], ["{e}", "{E} énergie"],
+];
+const PB_EXEMPLES = [
+  ['"add {c}{c}" !"add {c}{c}{c}"', "Ajoute exactement deux manas incolores (Sol Ring, Worn Powerstone)"],
+  ['"add {c}{c}"', "Ajoute au moins deux manas incolores (avec Mana Vault, Thran Dynamo)"],
+  ['"add {c}{c}{c}"', "Ajoute au moins trois manas incolores"],
+  ['"add two mana"', "Ajoute deux manas d'une couleur au choix"],
+  ['"add {r}{r}"', "Ajoute deux manas rouges"],
+  ['"add {b}{r}"', "Ajoute un noir et un rouge (Rakdos Signet, Rakdos Carnarium)"],
+  ['"{t}:" add', "S'engage pour produire du mana (texte anglais)"],
+  ['"{t} :" ajoutez', "La même chose en français (espace avant les deux-points)"],
+  ['"each opponent"', "Chaque adversaire (en français : \"chaque adversaire\")"],
+  ['"enters tapped"', "Arrive engagé"],
+  ['"when this creature enters"', "Quand cette créature arrive sur le champ de bataille"],
+  ['"pay {e}"', "Paye de l'énergie"],
+  ["treasure", "Les Trésors (\"tresor\" en français)"],
+];
+
+function penseBeteTexte(form) {
+  const ligne = (code, texte, ex) => `<tr><td>${ex ? `<button type="button" class="pb-exemple" data-exemple="${esc(code)}"><code class="brut">${esc(code)}</code></button>`
+    : `<code class="brut">${esc(code)}</code>`}</td><td>${esc(texte)}</td></tr>`;
+  ouvrirModale(`
+    <h2>Recherche texte</h2>
+    <div class="pense-bete">
+      <table>${PB_SYNTAXE.map(([c, t]) => ligne(c, t)).join("")}</table>
+      <h3>Règles</h3>
+      <ul>
+        <li>Majuscules et accents ne comptent pas ; ’ et ' se valent.</li>
+        <li>Les mots à trouver doivent tous être dans le même texte, anglais ou français. Une exclusion vaut pour les deux.</li>
+        <li>Cases « français » et « anglais » : chercher dans une seule langue ; aucune cochée, les deux.</li>
+        <li>Le texte français n'existe que pour les cartes imprimées en français : en anglais, la recherche est complète.</li>
+        <li>Le champ cherche dans le texte de règles, pas dans le coût : pour le coût, c'est le champ Coût, dans Couleurs.</li>
+        <li>Pas de joker (* ou %) ni de « ou » : une recherche par variante.</li>
+        <li>Titre et Type suivent les mêmes règles.</li>
+        <li>« sans texte » : les cartes sans texte de règles. Ctrl+Entrée dans le champ lance la recherche.</li>
+      </ul>
+      <h3>Symboles</h3>
+      <table>${PB_SYMBOLES.map(([c, t]) => ligne(c, t)).join("")}</table>
+      <p class="muet petit">Anglais : <code class="brut">{T}: Add {C}{C}.</code> Français : <code class="brut">{T} : Ajoutez {C}{C}.</code></p>
+      <h3>Exemples</h3>
+      <table>${PB_EXEMPLES.map(([c, t]) => ligne(c, t, true)).join("")}</table>
+    </div>
+    <div class="form-ligne" style="justify-content:flex-end;margin:1rem 0 0"><button type="button" class="btn" data-act="fermer">Fermer</button></div>`,
+  (b) => {
+    $$("[data-exemple]", b).forEach((x) => {
+      x.onclick = () => { form.elements.texte.value = x.dataset.exemple; fermerModale(); form.elements.texte.focus(); };
+    });
+    $('[data-act="fermer"]', b).onclick = fermerModale;
+  }, { focus: false, large: true });
+}
+
 // la disposition du moteur de Magic-Ville, simplifiée : Couleurs (coût compris) | Types | Recherche texte,
 // puis Valeur de mana, Force, Endurance, Rechercher, Format, Rareté ; en dessous, ce que l'Atelier ajoute, puis les éditions
 function formulaireRecherche(c) {
@@ -2761,7 +2871,7 @@ function formulaireRecherche(c) {
         <div class="rch-cases rch-centre">${rchCase("fr", "français", c)}${rchCase("en", "anglais", c)}</div>
         <label class="rch-ligne">Titre <input class="champ champ-petit" name="nom" type="search" value="${esc(c.nom || "")}"></label>
         <label class="rch-ligne">Type <input class="champ champ-petit" name="type" value="${esc(c.type || "")}" placeholder="gobelin, légendaire, equipment…"></label>
-        <div class="rch-bloc rch-bloc-texte"><span class="rch-texte-tete">Texte ${rchCase("vanilla", "sans texte", c)}</span>
+        <div class="rch-bloc rch-bloc-texte"><span class="rch-texte-tete"><span>Texte <button type="button" class="aide-q" data-act="aide-texte" aria-label="Pense-bête de la recherche texte">?</button></span> ${rchCase("vanilla", "sans texte", c)}</span>
           <textarea class="champ" name="texte" rows="2" placeholder="défaussez, &quot;chaque adversaire&quot;, !additio…">${esc(c.texte || "")}</textarea></div>
       </section>
     </div>
@@ -2974,6 +3084,7 @@ function rendreFormulaire() {
     const a = ev.target.closest("[data-act]");
     if (!a) return;
     if (a.dataset.act === "raz") return nouvelleRecherche();
+    if (a.dataset.act === "aide-texte") return penseBeteTexte(form);
     if (a.dataset.act === "budget") { form.elements.prixmax.value = String(BUDGET); form.elements.prixmax.focus(); return; }
     if (a.dataset.act === "identite" && rch.deck) {
       const id = critIdentite(rch.deck);
