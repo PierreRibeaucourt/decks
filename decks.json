@@ -390,7 +390,7 @@
  },
  "Deck Kels": {
   "slug": "kels",
-  "date": 1794082500.370772,
+  "date": 1794083168.6185193,
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/b/7/b70d445b-d3d6-4f7c-b9ea-bed6a26d4a2a.jpg?1783930505",
@@ -413,9 +413,9 @@
    ],
    "image_cmd": "https://cards.scryfall.io/normal/front/b/7/b70d445b-d3d6-4f7c-b9ea-bed6a26d4a2a.jpg?1783930505",
    "maybe": 0,
-   "modifie": 1794082359.5312998,
+   "modifie": 1794083021.386531,
    "note": "",
-   "prix_total": 175.97,
+   "prix_total": 175.92,
    "titre": "Kels",
    "total": 100,
    "trop_cher": [
@@ -612,7 +612,7 @@
     "Chupacabra vorace"
    ],
    [
-    "Nekrataal",
+    "Meteor Golem",
     ""
    ],
    [
