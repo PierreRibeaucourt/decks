@@ -600,6 +600,7 @@ async function route() {
   const parts = chemin.split("/");
   $("#lien-recherche").classList.toggle("actif", parts[0] === "recherche");
   vue.classList.toggle("vue-large", parts[0] === "recherche");
+  vue.classList.remove("vue-pleine");                       // la page « C'est quoi » la remet : son en-tête prend toute la largeur
   try {
     if (PARTAGE && parts[0] === "a-propos" && PARTAGE.page !== "a-propos") location.replace(A_PROPOS);   // ancienne adresse
     else if (parts[0] === "a-propos" || (PARTAGE && PARTAGE.page === "a-propos" && !parts[0])) vueAPropos();
@@ -3122,20 +3123,32 @@ function vueAPropos() {
   scrollTo(0, 0);
   etat.deck = null;
   const depot = esc((PARTAGE && PARTAGE.atelier) || DEPOT_ATELIER);
-  const retour = `<a href="${PARTAGE && PARTAGE.page ? esc(PARTAGE.accueil) : "#/"}">${esc(MES_DECKS)}</a><span aria-hidden="true">›</span>`;
   const capture = (f, alt) => `<img src="${PARTAGE ? CAPTURES_ATELIER : "/a-propos/"}${f}.webp" data-f="${f}" alt="${esc(alt)}"`;
   const consigne = `Installe et lance l'Atelier MTG depuis ${(PARTAGE && PARTAGE.atelier || DEPOT_ATELIER).replace("https://", "")}`;
   const fonction = (titre, texte) => `<div class="ap-carte"><h3>${titre}</h3><p>${texte}</p></div>`;
+  vue.classList.add("vue-pleine");
   vue.innerHTML = `
+    <header class="ap-tete">
+      <div class="ap-tete-dedans">
+        <div class="ap-scene" aria-hidden="true">
+          <figure class="ap-ecran e1">${capture("discussion", "")}></figure>
+          <figure class="ap-ecran e2">${capture("statistiques", "")}></figure>
+          <figure class="ap-ecran e3">${capture("decks", "")}></figure>
+        </div>
+        <div class="ap-tete-texte">
+          <h1>L'Atelier <span>MTG</span></h1>
+          <p class="ap-accroche">Vos decks Commander,<br>de la liste à la table.</p>
+          <ul class="ap-puces">${["Base de mana", "Combos", "Bracket", "Table de jeu", "Recherche avancée", "Claude"].map((x) => `<li>${x}</li>`).join("")}</ul>
+          <p class="ap-cta"><a class="btn btn-accent" href="${depot}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a></p>
+          <p class="ap-mention"><b>Gratuit</b> · open source · tout reste sur votre PC${versionAtelier ? ` · version ${esc(versionAtelier)}` : ""}</p>
+        </div>
+      </div>
+    </header>
     <article class="a-propos">
-      <nav class="fil" aria-label="Fil d'Ariane">${retour}<span aria-current="page">L'Atelier MTG</span></nav>
-      <h1>L'Atelier MTG</h1>
-      ${versionAtelier ? `<p class="ap-signature">Version ${esc(versionAtelier)}</p>` : ""}
       <p class="chapeau">Le gestionnaire de decks Commander local, sans compte et taillé pour le deckbuilding assisté.</p>
       <p>L'Atelier est une application locale, qui s'ouvre dans votre navigateur, pensée pour concevoir, tester et faire évoluer
         des decks Magic: The Gathering en Commander. Pas de publicité, aucun compte en ligne, pas de données hébergées sur un
         serveur distant : tout s'exécute directement sur votre ordinateur.</p>
-      <figure class="ap-une">${capture("atelier", "L'Atelier MTG : vos decks Commander, de la liste à la table")}></figure>
 
       <h2>Ce qui fait la différence</h2>
       ${MODULES_ATELIER.map(([f, titre, texte]) => `<section class="ap-module">
@@ -3187,7 +3200,7 @@ function vueAPropos() {
       <p>L'Atelier est né de cette synthèse : une interface locale fluide pour gérer ses cartes, connectable à la demande à un
         assistant IA pour auditer un deck, automatiser le classement ou simuler des parties.</p>
     </article>`;
-  $$(".a-propos img[data-f]").forEach((img) => {
+  $$(".ap-tete img[data-f], .a-propos img[data-f]").forEach((img) => {
     img.onerror = () => {                       // dans l'Atelier : la capture de ce PC, sinon celle du site de l'auteur
       if (!PARTAGE && !img.dataset.enLigne) { img.dataset.enLigne = "1"; img.src = CAPTURES_ATELIER + img.dataset.f + ".webp"; }
       else img.closest("figure").remove();                           // hors ligne, ou capture introuvable : le texte suffit
