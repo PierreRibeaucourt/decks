@@ -70,7 +70,8 @@ function comparerPartage(fa, fb) {
 }
 
 // lien vers un deck : sa page dans l'Atelier, ou sa page partagée depuis la racine du site
-const lienDeck = (id) => (PARTAGE && PARTAGE.liens && PARTAGE.liens[id]) || `#/deck/${enc(id)}`;
+// page d'un deck partagé ; depuis a-propos/, un dossier plus bas que la racine du site
+const lienDeck = (id) => (PARTAGE && PARTAGE.liens && PARTAGE.liens[id] ? (PARTAGE.page ? "../" : "") + PARTAGE.liens[id] : `#/deck/${enc(id)}`);
 
 function euros(p) {
   return p == null ? "—" : p.toFixed(2).replace(".", ",") + " €";
@@ -137,16 +138,18 @@ if (PARTAGE) $(".logo").href = PARTAGE.accueil === true ? "#/" : PARTAGE.accueil
 const ico = (nom) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONES[nom] || ""}</svg>`;
 $$("[data-ico]").forEach((el) => el.insertAdjacentHTML("afterbegin", ico(el.dataset.ico)));
 // page partagée : à qui est la page, et l'Atelier à télécharger pour faire pareil avec ses decks ;
-// en bas, la licence, le code source et la page « C'est quoi, l'Atelier MTG ? » (#/a-propos)
+// en bas, la licence, le code source et la page « C'est quoi, l'Atelier MTG ? », une seule pour le site : a-propos/
 const TITRE_PARTAGE = document.title;
+const A_PROPOS = !PARTAGE ? "#/a-propos" : PARTAGE.page === "a-propos" ? "./"
+  : (PARTAGE.accueil && PARTAGE.accueil !== true ? PARTAGE.accueil : "") + "a-propos/";
 if (PARTAGE) {
   const depot = PARTAGE.atelier ? esc(PARTAGE.atelier) : "";
   $(".barre").insertAdjacentHTML("afterend", `<div class="bandeau-partage">
-    <p>Page ${PARTAGE.auteur ? `de <strong>${esc(PARTAGE.auteur)}</strong>, ` : ""}partagée avec <a href="#/a-propos">l'Atelier MTG</a>. Pour gérer, tester et partager vos propres decks Commander, l'Atelier est gratuit.</p>
+    <p>Page ${PARTAGE.auteur ? `de <strong>${esc(PARTAGE.auteur)}</strong>, ` : ""}partagée avec <a href="${A_PROPOS}">l'Atelier MTG</a>. Pour gérer, tester et partager vos propres decks Commander, l'Atelier est gratuit.</p>
     ${depot ? `<a class="btn btn-accent btn-petit" href="${depot}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a>` : ""}
   </div>`);
   $(".cadre").insertAdjacentHTML("afterend", `<footer class="pied-partage">
-    <nav><a href="#/a-propos">C'est quoi, l'Atelier MTG ?</a>${depot ? `<a href="${depot}" target="_blank" rel="noopener">Code source sur GitHub</a>
+    <nav><a href="${A_PROPOS}">C'est quoi, l'Atelier MTG ?</a>${depot ? `<a href="${depot}" target="_blank" rel="noopener">Code source sur GitHub</a>
       <a href="${depot}/blob/main/LICENSE" target="_blank" rel="noopener">Licence MIT</a>` : ""}</nav>
     <p>Magic: The Gathering est une marque de Wizards of the Coast. L'Atelier MTG n'est ni affilié à Wizards of the Coast ni approuvé par elle.
       Données des cartes : Scryfall.</p>
@@ -598,7 +601,8 @@ async function route() {
   $("#lien-recherche").classList.toggle("actif", parts[0] === "recherche");
   vue.classList.toggle("vue-large", parts[0] === "recherche");
   try {
-    if (parts[0] === "a-propos") vueAPropos();
+    if (PARTAGE && parts[0] === "a-propos" && PARTAGE.page !== "a-propos") location.replace(A_PROPOS);   // ancienne adresse
+    else if (parts[0] === "a-propos" || (PARTAGE && PARTAGE.page === "a-propos" && !parts[0])) vueAPropos();
     else if (PARTAGE && parts[0] === "recherche") vueRechercheVitrine();
     else if (PARTAGE && PARTAGE.deck) await vueDeck(PARTAGE.deck, (parts[0] === "deck" && parts[2]) || "liste");
     else if (PARTAGE && parts[0] === "deck" && parts[1]) location.replace(lienDeck(decodeURIComponent(parts[1])));
@@ -647,6 +651,9 @@ function deckDeLaPage() {
     const deck = deckDeLaPage();
     const [ds, cartes] = await Promise.all([listeDecks(),
       q.length >= 2 ? api("/api/recherche/noms?q=" + enc(brut) + (deck ? "&deck=" + enc(deck.id) : "")).catch(() => []) : Promise.resolve([])]);
+    // rien trouvé : la base de cartes est peut-être encore en construction (premier lancement)
+    const enConstruction = q.length >= 2 && !cartes.length
+      && !((await api("/api/recherche/base").catch(() => null)) || { prete: true }).prete;
     if (k !== numero) return;
     const score = (d) => !q ? 0 : sansAccent(d.titre).startsWith(q) ? 0 : sansAccent(d.titre).includes(q) ? 1 : 2;
     const decksTrouves = ds.filter((d) => !q || sansAccent(`${d.titre} ${nomsCommandants(d)}`).includes(q))
@@ -669,9 +676,11 @@ function deckDeLaPage() {
       </a>`;
     const nc = cartes.length;
     liste.innerHTML = (q.length >= 2 ? `<div class="aller-section">Cartes</div>` + (nc ? items.slice(0, nc).map(ligneCarte).join("")
+        : enConstruction ? `<div class="aller-vide petit">La base de cartes se construit : la recherche marchera quand elle sera prête.
+            <a href="${esc(tous(brut))}">Voir l'avancement →</a></div>`
         : `<div class="aller-vide muet petit">Aucune carte.</div>`) : "")
       + (decksTrouves.length ? (q.length >= 2 ? `<div class="aller-section">Decks</div>` : "") + items.slice(nc).map((it, j) => ligneDeck(it, nc + j)).join("") : "")
-      + (q.length >= 2 ? `<div class="aller-pied petit"><a href="${esc(tous(brut))}">Toutes les cartes « ${esc(brut)} » →</a></div>` : "");
+      + (q.length >= 2 && !enConstruction ? `<div class="aller-pied petit"><a href="${esc(tous(brut))}">Toutes les cartes « ${esc(brut)} » →</a></div>` : "");
     liste.hidden = !liste.innerHTML;
   };
   const choisir = (it) => {
@@ -3096,14 +3105,25 @@ function vueRechercheVitrine() {
 // L'histoire est celle de l'auteur de l'Atelier, pas forcément celle de la personne qui partage ses decks.
 const AUTEUR_ATELIER = "PierreRibeaucourt";
 const DEPOT_ATELIER = "https://github.com/PierreRibeaucourt/atelier-mtg";
+// les captures de la page : sur le site de decks de l'auteur, pas dans le dépôt de code (on y voit des cartes et une discussion)
+const CAPTURES_ATELIER = "https://pierreribeaucourt.github.io/decks/a-propos/";
+const MODULES_ATELIER = [
+  ["decks", "Vos decks, à votre façon", "Créez, importez et éditez vos decks comme partout, avec une vue personnalisable : liste ou visuel, taille des cartes, rangement par type, par tag ou par fonction."],
+  ["versions", "Versions et historique", "Chaque modification est gardée. Enregistrez des versions, comparez deux listes, revenez en arrière."],
+  ["statistiques", "Statistiques et base de mana", "Courbe de mana, types, fonctions des cartes et surtout la répartition des sources de couleur : elle compte les terrains et les cartes de ramp, et dit si chaque couleur est confortable."],
+  ["combos", "Combos", "Les combos du deck sont repérées automatiquement, en croisant plusieurs sources : MTGPics (la base de Magic-Ville) et Commander Spellbook."],
+  ["bracket", "Bracket", "Le bracket est estimé automatiquement selon les règles officielles : Game Changers, combos infinies à deux cartes, tuteurs… et comparé à l'estimation de Commander Spellbook."],
+  ["discussion", "Discussion avec Claude", "Facultative, à droite de l'écran : Claude connaît vos decks et aide à catégoriser les cartes, faire un cut, chercher des idées ou vérifier une interaction."],
+  ["jouer", "Table de jeu", "Jouez vos decks en solo pour tester les mains de départ et les premiers tours : pioche, mulligan, jetons, marqueurs, planeswalkers, tout au clic ou au glisser."],
+  ["recherche", "Recherche avancée", "Une recherche multicritère comme celle de Magic-Ville, avec en plus un filtre de prix Cardmarket et une catégorisation automatique des cartes : ramp, pioche, tuteur, removal…"],
+];
 
 function vueAPropos() {
   scrollTo(0, 0);
   etat.deck = null;
   const depot = esc((PARTAGE && PARTAGE.atelier) || DEPOT_ATELIER);
-  const retour = PARTAGE ? `<a href="${esc(PARTAGE.accueil === true ? "#/" : PARTAGE.accueil)}">${esc(MES_DECKS)}</a><span aria-hidden="true">›</span>`
-    + (PARTAGE.deck ? `<a href="#/">${esc(PARTAGE.deck.replace(/^Deck /, ""))}</a><span aria-hidden="true">›</span>` : "")
-    : `<a href="#/">Mes decks</a><span aria-hidden="true">›</span>`;
+  const retour = `<a href="${PARTAGE && PARTAGE.page ? esc(PARTAGE.accueil) : "#/"}">${esc(MES_DECKS)}</a><span aria-hidden="true">›</span>`;
+  const capture = (f, alt) => `<img src="${PARTAGE ? CAPTURES_ATELIER : "/a-propos/"}${f}.webp" data-f="${f}" alt="${esc(alt)}"`;
   const consigne = `Installe et lance l'Atelier MTG depuis ${(PARTAGE && PARTAGE.atelier || DEPOT_ATELIER).replace("https://", "")}`;
   const fonction = (titre, texte) => `<div class="ap-carte"><h3>${titre}</h3><p>${texte}</p></div>`;
   vue.innerHTML = `
@@ -3115,6 +3135,7 @@ function vueAPropos() {
       <p>L'Atelier est une application locale, qui s'ouvre dans votre navigateur, pensée pour concevoir, tester et faire évoluer
         des decks Magic: The Gathering en Commander. Pas de publicité, aucun compte en ligne, pas de données hébergées sur un
         serveur distant : tout s'exécute directement sur votre ordinateur.</p>
+      <figure class="ap-une">${capture("atelier", "L'Atelier MTG : vos decks Commander, de la liste à la table")}></figure>
 
       <h2>Genèse du projet</h2>
       <p class="ap-signature">Par ${esc(AUTEUR_ATELIER)}, créateur de l'Atelier</p>
@@ -3131,14 +3152,17 @@ function vueAPropos() {
       <p>L'Atelier est né de cette synthèse : une interface locale fluide pour gérer ses cartes, connectable à la demande à un
         assistant IA pour auditer un deck, automatiser le classement ou simuler des parties.</p>
 
-      <h2>Fonctionnalités principales</h2>
+      <h2>Ce qui fait la différence</h2>
+      ${MODULES_ATELIER.map(([f, titre, texte]) => `<section class="ap-module">
+        <h3>${esc(titre)}</h3><p>${esc(texte)}</p>
+        <figure>${capture(f, titre)} loading="lazy"></figure>
+      </section>`).join("")}
+
+      <h2>Et aussi</h2>
       <div class="ap-grille">
-        ${fonction("Gestion et import de decks", "Import d'une liste copiée depuis Moxfield, Archidekt ou MTG Arena. Affichage en vue grille ou texte, tri par type, par tag ou par fonction stratégique.")}
-        ${fonction("Statistiques et budget", "Courbe de mana réelle, mains de départ tirées au hasard, équilibrage des sources de mana et prix Cardmarket du jour, avec une alerte au-delà de votre budget par carte.")}
-        ${fonction("Banc d'essai et simulations", "Simulateur multijoueur pour évaluer la régularité d'un deck sur des centaines de parties, ou table virtuelle pour s'entraîner en solo.")}
-        ${fonction("Moteur de synergies", "Repérage automatique des combos présentes dans la liste, et des cartes qui combotent avec une carte donnée.")}
-        ${fonction("Gestion des versions", "Historique complet des modifications et comparaison avant / après chaque ajustement.")}
-        ${fonction("Copilote IA optionnel", "Connexion directe à Claude Code, avec vos propres accès, pour obtenir des retours critiques, affiner une stratégie ou réorganiser une liste.")}
+        ${fonction("Import en un collage", "Une liste copiée depuis Moxfield, Archidekt ou MTG Arena devient un deck, rangé par catégories.")}
+        ${fonction("Prix et budget", "Prix Cardmarket du jour pour chaque carte et chaque deck, avec une alerte au-delà de votre budget par carte.")}
+        ${fonction("Simulations", "Un simulateur multijoueur joue des centaines de parties pour mesurer la régularité d'un deck et comparer deux versions.")}
         ${fonction("Partage simplifié", "Publication en un clic d'une page de présentation légère, comme celle-ci, à partager avec votre groupe de jeu.")}
       </div>
 
@@ -3162,9 +3186,28 @@ function vueAPropos() {
       <div class="ap-consigne"><code>${esc(consigne)}</code>
         <button type="button" class="btn btn-petit btn-discret" id="ap-copier">${ico("copier")}Copier</button></div>
     </article>`;
+  $$(".a-propos img[data-f]").forEach((img) => {
+    img.onerror = () => {                       // dans l'Atelier : la capture de ce PC, sinon celle du site de l'auteur
+      if (!PARTAGE && !img.dataset.enLigne) { img.dataset.enLigne = "1"; img.src = CAPTURES_ATELIER + img.dataset.f + ".webp"; }
+      else img.closest("figure").remove();                           // hors ligne, ou capture introuvable : le texte suffit
+    };
+    if (img.closest(".ap-module")) img.onclick = () => zoomer(img);
+  });
   $("#ap-copier").onclick = async () => {
     try { await navigator.clipboard.writeText(consigne); toast("Consigne copiée."); } catch (e) { erreur(e); }
   };
+}
+
+// une capture en grand, par-dessus la page ; un clic ou Échap la referme
+function zoomer(img) {
+  const z = document.createElement("div");
+  z.className = "ap-zoom";
+  z.innerHTML = `<img src="${esc(img.src)}" alt="${esc(img.alt)}">`;
+  const touche = (ev) => { if (ev.key === "Escape") fermer(); };
+  const fermer = () => { z.remove(); removeEventListener("keydown", touche); };
+  z.onclick = fermer;
+  addEventListener("keydown", touche);
+  document.body.append(z);
 }
 
 function critIdentite(d) {
