@@ -13,6 +13,8 @@ const etat = { decks: [], deck: null, filtre: "" };
 // et tout ce qui modifie (classe « ecrit »), la recherche et la discussion sont masqués
 const PARTAGE = window.PARTAGE || null;
 if (PARTAGE) document.documentElement.classList.add("partage");
+// page partagée : à qui sont ces decks (reglages.json « nom », sinon le compte GitHub qui publie)
+const MES_DECKS = PARTAGE && PARTAGE.auteur ? `Decks de ${PARTAGE.auteur}` : "Mes decks";
 // budget par carte (reglages.json, 5 € par défaut, 0 = pas d'alerte) : les cartes plus chères sont signalées
 const REGLAGES = (PARTAGE && PARTAGE.reglages) || window.REGLAGES || {};
 const BUDGET = REGLAGES.budget === undefined ? 5 : REGLAGES.budget > 0 ? REGLAGES.budget : Infinity;
@@ -133,6 +135,11 @@ const ICONES = {
 if (PARTAGE) $(".logo").href = PARTAGE.accueil === true ? "#/" : PARTAGE.accueil;
 const ico = (nom) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONES[nom] || ""}</svg>`;
 $$("[data-ico]").forEach((el) => el.insertAdjacentHTML("afterbegin", ico(el.dataset.ico)));
+// page partagée : à qui est la page, et l'Atelier à télécharger pour faire pareil avec ses decks
+if (PARTAGE) $(".barre").insertAdjacentHTML("afterend", `<div class="bandeau-partage">
+  <p>Page ${PARTAGE.auteur ? `de <strong>${esc(PARTAGE.auteur)}</strong>, ` : ""}partagée avec l'Atelier MTG. Pour gérer, tester et partager tes propres decks Commander, l'Atelier est gratuit.</p>
+  ${PARTAGE.atelier ? `<a class="btn btn-accent btn-petit" href="${esc(PARTAGE.atelier)}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a>` : ""}
+</div>`);
 
 // hauteur de la barre du haut : les onglets d'un deck se collent juste dessous
 const hauteurBarre = () => document.documentElement.style.setProperty("--haut-barre", $(".barre").offsetHeight + "px");
@@ -705,7 +712,7 @@ async function vueAccueil() {
   etat.couleurs ||= [];
   vue.innerHTML = `
     <div class="titre-page">
-      <h1>Mes decks</h1>
+      <h1>${esc(MES_DECKS)}</h1>
       <button class="btn btn-accent ecrit" id="btn-nouveau">${ico("plus")}Nouveau deck</button>
     </div>
     <div class="barre-outils">
@@ -893,7 +900,7 @@ async function vueDeck(id, onglet, extra = null, donnees = null) {
   etat.deck = d;
   const cmdsEntete = d.cartes.filter((c) => c.cat === "Commander" && c.info.image);      // deux partenaires : en éventail
   vue.innerHTML = `
-    <nav class="fil" aria-label="Fil d'Ariane"><a href="${PARTAGE ? esc(PARTAGE.accueil) : "#/"}">Mes decks</a><span aria-hidden="true">›</span><span aria-current="page">${esc(d.titre)}</span></nav>
+    <nav class="fil" aria-label="Fil d'Ariane"><a href="${PARTAGE ? esc(PARTAGE.accueil) : "#/"}">${esc(MES_DECKS)}</a><span aria-hidden="true">›</span><span aria-current="page">${esc(d.titre)}</span></nav>
     <div class="entete-deck ${cmdsEntete.length ? "avec-cmd" : ""} ${cmdsEntete.length > 1 ? "duo" : ""}">
       <div class="bandeau" style="background-image:url('${esc(d.art)}')"></div>
       ${cmdsEntete.length ? `<div class="cmds-entete">${cmdsEntete.map((c) =>
@@ -3061,7 +3068,7 @@ function vueRechercheVitrine() {
   rch.fns = [];
   vue.innerHTML = `
     <div class="rch-tete">
-      <nav class="fil" aria-label="Fil d'Ariane"><a href="${esc(PARTAGE.accueil === true ? "#/" : PARTAGE.accueil)}">Mes decks</a><span aria-hidden="true">›</span>${PARTAGE.deck ? `<a href="#/">${esc(PARTAGE.deck.replace(/^Deck /, ""))}</a><span aria-hidden="true">›</span>` : ""}<span aria-current="page">Recherche de cartes</span></nav>
+      <nav class="fil" aria-label="Fil d'Ariane"><a href="${esc(PARTAGE.accueil === true ? "#/" : PARTAGE.accueil)}">${esc(MES_DECKS)}</a><span aria-hidden="true">›</span>${PARTAGE.deck ? `<a href="#/">${esc(PARTAGE.deck.replace(/^Deck /, ""))}</a><span aria-hidden="true">›</span>` : ""}<span aria-current="page">Recherche de cartes</span></nav>
     </div>
     <div class="vitrine">
       <div class="vitrine-fond" inert aria-hidden="true">${formulaireRecherche(rch.crit)}</div>
