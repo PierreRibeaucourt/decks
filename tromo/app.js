@@ -128,6 +128,7 @@ const ICONES = {
   partager: '<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 13.3 7.6 4.4M15.8 6.3l-7.6 4.4"/>',
   compacter: '<path d="M4 14h6v6M20 10h-6V4"/><path d="m14 10 7-7M3 21l7-7"/>',
   ouvrir: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/>',
+  telecharger: '<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>',
 };
 if (PARTAGE) $(".logo").href = PARTAGE.accueil === true ? "#/" : PARTAGE.accueil;
 const ico = (nom) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONES[nom] || ""}</svg>`;
@@ -575,7 +576,8 @@ async function route() {
   $("#lien-recherche").classList.toggle("actif", parts[0] === "recherche");
   vue.classList.toggle("vue-large", parts[0] === "recherche");
   try {
-    if (PARTAGE && PARTAGE.deck) await vueDeck(PARTAGE.deck, (parts[0] === "deck" && parts[2]) || "liste");
+    if (PARTAGE && parts[0] === "recherche") vueRechercheVitrine();
+    else if (PARTAGE && PARTAGE.deck) await vueDeck(PARTAGE.deck, (parts[0] === "deck" && parts[2]) || "liste");
     else if (PARTAGE && parts[0] === "deck" && parts[1]) location.replace(lienDeck(decodeURIComponent(parts[1])));
     else if (parts[0] === "recherche") await vueRecherche(new URLSearchParams(qs || ""));
     else if (parts[0] === "deck" && parts[1]) await vueDeck(decodeURIComponent(parts[1]), parts[2] || "liste", parts[3] ? decodeURIComponent(parts[3]) : null);
@@ -3040,6 +3042,33 @@ async function vueRecherche(params) {
   if (c.r === "1") await lancerRecherche();
 }
 
+// page partagée : la recherche et la discussion en vitrine, grisées, avec le lien pour installer l'Atelier chez soi
+function invitation(titre, texte) {
+  return `<div class="vitrine-invite panneau">
+    <h2>${esc(titre)}</h2>
+    <p>${esc(texte)}</p>
+    ${PARTAGE.atelier ? `<a class="btn btn-accent" href="${esc(PARTAGE.atelier)}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a>` : ""}
+  </div>`;
+}
+
+function vueRechercheVitrine() {
+  scrollTo(0, 0);
+  etat.deck = null;
+  rch.deck = null;
+  rch.fonctions = (PARTAGE.api["/api/recherche/fonctions"] || []);
+  rch.crit = { ...RCH_DEFAUTS };
+  rch.eds = new Set();
+  rch.fns = [];
+  vue.innerHTML = `
+    <div class="rch-tete">
+      <nav class="fil" aria-label="Fil d'Ariane"><a href="${esc(PARTAGE.accueil === true ? "#/" : PARTAGE.accueil)}">Mes decks</a><span aria-hidden="true">›</span>${PARTAGE.deck ? `<a href="#/">${esc(PARTAGE.deck.replace(/^Deck /, ""))}</a><span aria-hidden="true">›</span>` : ""}<span aria-current="page">Recherche de cartes</span></nav>
+    </div>
+    <div class="vitrine">
+      <div class="vitrine-fond" inert aria-hidden="true">${formulaireRecherche(rch.crit)}</div>
+      ${invitation("Recherche de cartes", "Disponible dans l'Atelier MTG, à installer sur son ordinateur.")}
+    </div>`;
+}
+
 function critIdentite(d) {
   return { coul: lettresWUBRG(d.identite.join(""), "WUBRG") + "C", cm: "1", seules: "1", id: "1", format: "commander" };
 }
@@ -3888,6 +3917,14 @@ async function montageChat() {
         <button class="btn btn-accent" id="chat-envoyer">${ico("envoyer")}Envoyer</button>
       </div>
     </div>`;
+  if (PARTAGE) {                                   // page partagée : le panneau en vitrine, grisé
+    $$(".chat-tete select, #chat-nouvelle, #chat-fil, .chat-saisie", a).forEach((x) => { x.classList.add("vitrine-fond"); x.inert = true; });
+    a.insertAdjacentHTML("beforeend", invitation("Discussion avec Claude",
+      "Disponible dans l'Atelier MTG, à installer sur son ordinateur, avec Claude Code."));
+    $("#chat-fermer").onclick = () => basculeChat(false);
+    chat.charge = true;
+    return;
+  }
   try { $("#chat-modele").value = localStorage.getItem("chat-modele") || "opus"; } catch (_) { $("#chat-modele").value = "opus"; }
   $("#chat-modele").onchange = (ev) => { try { localStorage.setItem("chat-modele", ev.target.value); } catch (_) {} };
   $("#chat-fermer").onclick = () => basculeChat(false);
