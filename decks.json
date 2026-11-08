@@ -751,18 +751,18 @@
  },
  "Deck Greven Elemental": {
   "slug": "greven-elemental",
-  "date": 1794155330.836541,
+  "date": 1794158226.717733,
   "resume": {
    "alertes": {},
-   "art": "https://cards.scryfall.io/art_crop/front/b/d/bda22fc3-31a5-451a-9a8b-372884f7bc61.jpg?1783932799",
+   "art": "https://cards.scryfall.io/art_crop/front/b/5/b58112b0-a05c-4b98-b650-fd27ad97789f.jpg?1783907305",
    "bracket": 3,
    "bracket_raisons": [
     "1 Game Changer : Jeska's Will",
     "1 combo infinie à 2 cartes : à ne pas sortir en début de partie"
    ],
-   "commandant": "Greven, Predator Captain",
+   "commandant": "Neriv, Heart of the Storm",
    "commandants": [
-    "Greven, Predator Captain"
+    "Neriv, Heart of the Storm"
    ],
    "gc": [
     "Jeska's Will"
@@ -770,13 +770,14 @@
    "id": "Deck Greven Elemental",
    "identite": [
     "B",
-    "R"
+    "R",
+    "W"
    ],
-   "image_cmd": "https://cards.scryfall.io/normal/front/b/d/bda22fc3-31a5-451a-9a8b-372884f7bc61.jpg?1783932799",
+   "image_cmd": "https://cards.scryfall.io/normal/front/b/5/b58112b0-a05c-4b98-b650-fd27ad97789f.jpg?1783907305",
    "maybe": 4,
-   "modifie": 1794154445.101881,
+   "modifie": 1794158092.9080572,
    "note": "",
-   "prix_total": 143.31,
+   "prix_total": 147.71,
    "titre": "Greven Elemental",
    "total": 100,
    "trop_cher": [
@@ -790,8 +791,8 @@
   },
   "cartes": [
    [
-    "Greven, Predator Captain",
-    "Grêvën, capitaine du Prédateur"
+    "Neriv, Heart of the Storm",
+    "Neriv, cœur de la tempête"
    ],
    [
     "Ball Lightning",
@@ -974,24 +975,24 @@
     "Cachet d'ésotérisme"
    ],
    [
-    "Rakdos Signet",
-    "Cachet de Rakdos"
+    "Boros Signet",
+    "Cachet de Boros"
    ],
    [
     "Talisman of Indulgence",
     "Talisman d'indulgence"
    ],
    [
-    "Thought Vessel",
-    "Urne de pensée"
+    "Orzhov Signet",
+    "Cachet d'Orzhov"
    ],
    [
-    "Fire Diamond",
-    "Diamant du feu"
+    "Talisman of Hierarchy",
+    "Talisman de hiérarchie"
    ],
    [
-    "Wayfarer's Bauble",
-    "Babiole du voyageur"
+    "Talisman of Conviction",
+    "Talisman de conviction"
    ],
    [
     "Mana Geyser",
@@ -1030,12 +1031,12 @@
     "Acte blasphématoire"
    ],
    [
-    "Hour of Devastation",
-    "L'Âge de la Destruction"
+    "Day of Judgment",
+    ""
    ],
    [
-    "Chain Reaction",
-    "Réaction en chaîne"
+    "Wrath of God",
+    "Colère de Dieu"
    ],
    [
     "Command Tower",
@@ -1078,12 +1079,36 @@
     "Contreforts d'Ombresang"
    ],
    [
+    "Nomad Outpost",
+    ""
+   ],
+   [
+    "Battlefield Forge",
+    "Forge de campagne"
+   ],
+   [
+    "Clifftop Retreat",
+    "Rectorat du haut des falaises"
+   ],
+   [
+    "Rugged Prairie",
+    ""
+   ],
+   [
+    "Caves of Koilos",
+    ""
+   ],
+   [
     "Mountain",
     "Montagne"
    ],
    [
     "Swamp",
     "Marais"
+   ],
+   [
+    "Plains",
+    "Plaine"
    ],
    [
     "Maze Rusher",
