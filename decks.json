@@ -751,7 +751,7 @@
  },
  "Deck Greven Elemental": {
   "slug": "greven-elemental",
-  "date": 1794158226.717733,
+  "date": 1794158592.748251,
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/b/5/b58112b0-a05c-4b98-b650-fd27ad97789f.jpg?1783907305",
@@ -775,11 +775,11 @@
    ],
    "image_cmd": "https://cards.scryfall.io/normal/front/b/5/b58112b0-a05c-4b98-b650-fd27ad97789f.jpg?1783907305",
    "maybe": 4,
-   "modifie": 1794158092.9080572,
+   "modifie": 1794158457.777547,
    "note": "",
-   "prix_total": 147.71,
+   "prix_total": 147.74,
    "titre": "Greven Elemental",
-   "total": 100,
+   "total": 101,
    "trop_cher": [
     "Sneak Attack",
     "Molten Echoes",
@@ -1032,7 +1032,7 @@
    ],
    [
     "Day of Judgment",
-    ""
+    "Jour de condamnation"
    ],
    [
     "Wrath of God",
@@ -1080,7 +1080,7 @@
    ],
    [
     "Nomad Outpost",
-    ""
+    "Avant-poste nomade"
    ],
    [
     "Battlefield Forge",
@@ -1092,11 +1092,11 @@
    ],
    [
     "Rugged Prairie",
-    ""
+    "Prairie rocailleuse"
    ],
    [
     "Caves of Koilos",
-    ""
+    "Cavernes de Koïlos"
    ],
    [
     "Mountain",
@@ -1109,6 +1109,10 @@
    [
     "Plains",
     "Plaine"
+   ],
+   [
+    "Spark Trooper",
+    "Troupier d'étincelles"
    ],
    [
     "Maze Rusher",
