@@ -587,6 +587,7 @@ a.btn-accent { color: var(--accent-texte); }      /* un lien en bouton orange : 
 .rch-sym { border: 1px solid transparent; background: transparent; border-radius: 999px; padding: 3px; cursor: pointer; line-height: 0; opacity: .32; filter: grayscale(.7); }
 .rch-sym:hover { opacity: .75; filter: none; }
 .rch-sym.actif { opacity: 1; filter: none; border-color: var(--accent); background: var(--accent-doux); }
+.rch-sym.oblig { background: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .rch-sym .sym { width: 22px; height: 22px; vertical-align: 0; }
 .rch-sym:focus-visible, .rch-bascule:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .rch-bascules { display: flex; flex-wrap: wrap; gap: .3rem; }

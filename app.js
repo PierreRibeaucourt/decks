@@ -2870,11 +2870,19 @@ function critVersHash(c) {
 const cleDerniere = (deck) => "rch-derniere" + (deck ? ":" + deck : "");
 
 // ---- fenêtres du formulaire
-function rchSymboles(groupe, valeur, lettres = "WUBRG") {
+// couleurs : un clic = permise, un second = obligatoire (la carte doit l'avoir), un troisième = retirée ; l'incolore, deux états
+function rchSymboles(groupe, valeur, lettres = "WUBRG", oblig = "") {
   return `<div class="rch-symboles" data-groupe="${groupe}" role="group">${[...lettres].map((k) => {
-    const on = (valeur || "").includes(k);
-    return `<button type="button" class="rch-sym ${on ? "actif" : ""}" data-k="${k}" aria-pressed="${on}" title="${esc(NOMS_COULEURS[k] || k)}">${symbole(k)}</button>`;
+    const on = (valeur || "").includes(k) || (oblig || "").includes(k), ob = (oblig || "").includes(k);
+    return `<button type="button" class="rch-sym ${on ? "actif" : ""} ${ob ? "oblig" : ""}" data-k="${k}" aria-pressed="${on}" title="${esc((NOMS_COULEURS[k] || k) + (ob ? " · obligatoire" : ""))}">${symbole(k)}</button>`;
   }).join("")}</div>`;
+}
+
+function marquerCouleur(b, etat) {            // etat : "" (retirée), "actif" (permise), "oblig" (obligatoire)
+  b.classList.toggle("actif", !!etat);
+  b.classList.toggle("oblig", etat === "oblig");
+  b.setAttribute("aria-pressed", !!etat);
+  b.title = (NOMS_COULEURS[b.dataset.k] || b.dataset.k) + (etat === "oblig" ? " · obligatoire" : "");
 }
 
 function rchBascules(groupe, items, valeur, unique = false) {
@@ -3001,7 +3009,7 @@ function formulaireRecherche(c) {
   return `<form id="moteur" class="moteur" autocomplete="off">
     <div class="mt-rang mt-haut">
       <section class="fen fen-couleurs"><h3 class="fen-titre">Couleurs</h3>
-        ${rchSymboles("coul", c.coul, "WUBRGC")}
+        ${rchSymboles("coul", c.coul, "WUBRGC", c.oblig)}
         <div class="rch-cases rch-centre">${rchRadio("cm", "1", "Au moins une", c)}${rchRadio("cm", "2", "Toutes", c)}${rchCase("seules", "Uniquement celle(s) choisie(s)", c)}</div>
         <div class="rch-cases rch-entre">${rchCase("id", "Id. couleur", c)}${d && d.identite ? `<button type="button" class="lien-discret" data-act="identite" title="Couleurs du commandant et incolores">Couleurs de ${esc(d.titre)} ${identiteHtml(d.identite)}</button>` : ""}</div>
         <div class="rch-cases rch-entre rch-cout">
@@ -3083,6 +3091,7 @@ function lireFormulaire(form) {
     const on = $$(".actif", g).map((b) => b.dataset.k);
     c[g.dataset.groupe] = g.dataset.unique ? (on[0] || "") : on.join("");
   }
+  c.oblig = $$('.rch-symboles[data-groupe="coul"] .oblig', form).map((b) => b.dataset.k).join("");
   c.eds = [...(rch.eds || [])].join(",");
   return c;
 }
@@ -3103,7 +3112,7 @@ function resumeCrit(c) {
   if (c.vanilla === "1") r.push("Sans texte");
   if (c.cout) r.push(`Coût : ${c.cout}`);
   if (c.un === "1") r.push("Un seul symbole par couleur");
-  if (c.coul) r.push(`Couleurs ${[...c.coul].join(" ")}${c.id === "1" ? " (identité)" : ""}${c.seules === "1" ? ", uniquement" : ""}${c.cm === "2" ? ", toutes" : ""}`);
+  if (c.coul) r.push(`Couleurs ${[...c.coul].join(" ")}${c.id === "1" ? " (identité)" : ""}${c.oblig ? `, ${[...c.oblig].join(" ")} obligatoire${c.oblig.length > 1 ? "s" : ""}` : ""}${c.seules === "1" ? ", uniquement" : ""}${c.cm === "2" ? ", toutes" : ""}`);
   if (c.types) r.push(c.types.split(",").map((k) => (RCH_TYPES.find((t) => t[0] === k) || [k, k])[1]).join(c.tm === "2" ? " et " : " ou "));
   if (c.spt) r.push((RCH_SPT.find((t) => t[0] === c.spt) || ["", c.spt])[1]);
   if (c.spe) r.push((RCH_SPE.find((t) => t[0] === c.spe) || ["", c.spe])[1]);
@@ -3369,6 +3378,8 @@ function rendreFormulaire() {
   });
   form.addEventListener("click", (ev) => {
     const s = ev.target.closest(".rch-sym, .rch-bascule:not([data-fn])");
+    if (s && s.closest('[data-groupe="coul"]') && s.dataset.k !== "C")
+      return marquerCouleur(s, !s.classList.contains("actif") ? "actif" : s.classList.contains("oblig") ? "" : "oblig");
     if (s) {
       const g = s.closest("[data-groupe]");
       const v = !s.classList.contains("actif");
@@ -3384,7 +3395,7 @@ function rendreFormulaire() {
     if (a.dataset.act === "budget") { form.elements.prixmax.value = String(BUDGET); form.elements.prixmax.focus(); return; }
     if (a.dataset.act === "identite" && rch.deck) {
       const id = critIdentite(rch.deck);
-      $$('.rch-symboles[data-groupe="coul"] .rch-sym', form).forEach((b) => { const on = id.coul.includes(b.dataset.k); b.classList.toggle("actif", on); b.setAttribute("aria-pressed", on); });
+      $$('.rch-symboles[data-groupe="coul"] .rch-sym', form).forEach((b) => marquerCouleur(b, id.coul.includes(b.dataset.k) ? "actif" : ""));
       form.querySelector('input[name="cm"][value="1"]').checked = true;
       form.elements.seules.checked = true;
       form.elements.id.checked = true;
