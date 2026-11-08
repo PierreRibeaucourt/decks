@@ -1922,7 +1922,7 @@
  },
  "Deck Tromo": {
   "slug": "tromo",
-  "date": 1794084747.3405828,
+  "date": 1794134227.7878838,
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/f/4/f40ad933-ddd9-4975-a222-21fe3305137c.jpg?1783915686",
@@ -1943,9 +1943,9 @@
    ],
    "image_cmd": "https://cards.scryfall.io/normal/front/f/4/f40ad933-ddd9-4975-a222-21fe3305137c.jpg?1783915686",
    "maybe": 5,
-   "modifie": 1794070370.743412,
+   "modifie": 1794134104.112404,
    "note": "",
-   "prix_total": 114.37,
+   "prix_total": 117.32,
    "titre": "Tromo",
    "total": 100,
    "trop_cher": [
@@ -2133,8 +2133,8 @@
     "Instigateur sournois"
    ],
    [
-    "Angler Turtle",
-    "Tortue pêcheuse"
+    "Dissipation Field",
+    ""
    ],
    [
     "Curse of Verbosity",
