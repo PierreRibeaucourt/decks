@@ -1900,7 +1900,7 @@
    ]
   ]
  },
- "Deck Neriv Elemental": {
+ "Deck Greven Elemental": {
   "slug": "greven-elemental",
   "date": 1794219114.0543513,
   "resume": {
@@ -2252,6 +2252,7 @@
     "Coal Stoker",
     "Chauffeur de charbon"
    ]
-  ]
+  ],
+  "a_refaire": true
  }
 }
