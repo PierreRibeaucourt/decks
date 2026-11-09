@@ -1568,7 +1568,7 @@
  },
  "Deck Tromo": {
   "slug": "tromo",
-  "date": 1794139246.5148737,
+  "date": 1794245424.1716263,
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/f/4/f40ad933-ddd9-4975-a222-21fe3305137c.jpg?1783915686",
@@ -1591,7 +1591,7 @@
    "maybe": 5,
    "modifie": 1794139120.275628,
    "note": "",
-   "prix_total": 117.32,
+   "prix_total": 117.37,
    "titre": "Tromo",
    "total": 100,
    "trop_cher": [
@@ -1780,7 +1780,7 @@
    ],
    [
     "Dissipation Field",
-    ""
+    "Champ de dissipation"
    ],
    [
     "Curse of Verbosity",

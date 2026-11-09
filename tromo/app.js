@@ -18,8 +18,12 @@ const MES_DECKS = PARTAGE && PARTAGE.auteur ? `Decks de ${PARTAGE.auteur}` : "Me
 let versionAtelier = (PARTAGE && PARTAGE.version) || "";       // version.py ; dans l'Atelier, lue par verifierVersion()
 // budget par carte (reglages.json, 5 € par défaut, 0 = pas d'alerte) : les cartes plus chères sont signalées
 const REGLAGES = (PARTAGE && PARTAGE.reglages) || window.REGLAGES || {};
-const BUDGET = REGLAGES.budget === undefined ? 5 : REGLAGES.budget > 0 ? REGLAGES.budget : Infinity;
-const BUDGET_TXT = String(BUDGET).replace(".", ",") + " €";
+let BUDGET, BUDGET_TXT;                            // changés par la page Options sans recharger
+function majBudget(b) {
+  BUDGET = b == null ? 5 : b > 0 ? b : Infinity;
+  BUDGET_TXT = String(BUDGET).replace(".", ",") + " €";
+}
+majBudget(REGLAGES.budget);
 
 // préférences d'affichage gardées d'une visite à l'autre (si le navigateur le permet)
 const PREF = {
@@ -134,20 +138,26 @@ const ICONES = {
   ouvrir: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/>',
   telecharger: '<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>',
   coche: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  moins: '<path d="M5 12h14"/>',
+  options: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
 };
 if (PARTAGE) $(".logo").href = PARTAGE.accueil === true ? "#/" : PARTAGE.accueil;
 const ico = (nom) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONES[nom] || ""}</svg>`;
 $$("[data-ico]").forEach((el) => el.insertAdjacentHTML("afterbegin", ico(el.dataset.ico)));
-// page partagée : à qui est la page, et l'Atelier à télécharger pour faire pareil avec ses decks ;
-// en bas, la licence, le code source et la page « C'est quoi, l'Atelier MTG ? », une seule pour le site : a-propos/
+// page partagée : à qui est la page, et l'Atelier à installer pour faire pareil avec ses decks (sauf sur a-propos/,
+// dont l'en-tête a déjà son bouton « Installer ») ; en bas, la licence, le code source et la page « C'est quoi,
+// l'Atelier MTG ? », une seule pour le site : a-propos/
 const TITRE_PARTAGE = document.title;
 const A_PROPOS = !PARTAGE ? "#/a-propos" : PARTAGE.page === "a-propos" ? "./"
   : (PARTAGE.accueil && PARTAGE.accueil !== true ? PARTAGE.accueil : "") + "a-propos/";
+// « Installer l'Atelier MTG » : la section Installation de cette page, pas GitHub (un débutant y attend un fichier à
+// télécharger, il y trouve du code)
+const INSTALLER = !PARTAGE ? "#/a-propos/installation" : PARTAGE.page === "a-propos" ? "#installation" : A_PROPOS + "#installation";
 if (PARTAGE) {
   const depot = PARTAGE.atelier ? esc(PARTAGE.atelier) : "";
-  $(".barre").insertAdjacentHTML("afterend", `<div class="bandeau-partage">
+  if (PARTAGE.page !== "a-propos") $(".barre").insertAdjacentHTML("afterend", `<div class="bandeau-partage">
     <p>Page ${PARTAGE.auteur ? `de <strong>${esc(PARTAGE.auteur)}</strong>, ` : ""}partagée avec <a href="${A_PROPOS}">l'Atelier MTG</a>. Pour gérer, tester et partager vos propres decks Commander, l'Atelier est gratuit.</p>
-    ${depot ? `<a class="btn btn-accent btn-petit" href="${depot}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a>` : ""}
+    <a class="btn btn-accent btn-petit" href="${INSTALLER}">${ico("telecharger")}Installer l'Atelier MTG</a>
   </div>`);
   $(".cadre").insertAdjacentHTML("afterend", `<footer class="pied-partage">
     <nav><a href="${A_PROPOS}">C'est quoi, l'Atelier MTG ?</a>${depot ? `<a href="${depot}" target="_blank" rel="noopener">Code source sur GitHub</a>
@@ -588,6 +598,8 @@ function majTitre() {
   } else if (parts[0] === "recherche") {
     const p = new URLSearchParams(qs || "");
     t = ["Recherche", p.get("nom") && `« ${p.get("nom")} »`, (p.get("deck") || "").replace(/^Deck /, "")].filter(Boolean).join(" · ");
+  } else if (parts[0] === "options") {
+    t = "Options";
   }
   document.title = t + " — Atelier MTG";
 }
@@ -600,15 +612,18 @@ async function route() {
   const [chemin, qs] = location.hash.replace(/^#\/?/, "").split(/\?(.*)/s);
   const parts = chemin.split("/");
   $("#lien-recherche").classList.toggle("actif", parts[0] === "recherche");
-  vue.classList.toggle("vue-large", parts[0] === "recherche");
+  $("#lien-options").classList.toggle("actif", parts[0] === "options");
+  vue.classList.toggle("vue-large", parts[0] === "recherche" || parts[0] === "options");
   vue.classList.remove("vue-pleine");                       // la page « C'est quoi » la remet : son en-tête prend toute la largeur
   try {
     if (PARTAGE && parts[0] === "a-propos" && PARTAGE.page !== "a-propos") location.replace(A_PROPOS);   // ancienne adresse
-    else if (parts[0] === "a-propos" || (PARTAGE && PARTAGE.page === "a-propos" && !parts[0])) vueAPropos();
+    else if (parts[0] === "a-propos") vueAPropos(parts[1] === "installation");
+    else if (PARTAGE && PARTAGE.page === "a-propos" && (!parts[0] || parts[0] === "installation")) vueAPropos(parts[0] === "installation");
     else if (PARTAGE && parts[0] === "recherche") vueRechercheVitrine();
     else if (PARTAGE && PARTAGE.deck) await vueDeck(PARTAGE.deck, (parts[0] === "deck" && parts[2]) || "liste");
     else if (PARTAGE && parts[0] === "deck" && parts[1]) location.replace(lienDeck(decodeURIComponent(parts[1])));
     else if (parts[0] === "recherche") await vueRecherche(new URLSearchParams(qs || ""));
+    else if (!PARTAGE && parts[0] === "options") await vueOptions();
     else if (parts[0] === "deck" && parts[1]) await vueDeck(decodeURIComponent(parts[1]), parts[2] || "liste", parts[3] ? decodeURIComponent(parts[3]) : null);
     else await vueAccueil();
   } catch (e) {
@@ -961,7 +976,7 @@ async function vueDeck(id, onglet, extra = null, donnees = null) {
     "Copier la liste pour",
     ...EXPORTS.map(([fmt, lib]) => [lib, () => copierListe(fmt, lib), "", "copier"]),
     ...(PARTAGE ? [] : [["Cardmarket (à acheter)", () => copierCardmarket(d), "", "panier"]]),
-    ...(PARTAGE ? [] : [null, ["Supprimer ce deck…", () => supprimerDeck(d), "btn-danger", "corbeille"]]),
+    ...(PARTAGE ? [] : [null, ["Renommer…", () => modaleRenommer(d), "", "crayon"], ["Supprimer ce deck…", () => supprimerDeck(d), "btn-danger", "corbeille"]]),
   ]);
   const contenu = $("#contenu");
   if (onglet === "stats") return ongletStats(contenu, d);
@@ -1126,6 +1141,267 @@ function modalePartage(d) {
     const s = await api(`/api/decks/${enc(d.id)}/partage`).catch(() => ({}));
     if (s.url) rendre(s); else publier();
   }, { focus: false });
+}
+
+function modaleRenommer(d) {
+  ouvrirModale(`
+    <h2>Renommer le deck</h2>
+    <label class="bloc">Nom du deck<input class="champ" id="rn-nom" maxlength="60" value="${esc(d.titre)}"></label>
+    <div class="boutons"><button class="btn" id="annuler">Annuler</button><button class="btn btn-accent" id="ok">Renommer</button></div>`, (b) => {
+    const champ = $("#rn-nom", b), ok = $("#ok", b);
+    const valider = async () => {
+      if (ok.disabled) return;
+      try {
+        ok.disabled = true;
+        const r = await api(`/api/decks/${enc(d.id)}/renommer`, { method: "POST", body: { nom: champ.value } });
+        fermerModale();
+        if (r.id === d.id) return;
+        renommerPrefs(d.id, r.id);
+        if (chat.cle === d.id) { chat.cle = r.id; PREF.set("chat-discussion", r.id); }
+        etat.deck = null;
+        etat.decks = await api("/api/decks");
+        remplirChoixDiscussion(etat.decks);
+        location.hash = `#/deck/${enc(r.id)}${location.hash.split("/")[3] ? "/" + location.hash.split("/")[3] : ""}`;
+        toast("Deck renommé.");
+      } catch (e) { erreur(e); ok.disabled = false; }
+    };
+    $("#annuler", b).onclick = fermerModale;
+    ok.onclick = valider;
+    champ.onkeydown = (ev) => { if (ev.key === "Enter") valider(); };
+  });
+  $("#rn-nom").select();
+}
+
+// ce que le navigateur retient d'un deck (dernière recherche, partie de « Jouer ») suit son nouveau nom
+function renommerPrefs(ancien, nouveau) {
+  try {
+    for (const k of Object.keys(localStorage)) {
+      let v = localStorage.getItem(k);
+      const k2 = k === "pref-" + cleDerniere(ancien) ? "pref-" + cleDerniere(nouveau) : k === "partie-" + ancien ? "partie-" + nouveau : k;
+      if (k.startsWith("pref-rch-derniere")) {
+        const p = new URLSearchParams(v);
+        if (p.get("deck") === ancien) { p.set("deck", nouveau); v = p.toString(); }
+      }
+      if (k2 !== k) localStorage.removeItem(k);
+      localStorage.setItem(k2, v);
+    }
+  } catch (_) {}
+}
+
+// ------------------------------------------------------------------ options : réglages de ce PC (reglages.json), démarrage, classeur
+async function vueOptions() {
+  vue.innerHTML = `<nav class="fil" aria-label="Fil d'Ariane"><a href="#/">Mes decks</a><span aria-hidden="true">›</span><span aria-current="page">Options</span></nav>
+    <section class="panneau options" id="opt-general"><p class="chargement">Chargement…</p></section>
+    <section class="panneau options" id="opt-classeur"></section>`;
+  optionsGenerales($("#opt-general"), await api("/api/options"));
+  classeurOptions($("#opt-classeur"));
+}
+
+// chaque champ s'enregistre quand on le quitte (ou Entrée), la case tout de suite
+function optionsGenerales(el, o) {
+  const budget = (b) => (b == null ? "" : String(b).replace(".", ","));
+  el.innerHTML = `<h2>Général</h2>
+    <label class="opt-ligne"><span>Nom affiché</span><input class="champ" name="nom" maxlength="60" value="${esc(o.nom)}" placeholder="${esc(o.github)}"></label>
+    <label class="opt-ligne"><span>Budget par carte</span><span class="opt-euros"><input class="champ" name="budget" inputmode="decimal" value="${budget(o.budget)}" placeholder="${budget(o.budget_defaut)}">€</span></label>
+    <label class="opt-ligne"><span>Compte GitHub</span><input class="champ" name="github" maxlength="39" value="${esc(o.github)}" autocomplete="off" spellcheck="false"></label>
+    ${o.demarrage == null ? "" : `<label class="opt-case"><input type="checkbox" name="demarrage" ${o.demarrage ? "checked" : ""}>Lancer l'Atelier au démarrage de Windows</label>`}`;
+  el.onchange = async (ev) => {
+    const c = ev.target;
+    if (!c.name) return;
+    try {
+      const r = await api("/api/options", { method: "POST", body: { [c.name]: c.type === "checkbox" ? c.checked : c.value } });
+      Object.assign(o, r);
+      majBudget(r.budget);
+      $('[name="nom"]', el).placeholder = r.github;
+      toast("Enregistré.");
+    } catch (e) { erreur(e); }
+    if (c.type === "checkbox") c.checked = !!o.demarrage;
+    else c.value = c.name === "budget" ? budget(o.budget) : o[c.name];       // la valeur gardée (nettoyée, ou l'ancienne)
+  };
+  el.onkeydown = (ev) => { if (ev.key === "Enter" && ev.target.matches("input.champ")) ev.target.blur(); };
+}
+
+// le classeur, présenté comme les résultats de la recherche : en-têtes Coul. · Nom VO · Nom VF · Type · Coût · Qté · Prix
+// (un clic trie, un second inverse), 30 cartes par page, en liste ou en images ; la couleur rangée comme Magic-Ville :
+// W, U, B, R, G, bicolores, multicolores, incolores, puis les terrains
+const COLONNES_CLASSEUR = [["couleur", "Coul."], ["nom", "Nom VO"], ["nomfr", "Nom VF"], ["type", "Type"], ["ccm", "Coût"], ["n", "Qté"], ["prix", "Prix"]];
+const TRI_CLASSEUR_DESC = { prix: true, n: true };          // sens naturel : les plus chères, les plus nombreuses d'abord
+const PAR_PAGE_CLASSEUR = 30;                               // comme la recherche
+function cleCouleur(f) {
+  if (/\bLand\b/.test(f.type || "")) return [8];
+  const c = (f.couleurs || []).map((k) => "WUBRG".indexOf(k)).filter((i) => i >= 0).sort();
+  return !c.length ? [7] : c.length === 1 ? c : [c.length > 2 ? 6 : 5, ...c];
+}
+const cmpListes = (a, b) => {
+  for (let i = 0; i < Math.max(a.length, b.length); i++) if ((a[i] ?? -1) !== (b[i] ?? -1)) return (a[i] ?? -1) - (b[i] ?? -1);
+  return 0;
+};
+const mvCarte = (x) => x.info.mv ?? 0;
+const estTerrainInfo = (x) => (/\bLand\b/.test(x.info.type || "") ? 1 : 0);
+const TRI_CLASSEUR = {
+  nom: () => 0,                                              // le nom départage toujours
+  nomfr: (a, b) => sansAccent(a.info.fr || a.nom).localeCompare(sansAccent(b.info.fr || b.nom)),
+  couleur: (a, b) => cmpListes(cleCouleur(a.info), cleCouleur(b.info)) || mvCarte(a) - mvCarte(b),
+  ccm: (a, b) => estTerrainInfo(a) - estTerrainInfo(b) || mvCarte(a) - mvCarte(b),        // les terrains à la fin
+  type: (a, b) => ORDRE_TYPES.indexOf(typeCarte(a.info.type)) - ORDRE_TYPES.indexOf(typeCarte(b.info.type)) || mvCarte(a) - mvCarte(b),
+  prix: (a, b) => (a.info.prix ?? -1) - (b.info.prix ?? -1),
+  n: (a, b) => a.n - b.n,
+};
+
+// une carte du classeur au format des résultats de la recherche : même présentation, même fiche
+const carteClasseur = (x) => {
+  const f = x.info || {};
+  return { nom: x.nom, n: x.n, fr: f.fr, cout: f.cout, type: f.type, type_fr: f.fr_type, pt: f.pt, texte: f.texte, texte_fr: f.fr_texte,
+    prix: f.prix, prix_lien: f.prix_lien, image: f.image, petite: f.petite, image_dos: (f.dos && f.dos.image) || "", gc: f.gc,
+    legal: !["banned", "not_legal"].includes(f.legal), couleurs: f.couleurs || [] };
+};
+
+const qteClasseur = (x) => `<span class="cl-qte">
+    <button type="button" class="btn-menu" data-n="${x.n - 1}" aria-label="Un de moins : ${esc(x.nom)}" title="Un de moins">${ico("moins")}</button>
+    <span class="cl-n">${x.n}</span>
+    <button type="button" class="btn-menu" data-n="${x.n + 1}" aria-label="Un de plus : ${esc(x.nom)}" title="Un de plus">${ico("plus")}</button></span>`;
+
+function ligneClasseur(x, i) {
+  const cher = (x.prix || 0) > BUDGET;
+  const apercu = `data-image="${esc(x.image)}" data-legende="${esc(`${x.fr || x.nom} — ${prixRch(x)}`)}" ${cher ? 'data-cher="1"' : ""}`;
+  const texte = (x.texte_fr || x.texte || "").split("\n").map((l) => l.trim() === "//" ? "<hr>" : l.trim() ? `<p>${texteMana(l)}</p>` : "").join("");
+  return `<article class="rch-carte" data-i="${i}" data-nom="${esc(x.nom)}">
+    <button type="button" class="rch-vignette" data-act="ouvrir" ${apercu} aria-label="Fiche de ${esc(x.nom)}">
+      ${x.petite ? `<img src="${esc(x.petite)}" alt="" loading="lazy">` : `<span class="sans-image">${esc(x.nom)}</span>`}</button>
+    <div class="rch-vo"><button type="button" class="rch-nom" data-act="ouvrir" ${apercu}>${esc(x.nom)}</button></div>
+    <div class="rch-vf">${x.fr && x.fr !== x.nom ? `<button type="button" class="rch-nom" data-act="ouvrir" ${apercu}>${esc(x.fr)}</button>` : ""}</div>
+    <div class="rch-typecourt">${esc(TYPE_COURT[typeCarte(x.type)] || "")}</div>
+    <div class="rch-cm">${mana(x.cout)}</div>
+    ${qteClasseur(x)}
+    <div class="rch-prix"><a class="prix ${cher ? "cher" : ""}" href="${esc(x.prix_lien || lienCardmarket(x.nom))}" target="_blank" rel="noopener" title="Cardmarket">${prixRch(x)}</a></div>
+    <div class="rch-detail">
+      <div class="rch-type">${esc(x.type_fr || x.type || "")}</div>
+      ${texte ? `<div class="rch-texte fs-texte">${texte}</div>` : ""}
+      ${x.pt ? `<div class="rch-pt">${esc(x.pt.replace(/loyauté (\S+)/g, "Loy. $1"))}</div>` : ""}
+    </div>
+  </article>`;
+}
+
+function carteImageClasseur(x, i) {
+  const cher = (x.prix || 0) > BUDGET;
+  return `<div class="carte-v rch-carte-v" data-i="${i}" data-nom="${esc(x.nom)}">
+    <button type="button" class="pile" data-act="ouvrir" aria-label="${esc(x.nom)} : fiche">${imageCarte({ petite: x.petite, image: x.image, nom: x.nom }, "recto")}</button>
+    <div class="legende-v"><span class="nom-v" title="${esc(x.nom + (x.fr && x.fr !== x.nom ? " — " + x.fr : ""))}">${esc(x.fr || x.nom)}</span><span class="prix-v ${cher ? "cher" : ""}">${prixRch(x)}</span></div>
+    <div class="rch-actions-v">${qteClasseur(x)}</div>
+  </div>`;
+}
+
+// le classeur : les cartes qu'on a en dehors des decks (Classeur/classeur.txt, sur ce PC seulement)
+async function classeurOptions(el) {
+  let cartes = [], vus = [], page = 1;
+  let tri = PREF.get("tri-classeur", "nom");
+  if (!TRI_CLASSEUR[tri]) tri = "nom";
+  let sens = PREF.get("sens-classeur", TRI_CLASSEUR_DESC[tri] ? "desc" : "asc");
+  let vueImages = PREF.get("vue-classeur", "liste") === "images";
+  el.innerHTML = `<div class="opt-titre"><h2>Classeur</h2>
+      <button type="button" class="btn btn-petit btn-discret" id="cl-copier">${ico("copier")}Copier la liste</button></div>
+    <div class="cl-outils"><div id="cl-ajout"></div><input class="champ" id="cl-filtre" type="search" placeholder="Filtrer…" aria-label="Filtrer le classeur"></div>
+    <details class="cl-coller"><summary>Coller une liste</summary>
+      <textarea class="champ" id="cl-liste" rows="6" placeholder="1 Sol Ring&#10;2 Lightning Bolt&#10;…"></textarea>
+      <div class="boutons"><button class="btn btn-accent btn-petit" id="cl-ajouter">Ajouter au classeur</button></div></details>
+    <div id="cl-res"><p class="chargement">Chargement…</p></div>`;
+  const res = $("#cl-res", el), filtre = $("#cl-filtre", el);
+  const nb = (l) => l.reduce((s, x) => s + x.n, 0);
+  const entete = () => `<div class="rch-cols">${COLONNES_CLASSEUR.map(([k, l]) => {
+    const actif = tri === k;
+    return `<button type="button" class="rch-col ${actif ? "actif" : ""}" data-tri="${k}" aria-pressed="${actif}">${l}${actif ? `<span aria-label="${sens === "desc" ? "décroissant" : "croissant"}">${sens === "desc" ? "↓" : "↑"}</span>` : ""}</button>`;
+  }).join("")}</div>`;
+  const rendre = () => {
+    const q = sansAccent(filtre.value.trim()), dir = sens === "desc" ? -1 : 1;
+    vus = cartes.filter((x) => !q || sansAccent(x.nom + " " + (x.info.fr || "")).includes(q))
+      .sort((a, b) => dir * TRI_CLASSEUR[tri](a, b) || (tri === "nom" ? dir : 1) * a.nom.localeCompare(b.nom)).map(carteClasseur);
+    const pages = Math.max(1, Math.ceil(vus.length / PAR_PAGE_CLASSEUR));
+    page = Math.min(Math.max(1, page), pages);
+    const debut = (page - 1) * PAR_PAGE_CLASSEUR, r = { page, pages }, n = nb(vus);
+    res.innerHTML = `
+      <div class="rch-entete">
+        <div class="rch-compte"><strong>${sepMilliers(n)} carte${n > 1 ? "s" : ""}</strong> <span class="muet">· ${euros(vus.reduce((s, x) => s + (x.prix || 0) * x.n, 0))}</span></div>
+        ${paginationRch(r)}
+        <div class="rch-outils"><div class="segments" role="group" aria-label="Affichage">${[["liste", "Liste"], ["images", "Images"]].map(([k, l]) =>
+          `<button type="button" data-vue="${k}" class="${(k === "images") === vueImages ? "actif" : ""}" aria-pressed="${(k === "images") === vueImages}">${l}</button>`).join("")}</div></div>
+      </div>
+      ${vus.length ? `<div class="rch-liste ${vueImages ? "etale" : "avec-images cl-table"}">${vueImages ? "" : entete()}${vus.slice(debut, debut + PAR_PAGE_CLASSEUR)
+        .map((x, j) => (vueImages ? carteImageClasseur : ligneClasseur)(x, debut + j)).join("")}</div>`
+        : `<div class="panneau vide"><p>Aucune carte.</p></div>`}
+      ${pages > 1 ? `<div class="rch-bas">${paginationRch(r)}</div>` : ""}`;
+  };
+  const modifier = async (corps) => {
+    const avant = nb(cartes);
+    const r = await api("/api/classeur", { method: "POST", body: corps });
+    cartes = r.cartes;
+    rendre();
+    return { n: nb(cartes) - avant, inconnues: r.inconnues };
+  };
+  res.onclick = async (ev) => {
+    const col = ev.target.closest(".rch-col");
+    if (col) {                                               // en-tête : trier, ou inverser l'ordre
+      if (col.dataset.tri === tri) sens = sens === "desc" ? "asc" : "desc";
+      else { tri = col.dataset.tri; sens = TRI_CLASSEUR_DESC[tri] ? "desc" : "asc"; }
+      PREF.set("tri-classeur", tri);
+      PREF.set("sens-classeur", sens);
+      page = 1;
+      return rendre();
+    }
+    const v = ev.target.closest("[data-vue]");
+    if (v) {
+      vueImages = v.dataset.vue === "images";
+      PREF.set("vue-classeur", v.dataset.vue);
+      return rendre();
+    }
+    const p = ev.target.closest("[data-page]");
+    if (p) {
+      const bas = !!p.closest(".rch-bas");
+      page = +p.dataset.page;
+      rendre();
+      if (bas) res.scrollIntoView({ block: "start" });
+      return;
+    }
+    const b = ev.target.closest("[data-n]");
+    if (b) {
+      b.disabled = true;
+      try { await modifier({ nom: b.closest("[data-nom]").dataset.nom, n: +b.dataset.n }); } catch (e) { erreur(e); b.disabled = false; }
+      return;
+    }
+    const o = ev.target.closest('[data-act="ouvrir"]');
+    if (o) ficheRecherche(+o.closest("[data-i]").dataset.i, { liste: vus, deck: null });
+  };
+  res.onchange = (ev) => {
+    if (!ev.target.matches(".rch-page")) return;
+    page = +ev.target.value || 1;
+    rendre();
+  };
+  filtre.oninput = () => { page = 1; rendre(); };
+  const rech = rechercheCarte($("#cl-ajout", el), { deck: () => null, placeholder: "Ajouter une carte…",
+    surChoix: async (x) => {
+      try { await modifier({ liste: "1 " + x.nom }); toast(`${x.fr || x.nom} : dans le classeur.`); rech.vider(); } catch (e) { erreur(e); }
+    } });
+  $("#cl-ajouter", el).onclick = async (ev) => {
+    const t = $("#cl-liste", el), b = ev.currentTarget;
+    if (!t.value.trim()) return;
+    b.disabled = true;
+    try {
+      const { n, inconnues } = await modifier({ liste: t.value });
+      t.value = inconnues.join("\n");                 // les introuvables restent, à corriger
+      toast([n && `${n} carte${n > 1 ? "s" : ""} ajoutée${n > 1 ? "s" : ""}.`,
+        inconnues.length && `Introuvable${inconnues.length > 1 ? "s" : ""} : ${inconnues.join(", ")}`].filter(Boolean).join(" "));
+    } catch (e) { erreur(e); }
+    b.disabled = false;
+  };
+  $("#cl-copier", el).onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(cartes.map((x) => `${x.n} ${x.nom}`).join("\n") + "\n");
+      toast("Liste copiée.");
+    } catch (e) { erreur(e); }
+  };
+  try {
+    cartes = (await api("/api/classeur")).cartes;
+    rendre();
+  } catch (e) { res.innerHTML = `<p class="erreur">${esc(e.message)}</p>`; }
 }
 
 async function supprimerDeck(d) {
@@ -1686,7 +1962,7 @@ function rechercheCarte(zone, { surChoix, surAjout = null, deck = () => etat.dec
     const deja = d && d.cartes.some((c) => c.nom === x.nom);
     const hors = d && d.identite && (x.couleurs || []).some((k) => !d.identite.includes(k));
     const cher = (x.prix || 0) > BUDGET;
-    const plus = !surAjout ? "" : deja && !/Basic/.test(x.type || "") ? `<span class="res-plus"></span>`
+    const plus = !surAjout ? "" : deja && !/\bBasic\b/.test(x.type || "") ? `<span class="res-plus"></span>`
       : `<button type="button" class="res-plus" data-plus="${i}" title="Ajouter au deck" aria-label="Ajouter ${esc(x.nom)} au deck">${ico("plus")}</button>`;
     return `<div class="res-ligne"><button type="button" class="res-carte ${i === actif ? "choisi" : ""}" data-i="${i}" role="option"
         data-image="${esc(x.image)}" data-legende="${esc(legende(x))}" ${cher ? 'data-cher="1"' : ""}>
@@ -2827,7 +3103,7 @@ async function suivreSimulation(el, d, id) {
 // ------------------------------------------------------------------ recherche de cartes (moteur façon Magic-Ville)
 // Mêmes fenêtres et mêmes règles que le moteur de Magic-Ville ; la recherche se fait sur la base locale (recherche.py).
 // Les critères vivent dans l'adresse (#/recherche?…) : précédent / suivant du navigateur, favoris, plusieurs onglets.
-const RCH_DEFAUTS = { fr: "1", en: "1", cm: "1", tm: "1", mvx: "1", fx: "1", ex: "1", format: "commander", ordre: "couleur" };
+const RCH_DEFAUTS = { fr: "1", en: "1", tm: "1", mvx: "1", fx: "1", ex: "1", format: "commander", ordre: "couleur" };
 const RCH_TYPES = [["AR", "Artefact"], ["CR", "Créature"], ["EN", "Enchantement"], ["IN", "Éphémère"],
   ["SO", "Rituel"], ["BAT", "Bataille"], ["PL", "Planeswalker"], ["LA", "Terrain"]];
 const RCH_SPE = [["", "Cartes spéciales"], ["colorless", "Symbole de mana incolore"], ["split", "Cartes doubles"], ["flip", "Cartes à inversion"],
@@ -2854,7 +3130,10 @@ const lettresWUBRG = (s, permis = "WUBRG") => [...permis].filter((k) => (s || ""
 function critDepuis(params) {
   const c = { ...RCH_DEFAUTS };
   for (const [k, v] of params) c[k] = v;
-  for (const k of ["doit", "peut", "mult", "img", "versions", "fun"]) delete c[k];      // critères retirés du formulaire (anciennes adresses)
+  // critères retirés du formulaire (anciennes adresses) ; « seules » est devenu la règle : aucune autre couleur que celles choisies
+  for (const k of ["doit", "peut", "mult", "img", "versions", "fun", "cout", "un", "seules"]) delete c[k];
+  if (c.cm === "2") c.oblig = lettresWUBRG(c.coul);       // ancienne case « Toutes » : chaque couleur choisie est obligatoire
+  delete c.cm;
   return c;
 }
 
@@ -2870,11 +3149,26 @@ function critVersHash(c) {
 const cleDerniere = (deck) => "rch-derniere" + (deck ? ":" + deck : "");
 
 // ---- fenêtres du formulaire
-function rchSymboles(groupe, valeur, lettres = "WUBRG") {
+// couleurs : un clic = « peut » (permise), un second = « doit » (la carte doit l'avoir), un troisième = retirée ;
+// l'incolore, deux états. Le mot s'écrit sous le symbole.
+const ETAT_COULEUR = { actif: "peut", oblig: "doit" };
+const titreCouleur = (k, etat) => (NOMS_COULEURS[k] || k)
+  + (etat === "oblig" ? " : doit · cliquer pour retirer" : etat ? ` : peut${k === "C" ? "" : " · cliquer pour doit"}` : "");
+
+function rchSymboles(groupe, valeur, lettres = "WUBRG", oblig = "") {
   return `<div class="rch-symboles" data-groupe="${groupe}" role="group">${[...lettres].map((k) => {
-    const on = (valeur || "").includes(k);
-    return `<button type="button" class="rch-sym ${on ? "actif" : ""}" data-k="${k}" aria-pressed="${on}" title="${esc(NOMS_COULEURS[k] || k)}">${symbole(k)}</button>`;
+    const etat = (oblig || "").includes(k) && k !== "C" ? "oblig" : (valeur || "").includes(k) ? "actif" : "";
+    return `<button type="button" class="rch-sym ${etat === "oblig" ? "actif oblig" : etat}" data-k="${k}" data-etat="${ETAT_COULEUR[etat] || ""}"
+      aria-pressed="${!!etat}" title="${esc(titreCouleur(k, etat))}">${symbole(k)}</button>`;
   }).join("")}</div>`;
+}
+
+function marquerCouleur(b, etat) {            // etat : "" (retirée), "actif" (peut), "oblig" (doit)
+  b.classList.toggle("actif", !!etat);
+  b.classList.toggle("oblig", etat === "oblig");
+  b.dataset.etat = ETAT_COULEUR[etat] || "";
+  b.setAttribute("aria-pressed", !!etat);
+  b.title = titreCouleur(b.dataset.k, etat);
 }
 
 function rchBascules(groupe, items, valeur, unique = false) {
@@ -3001,13 +3295,8 @@ function formulaireRecherche(c) {
   return `<form id="moteur" class="moteur" autocomplete="off">
     <div class="mt-rang mt-haut">
       <section class="fen fen-couleurs"><h3 class="fen-titre">Couleurs</h3>
-        ${rchSymboles("coul", c.coul, "WUBRGC")}
-        <div class="rch-cases rch-centre">${rchRadio("cm", "1", "Au moins une", c)}${rchRadio("cm", "2", "Toutes", c)}${rchCase("seules", "Uniquement celle(s) choisie(s)", c)}</div>
-        <div class="rch-cases rch-entre">${rchCase("id", "Id. couleur", c)}${d && d.identite ? `<button type="button" class="lien-discret" data-act="identite" title="Couleurs du commandant et incolores">Couleurs de ${esc(d.titre)} ${identiteHtml(d.identite)}</button>` : ""}</div>
-        <div class="rch-cases rch-entre rch-cout">
-          <label class="rch-ligne-champ">Coût ${rchChamp("cout", c, 'placeholder="2BR, U?, 1**" size="9" title="Chiffres = mana générique ; ? = un mana générique quelconque ; * = un mana coloré quelconque ; l\'hybride compte pour ses deux couleurs"')}</label>
-          ${rchCase("un", "Un seul symbole par couleur", c)}
-        </div>
+        ${rchSymboles("coul", c.coul, "WUBRGC", c.oblig)}
+        <div class="rch-cases ${d && d.identite ? "rch-entre" : "rch-centre"}">${rchCase("id", "Identité de couleur", c)}${d && d.identite ? `<button type="button" class="lien-discret" data-act="identite" title="Couleurs du commandant et incolores">Couleurs de ${esc(d.titre)} ${identiteHtml(d.identite)}</button>` : ""}</div>
         ${rchSelect("spe", RCH_SPE, c)}
       </section>
       <section class="fen fen-types"><h3 class="fen-titre">Types</h3>
@@ -3070,19 +3359,19 @@ function formulaireRecherche(c) {
 function lireFormulaire(form) {
   const c = {};
   const val = (n) => (form.elements[n] ? form.elements[n].value.trim() : "");
-  for (const n of ["nom", "type", "texte", "cout", "mv", "mvmax", "mvmin", "f", "fmax", "fmin", "e", "emax", "emin", "prixmax", "prixmin", "spe", "spt", "gc", "cmd"]) c[n] = val(n);
+  for (const n of ["nom", "type", "texte", "mv", "mvmax", "mvmin", "f", "fmax", "fmin", "e", "emax", "emin", "prixmax", "prixmin", "spe", "spt", "gc", "cmd"]) c[n] = val(n);
   c.fn = (rch.fns || []).join(",");
-  for (const n of ["fr", "en", "vanilla", "seules", "id", "un", "mvx", "pair", "impair", "fx", "ex", "neuves", "horsdeck"]) {
+  for (const n of ["fr", "en", "vanilla", "id", "mvx", "pair", "impair", "fx", "ex", "neuves", "horsdeck"]) {
     const el = form.elements[n];
     c[n] = el && el.checked ? "1" : "";
   }
-  c.cm = (form.querySelector('input[name="cm"]:checked') || {}).value || "1";
   c.tm = (form.querySelector('input[name="tm"]:checked') || {}).value || "1";
   c.types = $$('input[name="types"]:checked', form).map((x) => x.value).join(",");
   for (const g of $$(".rch-symboles[data-groupe], .rch-bascules[data-groupe]", form)) {
     const on = $$(".actif", g).map((b) => b.dataset.k);
     c[g.dataset.groupe] = g.dataset.unique ? (on[0] || "") : on.join("");
   }
+  c.oblig = $$('.rch-symboles[data-groupe="coul"] .oblig', form).map((b) => b.dataset.k).join("");
   c.eds = [...(rch.eds || [])].join(",");
   return c;
 }
@@ -3101,9 +3390,11 @@ function resumeCrit(c) {
   if (c.type) r.push(`Type : ${c.type}`);
   if (c.texte) r.push(`Texte : ${c.texte}`);
   if (c.vanilla === "1") r.push("Sans texte");
-  if (c.cout) r.push(`Coût : ${c.cout}`);
-  if (c.un === "1") r.push("Un seul symbole par couleur");
-  if (c.coul) r.push(`Couleurs ${[...c.coul].join(" ")}${c.id === "1" ? " (identité)" : ""}${c.seules === "1" ? ", uniquement" : ""}${c.cm === "2" ? ", toutes" : ""}`);
+  if (c.coul || c.oblig) {
+    const doit = [...(c.oblig || "")], peut = [...(c.coul || "")].filter((k) => !doit.includes(k));
+    r.push(`Couleurs${c.id === "1" ? " (identité)" : ""} : ${[doit.length && doit.join(" ") + " doit", peut.length && peut.join(" ") + " peut"]
+      .filter(Boolean).join(", ")}`);
+  }
   if (c.types) r.push(c.types.split(",").map((k) => (RCH_TYPES.find((t) => t[0] === k) || [k, k])[1]).join(c.tm === "2" ? " et " : " ou "));
   if (c.spt) r.push((RCH_SPT.find((t) => t[0] === c.spt) || ["", c.spt])[1]);
   if (c.spe) r.push((RCH_SPE.find((t) => t[0] === c.spe) || ["", c.spe])[1]);
@@ -3191,7 +3482,7 @@ function invitation(titre, texte) {
   return `<div class="vitrine-invite panneau">
     <h2>${esc(titre)}</h2>
     <p>${esc(texte)}</p>
-    ${PARTAGE.atelier ? `<a class="btn btn-accent" href="${esc(PARTAGE.atelier)}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a>` : ""}
+    <a class="btn btn-accent" href="${INSTALLER}">${ico("telecharger")}Installer l'Atelier MTG</a>
   </div>`;
 }
 
@@ -3219,18 +3510,72 @@ const AUTEUR_ATELIER = "PierreRibeaucourt";
 const DEPOT_ATELIER = "https://github.com/PierreRibeaucourt/atelier-mtg";
 // les captures de la page : sur le site de decks de l'auteur, pas dans le dépôt de code (on y voit des cartes et une discussion)
 const CAPTURES_ATELIER = "https://pierreribeaucourt.github.io/decks/a-propos/";
+// pour qui n'a pas encore d'assistant IA : Claude Code dans l'application de bureau, sans terminal (guide en français)
+const CLAUDE_BUREAU = "https://code.claude.com/docs/fr/desktop-quickstart";
 const MODULES_ATELIER = [
   ["decks", "Vos decks, à votre façon", "Créez, importez et éditez vos decks comme partout, avec une vue personnalisable : liste ou visuel, taille des cartes, rangement par type, par tag ou par fonction."],
   ["versions", "Versions et historique", "Chaque modification est gardée. Enregistrez des versions, comparez deux listes, revenez en arrière."],
   ["statistiques", "Statistiques et base de mana", "Courbe de mana, types, fonctions des cartes et surtout la répartition des sources de couleur : elle compte les terrains et les cartes de ramp, et dit si chaque couleur est confortable."],
   ["combos", "Combos", "Les combos du deck sont repérées automatiquement, en croisant plusieurs sources : MTGPics (la base de Magic-Ville) et Commander Spellbook."],
   ["bracket", "Bracket", "Le bracket est estimé automatiquement selon les règles officielles : Game Changers, combos infinies à deux cartes, tuteurs… et comparé à l'estimation de Commander Spellbook."],
-  ["discussion", "Discussion avec Claude", "Facultative, à droite de l'écran : Claude connaît vos decks et aide à catégoriser les cartes, faire un cut, chercher des idées ou vérifier une interaction."],
+  ["discussion", "Discussion avec Claude", "Facultative, à droite de l'écran : Claude connaît vos decks et aide à catégoriser les cartes, faire un cut, chercher des idées ou vérifier une interaction. Aucune clé d'API à créer : elle passe par Claude Code et votre abonnement Claude payant (Pro ou plus), dont elle consomme simplement l'usage normal."],
   ["jouer", "Table de jeu", "Jouez vos decks en solo pour tester les mains de départ et les premiers tours : pioche, mulligan, jetons, marqueurs, planeswalkers, tout au clic ou au glisser."],
   ["recherche", "Recherche avancée", "Une recherche multicritère comme celle de Magic-Ville, avec en plus un filtre de prix Cardmarket et une catégorisation automatique des cartes : ramp, pioche, tuteur, removal…"],
 ];
+// les questions des visiteurs (joueurs experts, débutants, non-informaticiens), repliées ; une réponse en HTML commence par « < »
+const FAQ_ATELIER = [
+  ["Installation et sécurité", [
+    ["Il n'y a pas de fichier à télécharger ? Je ne suis pas informaticien.",
+      "L'Atelier se récupère sur GitHub, sous forme de code. Le plus simple est de confier l'installation à un assistant IA qui agit sur votre ordinateur, comme Claude Code : collez-lui la consigne ci-dessus. Il installe ce qu'il faut, vous pose trois questions et crée un raccourci sur le bureau. Ensuite, les mises à jour s'installent en un clic."],
+    ["Ça marche sur Mac et Linux ?",
+      "<p>En principe oui : c'est le même programme, lancé par <code>atelier.sh</code>. Mais pour l'instant, seul Windows est testé.</p>"],
+    ["Est-ce sûr ?",
+      "L'Atelier ne s'ouvre que sur votre PC : il n'est pas accessible depuis le réseau. Il n'a pas d'installeur certifié, mais tout son code est public : vous, ou votre assistant IA, pouvez le lire avant de l'installer."],
+  ]],
+  ["Claude", [
+    ["Faut-il payer pour Claude ?",
+      "Claude est facultatif : sans lui, tout le reste fonctionne. Pour s'en servir, il faut un abonnement Claude payant (Pro ou plus), car le compte gratuit ne donne pas accès à Claude Code."],
+    ["Va-t-il épuiser mon abonnement ?",
+      "Il ne travaille que quand vous lui écrivez, ou quand vous demandez l'analyse des synergies d'un deck : rien ne tourne en arrière-plan. Les combos, le bracket, les statistiques et les fonctions des cartes ne passent pas par lui. « Compacter » résume une longue discussion pour qu'elle consomme moins."],
+  ]],
+  ["Vos cartes et vos données", [
+    ["Comment entrent mes cartes ?",
+      "On colle une liste copiée depuis Moxfield, Archidekt ou MTG Arena. La liste d'un deck préconstruit se trouve sur ces sites. Les cartes rangées hors des decks se collent de la même façon dans le classeur."],
+    ["Et sur mon téléphone ?",
+      "L'Atelier s'ouvre sur le PC. Pour emporter un deck, « Partager » le publie en ligne, sur une page comme celle-ci : elle se lit sur téléphone et se met à jour toute seule quand le deck change. Il faut un compte GitHub, gratuit : c'est lui qui héberge votre page."],
+    ["Puis-je partir avec mes decks ?",
+      "Oui. Chaque deck est un dossier sur votre disque, avec sa liste en texte (format Archidekt, tags compris), son historique et ses versions. Le menu « … » copie la liste pour Archidekt, Moxfield, MTG Arena ou MTGO."],
+  ]],
+  ["Magic", [
+    ["Peut-on jouer en ligne contre d'autres joueurs ?",
+      "Non, ce n'est pas un jeu vidéo. La table de jeu se joue seul, à la main, pour tester les mains de départ et les premiers tours."],
+    ["Comment simuler des parties à quatre ?",
+      "En simplifiant. Les trois adversaires sont des archétypes (aggro, contrôle, jetons, combo…). Selon des probabilités, ils posent des créatures, retirent vos menaces, rasent la table ou gagnent sur une combo, mais sans politique. Le simulateur mesure la vitesse et la régularité de votre deck, et compare deux versions sur les mêmes parties."],
+    ["Je débute, est-ce pour moi ?",
+      `<p>Oui. Les statistiques comparent votre deck à un modèle type, et Claude peut expliquer une règle, une carte ou proposer des ajouts dans votre budget. Les mots de cette page :</p>
+      <ul class="ap-lexique">
+        <li><dfn>Ramp</dfn> : les cartes qui donnent du mana en plus, pour jouer plus gros plus tôt.</li>
+        <li><dfn>Removal</dfn> : les cartes qui détruisent ou exilent une menace adverse.</li>
+        <li><dfn>Tuteur</dfn> : une carte qui va chercher une carte précise dans votre bibliothèque.</li>
+        <li><dfn>Combo</dfn> : des cartes qui, ensemble, gagnent la partie ou créent un effet infini.</li>
+        <li><dfn>Cut</dfn> : les cartes à retirer pour revenir à 100.</li>
+        <li><dfn>Bracket</dfn> : le niveau de puissance officiel d'un deck Commander, de 1 à 5, pour jouer à armes égales.</li>
+        <li><dfn>Game Changers</dfn> : une liste officielle de cartes très puissantes, qui font monter le bracket.</li>
+      </ul>`],
+    ["La recherche comprend-elle la syntaxe Scryfall ?",
+      "Non. Elle reprend le formulaire de Magic-Ville, où les mêmes critères se cochent : identité de couleur, texte, coût… Elle ajoute le prix et la fonction des cartes."],
+    ["Les règles et les combos sont-ils à jour ?",
+      "La liste des Game Changers est relue chaque jour, et les nouvelles cartes arrivent toutes seules à chaque extension. Les combos viennent de Commander Spellbook et de MTGPics, entretenues par leurs communautés. Si les règles des brackets changent, une mise à jour de l'Atelier les suit."],
+    ["Les prix tiennent-ils compte de l'état, de la langue, du port ?",
+      "Non : c'est le prix indicatif de Cardmarket, pour l'édition la moins chère. On n'achète pas dans l'Atelier. En revanche, l'onglet Achats copie les cartes qui vous manquent au format des listes de souhaits de Cardmarket, et c'est Cardmarket qui calcule ensuite le panier."],
+  ]],
+];
 
-function vueAPropos() {
+// espaces insécables de la typographie française : « ? » ou « » » jamais seuls en début de ligne
+const insecables = (t) => t.replace(/ ([?!:;»])/g, " $1").replace(/« /g, "« ");
+
+// installation : arriver directement à la section Installation (bouton « Installer l'Atelier MTG » d'une autre page)
+function vueAPropos(installation = false) {
   scrollTo(0, 0);
   etat.deck = null;
   const depot = esc((PARTAGE && PARTAGE.atelier) || DEPOT_ATELIER);
@@ -3250,7 +3595,7 @@ function vueAPropos() {
           <h1>L'Atelier <span>MTG</span></h1>
           <p class="ap-accroche">Vos decks Commander,<br>de la liste à la table.</p>
           <ul class="ap-puces">${["Base de mana", "Combos", "Bracket", "Table de jeu", "Recherche avancée", "Claude"].map((x) => `<li>${x}</li>`).join("")}</ul>
-          <p class="ap-cta"><a class="btn btn-accent" href="${depot}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a></p>
+          <p class="ap-cta"><a class="btn btn-accent" href="${INSTALLER}" id="ap-installer">${ico("telecharger")}Installer l'Atelier MTG</a></p>
           <p class="ap-mention"><b>Gratuit</b> · open source · tout reste sur votre PC${versionAtelier ? ` · version ${esc(versionAtelier)}` : ""}</p>
         </div>
       </div>
@@ -3270,7 +3615,7 @@ function vueAPropos() {
       <h2>Et aussi</h2>
       <div class="ap-grille">
         ${fonction("Import en un collage", "Une liste copiée depuis Moxfield, Archidekt ou MTG Arena devient un deck, rangé par catégories.")}
-        ${fonction("Prix et budget", "Prix Cardmarket du jour pour chaque carte et chaque deck, avec une alerte au-delà de votre budget par carte.")}
+        ${fonction("Prix et budget", "Prix indicatif Cardmarket du jour pour chaque carte et chaque deck, avec une alerte au-delà de votre budget par carte.")}
         ${fonction("Simulations", "Un simulateur multijoueur joue des centaines de parties pour mesurer la régularité d'un deck et comparer deux versions.")}
         ${fonction("Partage simplifié", "Publication en un clic d'une page de présentation légère, comme celle-ci, à partager avec votre groupe de jeu.")}
       </div>
@@ -3286,14 +3631,25 @@ function vueAPropos() {
           sans aucune configuration IA.</li>
       </ul>
 
-      <h2>Installation</h2>
-      <p>Le dépôt de code et les instructions détaillées sont sur GitHub, testés et validés sous Windows.</p>
-      <p><a class="btn btn-accent" href="${depot}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a>
-        <a class="ap-depot" href="${depot}" target="_blank" rel="noopener">${depot.replace("https://", "")}</a></p>
-      <h3>Démarrage rapide, avec un assistant IA</h3>
-      <p>Si vous utilisez un agent de développement (Claude Code, Cursor, Copilot…), collez simplement cette consigne :</p>
+      <h2 id="installation">Installation</h2>
+      <p>L'Atelier s'installe une fois sur votre ordinateur, puis s'ouvre par un raccourci sur le bureau. Il est testé sous
+        Windows ; il devrait marcher aussi sous macOS et Linux.</p>
+      <h3>Le plus simple : avec un assistant IA</h3>
+      <p>Collez cette consigne à un assistant IA qui agit sur votre ordinateur (Claude Code, Cursor, Copilot…) : il installe
+        tout et vous pose trois questions.</p>
       <div class="ap-consigne"><code>${esc(consigne)}</code>
         <button type="button" class="btn btn-petit btn-discret" id="ap-copier">${ico("copier")}Copier</button></div>
+      <p>Pas encore d'assistant IA ? Installez <a href="${CLAUDE_BUREAU}" target="_blank" rel="noopener">l'application Claude
+        pour ordinateur</a> (abonnement Pro ou plus), ouvrez son onglet Code, choisissez le dossier où ranger l'Atelier, puis
+        collez-y la consigne.</p>
+      <h3>À la main</h3>
+      <p>Il faut Python 3.10 ou plus récent, et git. Les commandes sont sur GitHub :
+        <a class="ap-depot" href="${depot}" target="_blank" rel="noopener">${depot.replace("https://", "")}</a></p>
+
+      <h2>Questions fréquentes</h2>
+      ${FAQ_ATELIER.map(([groupe, questions]) => `<h3 class="ap-faq-groupe">${groupe}</h3>
+        ${questions.map(([q, r]) => `<details class="ap-faq"><summary>${insecables(q)}${ico("plus")}</summary>
+          <div class="ap-faq-rep">${insecables(r.startsWith("<") ? r : `<p>${r}</p>`)}</div></details>`).join("")}`).join("")}
 
       <h2>Genèse du projet</h2>
       <p class="ap-signature">Par ${esc(AUTEUR_ATELIER)}, créateur de l'Atelier</p>
@@ -3321,6 +3677,10 @@ function vueAPropos() {
   $("#ap-copier").onclick = async () => {
     try { await navigator.clipboard.writeText(consigne); toast("Consigne copiée."); } catch (e) { erreur(e); }
   };
+  // un saut, pas un défilement animé : les captures qui se chargent en chemin le feraient s'arrêter trop tôt
+  const aInstallation = () => $("#installation").scrollIntoView();
+  $("#ap-installer").onclick = (ev) => { ev.preventDefault(); aInstallation(); };      // même page : sans la redessiner
+  if (installation) aInstallation();
 }
 
 // une capture en grand, par-dessus la page ; un clic ou Échap la referme
@@ -3336,7 +3696,7 @@ function zoomer(img) {
 }
 
 function critIdentite(d) {
-  return { coul: lettresWUBRG(d.identite.join(""), "WUBRG") + "C", cm: "1", seules: "1", id: "1", format: "commander" };
+  return { coul: lettresWUBRG(d.identite.join(""), "WUBRG") + "C", id: "1", format: "commander" };
 }
 
 function majInfosDeck() {
@@ -3369,6 +3729,8 @@ function rendreFormulaire() {
   });
   form.addEventListener("click", (ev) => {
     const s = ev.target.closest(".rch-sym, .rch-bascule:not([data-fn])");
+    if (s && s.closest('[data-groupe="coul"]'))
+      return marquerCouleur(s, !s.classList.contains("actif") ? "actif" : s.classList.contains("oblig") || s.dataset.k === "C" ? "" : "oblig");
     if (s) {
       const g = s.closest("[data-groupe]");
       const v = !s.classList.contains("actif");
@@ -3384,9 +3746,7 @@ function rendreFormulaire() {
     if (a.dataset.act === "budget") { form.elements.prixmax.value = String(BUDGET); form.elements.prixmax.focus(); return; }
     if (a.dataset.act === "identite" && rch.deck) {
       const id = critIdentite(rch.deck);
-      $$('.rch-symboles[data-groupe="coul"] .rch-sym', form).forEach((b) => { const on = id.coul.includes(b.dataset.k); b.classList.toggle("actif", on); b.setAttribute("aria-pressed", on); });
-      form.querySelector('input[name="cm"][value="1"]').checked = true;
-      form.elements.seules.checked = true;
+      $$('.rch-symboles[data-groupe="coul"] .rch-sym', form).forEach((b) => marquerCouleur(b, id.coul.includes(b.dataset.k) ? "actif" : ""));
       form.elements.id.checked = true;
       const f = $('.rch-bascules[data-groupe="format"]', form);
       $$(".rch-bascule", f).forEach((b) => { const on = b.dataset.k === "commander"; b.classList.toggle("actif", on); b.setAttribute("aria-pressed", on); });
@@ -3604,7 +3964,7 @@ function rendreResultats(z, r) {
         <button class="btn btn-petit" id="rch-sens" title="Inverser l'ordre">${sens === "desc" ? "↓" : "↑"}</button>
       </div>
     </div>
-    ${r.total ? `<div class="rch-liste ${vueImages ? "etale" : "avec-images"}">${r.cartes.map((x, i) => (vueImages ? carteImageRch(x, i) : ligneRch(x, i))).join("")}</div>`
+    ${r.total ? `<div class="rch-liste ${vueImages ? "etale" : "avec-images"}">${vueImages ? "" : enteteRch(c, sens)}${r.cartes.map((x, i) => (vueImages ? carteImageRch(x, i) : ligneRch(x, i))).join("")}</div>`
       : `<div class="panneau vide"><p>Aucune carte.</p></div>`}
     <div class="rch-bas">${paginationRch(r)}</div>
     <p class="muet petit rch-base">${baseTexte(r.base)}</p>`;
@@ -3622,11 +3982,16 @@ function rendreResultats(z, r) {
     rendreResultats(z, r);
   }));
   $("#rch-tri", z).onchange = (ev) => { location.hash = "#/recherche?" + critVersHash({ ...rch.crit, ordre: ev.target.value, sens: "", page: "" }); };
-  $("#rch-sens", z).onclick = () => {
+  const inverser = () => {
     const def = RCH_TRI_DESC[rch.crit.ordre] ? "desc" : "asc";
     const nouveau = sens === "desc" ? "asc" : "desc";
     location.hash = "#/recherche?" + critVersHash({ ...rch.crit, sens: nouveau === def ? "" : nouveau, page: "" });
   };
+  $("#rch-sens", z).onclick = inverser;
+  $$(".rch-col", z).forEach((b) => b.addEventListener("click", () => {          // en-têtes de la liste : trier, ou inverser
+    if (b.classList.contains("actif")) return inverser();
+    location.hash = "#/recherche?" + critVersHash({ ...rch.crit, ordre: b.dataset.tri, sens: "", page: "" });
+  }));
   $$(".rch-page", z).forEach((p) => p.addEventListener("change", () => {
     const n = Math.max(1, Math.min(r.pages, Math.round(+p.value) || 1));
     location.hash = lienPage(n);
@@ -3703,24 +4068,40 @@ function texteCarteRch(x) {
   return (t || "").split("\n").map((l) => l.trim() === "//" ? "<hr>" : l.trim() ? `<p>${texteMana(l)}</p>` : "").join("");
 }
 
+// liste façon Magic-Ville : sous les en-têtes Coul. · Nom VO · Nom VF · Type · Coût (un clic trie, un second inverse) et
+// Prix (à la place des éditions) ; sous les noms, le type complet, le texte, puis force/endurance ou loyauté à droite
+const COLONNES_RCH = [["couleur", "Coul."], ["nom", "Nom VO"], ["nomfr", "Nom VF"], ["type", "Type"], ["cout", "Coût"], ["prix", "Prix"]];
+const TYPE_COURT = { "Créatures": "Créature", "Planeswalkers": "Planeswalker", "Batailles": "Bataille", "Éphémères": "Éphémère",
+  "Rituels": "Rituel", "Artefacts": "Artefact", "Enchantements": "Enchantement", "Terrains": "Terrain" };
+
+function enteteRch(c, sens) {
+  return `<div class="rch-cols">${COLONNES_RCH.map(([k, l]) => {
+    const actif = (c.ordre || "couleur") === k;
+    return `<button type="button" class="rch-col ${actif ? "actif" : ""}" data-tri="${k}" aria-pressed="${actif}">${l}${actif ? `<span aria-label="${sens === "desc" ? "décroissant" : "croissant"}">${sens === "desc" ? "↓" : "↑"}</span>` : ""}</button>`;
+  }).join("")}</div>`;
+}
+
 function ligneRch(x, i) {
   const cher = (x.prix || 0) > BUDGET;
   const typeAff = rch.crit.fr !== "" && x.type_fr ? x.type_fr : x.type;
+  const apercu = `data-image="${esc(x.image)}" data-legende="${esc(`${x.fr || x.nom} — ${prixRch(x)}`)}" ${cher ? 'data-cher="1"' : ""}`;
+  const badges = badgesRch(x);
   return `<article class="rch-carte" data-i="${i}">
-    <button type="button" class="rch-vignette" data-act="ouvrir" data-image="${esc(x.image)}" data-legende="${esc(`${x.fr || x.nom} — ${prixRch(x)}`)}" ${cher ? 'data-cher="1"' : ""} aria-label="Fiche de ${esc(x.nom)}">
+    <button type="button" class="rch-vignette" data-act="ouvrir" ${apercu} aria-label="Fiche de ${esc(x.nom)}">
       ${x.petite ? `<img src="${esc(x.petite)}" alt="" loading="lazy">` : `<span class="sans-image">${esc(x.nom)}</span>`}</button>
-    <div class="rch-corps">
-      <div class="rch-haut">
-        <div class="rch-noms" data-image="${esc(x.image)}" data-legende="${esc(`${x.fr || x.nom} — ${prixRch(x)}`)}" ${cher ? 'data-cher="1"' : ""}><button type="button" class="rch-nom" data-act="ouvrir">${esc(x.nom)}</button>${x.fr && x.fr !== x.nom ? `<span class="rch-vf">${esc(x.fr)}</span>` : ""}</div>
-        ${mana(x.cout)}
-      </div>
-      <div class="rch-type">${esc(typeAff)}${x.pt ? ` <span class="rch-pt">${esc(x.pt)}</span>` : ""}</div>
+    <div class="rch-vo"><button type="button" class="rch-nom" data-act="ouvrir" ${apercu}>${esc(x.nom)}</button></div>
+    <div class="rch-vf">${x.fr && x.fr !== x.nom ? `<button type="button" class="rch-nom" data-act="ouvrir" ${apercu}>${esc(x.fr)}</button>` : ""}</div>
+    <div class="rch-typecourt">${esc(TYPE_COURT[typeCarte(x.type)] || "")}</div>
+    <div class="rch-cm">${mana(x.cout)}</div>
+    <div class="rch-prix">
+      <a class="prix ${cher ? "cher" : ""}" href="${esc(lienCardmarket(x.nom))}" target="_blank" rel="noopener" title="Cardmarket">${prixRch(x)}</a>
+      ${badges ? `<span class="rch-badges">${badges}</span>` : ""}
+      ${rch.deck ? `<span class="rch-actions">${etatDeckRch(x)}</span>` : ""}
+    </div>
+    <div class="rch-detail">
+      <div class="rch-type">${esc(typeAff)}</div>
       ${x.texte || x.texte_fr ? `<div class="rch-texte fs-texte">${texteCarteRch(x)}</div>` : ""}
-      <div class="rch-pied">
-        <a class="prix ${cher ? "cher" : ""}" href="${esc(lienCardmarket(x.nom))}" target="_blank" rel="noopener" title="Cardmarket">${prixRch(x)}</a>
-        <span class="rch-badges">${badgesRch(x)}</span>
-        <span class="rch-actions">${etatDeckRch(x)}</span>
-      </div>
+      ${x.pt ? `<div class="rch-pt">${esc(x.pt.replace(/loyauté (\S+)/g, "Loy. $1"))}</div>` : ""}
     </div>
   </article>`;
 }
@@ -4383,4 +4764,9 @@ if (!PARTAGE) {
   verifierVersion();
   setTimeout(verifierVersion, 30000);                // l'Atelier lit le dépôt quelques secondes après son lancement
   setInterval(verifierVersion, 3 * 3600 * 1000);
+}
+// le navigateur garde la page « L'Atelier n'est pas lancé » (avec de quoi le lancer) pour quand l'adresse ne répond plus (sw.js)
+if (!PARTAGE && "serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+  caches.open("atelier-eteint").then((c) => c.add("/eteint")).catch(() => {});     // sa version du jour : bouton Lancer ou non
 }
