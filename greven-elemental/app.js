@@ -144,17 +144,20 @@ const ICONES = {
 if (PARTAGE) $(".logo").href = PARTAGE.accueil === true ? "#/" : PARTAGE.accueil;
 const ico = (nom) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONES[nom] || ""}</svg>`;
 $$("[data-ico]").forEach((el) => el.insertAdjacentHTML("afterbegin", ico(el.dataset.ico)));
-// page partagée : à qui est la page, et l'Atelier à télécharger pour faire pareil avec ses decks (sauf sur a-propos/,
-// dont l'en-tête a déjà son bouton « Télécharger ») ; en bas, la licence, le code source et la page « C'est quoi,
+// page partagée : à qui est la page, et l'Atelier à installer pour faire pareil avec ses decks (sauf sur a-propos/,
+// dont l'en-tête a déjà son bouton « Installer ») ; en bas, la licence, le code source et la page « C'est quoi,
 // l'Atelier MTG ? », une seule pour le site : a-propos/
 const TITRE_PARTAGE = document.title;
 const A_PROPOS = !PARTAGE ? "#/a-propos" : PARTAGE.page === "a-propos" ? "./"
   : (PARTAGE.accueil && PARTAGE.accueil !== true ? PARTAGE.accueil : "") + "a-propos/";
+// « Installer l'Atelier MTG » : la section Installation de cette page, pas GitHub (un débutant y attend un fichier à
+// télécharger, il y trouve du code)
+const INSTALLER = !PARTAGE ? "#/a-propos/installation" : PARTAGE.page === "a-propos" ? "#installation" : A_PROPOS + "#installation";
 if (PARTAGE) {
   const depot = PARTAGE.atelier ? esc(PARTAGE.atelier) : "";
   if (PARTAGE.page !== "a-propos") $(".barre").insertAdjacentHTML("afterend", `<div class="bandeau-partage">
     <p>Page ${PARTAGE.auteur ? `de <strong>${esc(PARTAGE.auteur)}</strong>, ` : ""}partagée avec <a href="${A_PROPOS}">l'Atelier MTG</a>. Pour gérer, tester et partager vos propres decks Commander, l'Atelier est gratuit.</p>
-    ${depot ? `<a class="btn btn-accent btn-petit" href="${depot}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a>` : ""}
+    <a class="btn btn-accent btn-petit" href="${INSTALLER}">${ico("telecharger")}Installer l'Atelier MTG</a>
   </div>`);
   $(".cadre").insertAdjacentHTML("afterend", `<footer class="pied-partage">
     <nav><a href="${A_PROPOS}">C'est quoi, l'Atelier MTG ?</a>${depot ? `<a href="${depot}" target="_blank" rel="noopener">Code source sur GitHub</a>
@@ -614,7 +617,8 @@ async function route() {
   vue.classList.remove("vue-pleine");                       // la page « C'est quoi » la remet : son en-tête prend toute la largeur
   try {
     if (PARTAGE && parts[0] === "a-propos" && PARTAGE.page !== "a-propos") location.replace(A_PROPOS);   // ancienne adresse
-    else if (parts[0] === "a-propos" || (PARTAGE && PARTAGE.page === "a-propos" && !parts[0])) vueAPropos();
+    else if (parts[0] === "a-propos") vueAPropos(parts[1] === "installation");
+    else if (PARTAGE && PARTAGE.page === "a-propos" && (!parts[0] || parts[0] === "installation")) vueAPropos(parts[0] === "installation");
     else if (PARTAGE && parts[0] === "recherche") vueRechercheVitrine();
     else if (PARTAGE && PARTAGE.deck) await vueDeck(PARTAGE.deck, (parts[0] === "deck" && parts[2]) || "liste");
     else if (PARTAGE && parts[0] === "deck" && parts[1]) location.replace(lienDeck(decodeURIComponent(parts[1])));
@@ -3478,7 +3482,7 @@ function invitation(titre, texte) {
   return `<div class="vitrine-invite panneau">
     <h2>${esc(titre)}</h2>
     <p>${esc(texte)}</p>
-    ${PARTAGE.atelier ? `<a class="btn btn-accent" href="${esc(PARTAGE.atelier)}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a>` : ""}
+    <a class="btn btn-accent" href="${INSTALLER}">${ico("telecharger")}Installer l'Atelier MTG</a>
   </div>`;
 }
 
@@ -3506,18 +3510,72 @@ const AUTEUR_ATELIER = "PierreRibeaucourt";
 const DEPOT_ATELIER = "https://github.com/PierreRibeaucourt/atelier-mtg";
 // les captures de la page : sur le site de decks de l'auteur, pas dans le dépôt de code (on y voit des cartes et une discussion)
 const CAPTURES_ATELIER = "https://pierreribeaucourt.github.io/decks/a-propos/";
+// pour qui n'a pas encore d'assistant IA : Claude Code dans l'application de bureau, sans terminal (guide en français)
+const CLAUDE_BUREAU = "https://code.claude.com/docs/fr/desktop-quickstart";
 const MODULES_ATELIER = [
   ["decks", "Vos decks, à votre façon", "Créez, importez et éditez vos decks comme partout, avec une vue personnalisable : liste ou visuel, taille des cartes, rangement par type, par tag ou par fonction."],
   ["versions", "Versions et historique", "Chaque modification est gardée. Enregistrez des versions, comparez deux listes, revenez en arrière."],
   ["statistiques", "Statistiques et base de mana", "Courbe de mana, types, fonctions des cartes et surtout la répartition des sources de couleur : elle compte les terrains et les cartes de ramp, et dit si chaque couleur est confortable."],
   ["combos", "Combos", "Les combos du deck sont repérées automatiquement, en croisant plusieurs sources : MTGPics (la base de Magic-Ville) et Commander Spellbook."],
   ["bracket", "Bracket", "Le bracket est estimé automatiquement selon les règles officielles : Game Changers, combos infinies à deux cartes, tuteurs… et comparé à l'estimation de Commander Spellbook."],
-  ["discussion", "Discussion avec Claude", "Facultative, à droite de l'écran : Claude connaît vos decks et aide à catégoriser les cartes, faire un cut, chercher des idées ou vérifier une interaction. Aucune clé d'API à créer : elle passe par Claude Code et votre abonnement Claude, dont elle consomme simplement l'usage normal."],
+  ["discussion", "Discussion avec Claude", "Facultative, à droite de l'écran : Claude connaît vos decks et aide à catégoriser les cartes, faire un cut, chercher des idées ou vérifier une interaction. Aucune clé d'API à créer : elle passe par Claude Code et votre abonnement Claude payant (Pro ou plus), dont elle consomme simplement l'usage normal."],
   ["jouer", "Table de jeu", "Jouez vos decks en solo pour tester les mains de départ et les premiers tours : pioche, mulligan, jetons, marqueurs, planeswalkers, tout au clic ou au glisser."],
   ["recherche", "Recherche avancée", "Une recherche multicritère comme celle de Magic-Ville, avec en plus un filtre de prix Cardmarket et une catégorisation automatique des cartes : ramp, pioche, tuteur, removal…"],
 ];
+// les questions des visiteurs (joueurs experts, débutants, non-informaticiens), repliées ; une réponse en HTML commence par « < »
+const FAQ_ATELIER = [
+  ["Installation et sécurité", [
+    ["Il n'y a pas de fichier à télécharger ? Je ne suis pas informaticien.",
+      "L'Atelier se récupère sur GitHub, sous forme de code. Le plus simple est de confier l'installation à un assistant IA qui agit sur votre ordinateur, comme Claude Code : collez-lui la consigne ci-dessus. Il installe ce qu'il faut, vous pose trois questions et crée un raccourci sur le bureau. Ensuite, les mises à jour s'installent en un clic."],
+    ["Ça marche sur Mac et Linux ?",
+      "<p>En principe oui : c'est le même programme, lancé par <code>atelier.sh</code>. Mais pour l'instant, seul Windows est testé.</p>"],
+    ["Est-ce sûr ?",
+      "L'Atelier ne s'ouvre que sur votre PC : il n'est pas accessible depuis le réseau. Il n'a pas d'installeur certifié, mais tout son code est public : vous, ou votre assistant IA, pouvez le lire avant de l'installer."],
+  ]],
+  ["Claude", [
+    ["Faut-il payer pour Claude ?",
+      "Claude est facultatif : sans lui, tout le reste fonctionne. Pour s'en servir, il faut un abonnement Claude payant (Pro ou plus), car le compte gratuit ne donne pas accès à Claude Code."],
+    ["Va-t-il épuiser mon abonnement ?",
+      "Il ne travaille que quand vous lui écrivez, ou quand vous demandez l'analyse des synergies d'un deck : rien ne tourne en arrière-plan. Les combos, le bracket, les statistiques et les fonctions des cartes ne passent pas par lui. « Compacter » résume une longue discussion pour qu'elle consomme moins."],
+  ]],
+  ["Vos cartes et vos données", [
+    ["Comment entrent mes cartes ?",
+      "On colle une liste copiée depuis Moxfield, Archidekt ou MTG Arena. La liste d'un deck préconstruit se trouve sur ces sites. Les cartes rangées hors des decks se collent de la même façon dans le classeur."],
+    ["Et sur mon téléphone ?",
+      "L'Atelier s'ouvre sur le PC. Pour emporter un deck, « Partager » le publie en ligne, sur une page comme celle-ci : elle se lit sur téléphone et se met à jour toute seule quand le deck change. Il faut un compte GitHub, gratuit : c'est lui qui héberge votre page."],
+    ["Puis-je partir avec mes decks ?",
+      "Oui. Chaque deck est un dossier sur votre disque, avec sa liste en texte (format Archidekt, tags compris), son historique et ses versions. Le menu « … » copie la liste pour Archidekt, Moxfield, MTG Arena ou MTGO."],
+  ]],
+  ["Magic", [
+    ["Peut-on jouer en ligne contre d'autres joueurs ?",
+      "Non, ce n'est pas un jeu vidéo. La table de jeu se joue seul, à la main, pour tester les mains de départ et les premiers tours."],
+    ["Comment simuler des parties à quatre ?",
+      "En simplifiant. Les trois adversaires sont des archétypes (aggro, contrôle, jetons, combo…). Selon des probabilités, ils posent des créatures, retirent vos menaces, rasent la table ou gagnent sur une combo, mais sans politique. Le simulateur mesure la vitesse et la régularité de votre deck, et compare deux versions sur les mêmes parties."],
+    ["Je débute, est-ce pour moi ?",
+      `<p>Oui. Les statistiques comparent votre deck à un modèle type, et Claude peut expliquer une règle, une carte ou proposer des ajouts dans votre budget. Les mots de cette page :</p>
+      <ul class="ap-lexique">
+        <li><dfn>Ramp</dfn> : les cartes qui donnent du mana en plus, pour jouer plus gros plus tôt.</li>
+        <li><dfn>Removal</dfn> : les cartes qui détruisent ou exilent une menace adverse.</li>
+        <li><dfn>Tuteur</dfn> : une carte qui va chercher une carte précise dans votre bibliothèque.</li>
+        <li><dfn>Combo</dfn> : des cartes qui, ensemble, gagnent la partie ou créent un effet infini.</li>
+        <li><dfn>Cut</dfn> : les cartes à retirer pour revenir à 100.</li>
+        <li><dfn>Bracket</dfn> : le niveau de puissance officiel d'un deck Commander, de 1 à 5, pour jouer à armes égales.</li>
+        <li><dfn>Game Changers</dfn> : une liste officielle de cartes très puissantes, qui font monter le bracket.</li>
+      </ul>`],
+    ["La recherche comprend-elle la syntaxe Scryfall ?",
+      "Non. Elle reprend le formulaire de Magic-Ville, où les mêmes critères se cochent : identité de couleur, texte, coût… Elle ajoute le prix et la fonction des cartes."],
+    ["Les règles et les combos sont-ils à jour ?",
+      "La liste des Game Changers est relue chaque jour, et les nouvelles cartes arrivent toutes seules à chaque extension. Les combos viennent de Commander Spellbook et de MTGPics, entretenues par leurs communautés. Si les règles des brackets changent, une mise à jour de l'Atelier les suit."],
+    ["Les prix tiennent-ils compte de l'état, de la langue, du port ?",
+      "Non : c'est le prix indicatif de Cardmarket, pour l'édition la moins chère. On n'achète pas dans l'Atelier. En revanche, l'onglet Achats copie les cartes qui vous manquent au format des listes de souhaits de Cardmarket, et c'est Cardmarket qui calcule ensuite le panier."],
+  ]],
+];
 
-function vueAPropos() {
+// espaces insécables de la typographie française : « ? » ou « » » jamais seuls en début de ligne
+const insecables = (t) => t.replace(/ ([?!:;»])/g, " $1").replace(/« /g, "« ");
+
+// installation : arriver directement à la section Installation (bouton « Installer l'Atelier MTG » d'une autre page)
+function vueAPropos(installation = false) {
   scrollTo(0, 0);
   etat.deck = null;
   const depot = esc((PARTAGE && PARTAGE.atelier) || DEPOT_ATELIER);
@@ -3537,7 +3595,7 @@ function vueAPropos() {
           <h1>L'Atelier <span>MTG</span></h1>
           <p class="ap-accroche">Vos decks Commander,<br>de la liste à la table.</p>
           <ul class="ap-puces">${["Base de mana", "Combos", "Bracket", "Table de jeu", "Recherche avancée", "Claude"].map((x) => `<li>${x}</li>`).join("")}</ul>
-          <p class="ap-cta"><a class="btn btn-accent" href="${depot}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a></p>
+          <p class="ap-cta"><a class="btn btn-accent" href="${INSTALLER}" id="ap-installer">${ico("telecharger")}Installer l'Atelier MTG</a></p>
           <p class="ap-mention"><b>Gratuit</b> · open source · tout reste sur votre PC${versionAtelier ? ` · version ${esc(versionAtelier)}` : ""}</p>
         </div>
       </div>
@@ -3557,7 +3615,7 @@ function vueAPropos() {
       <h2>Et aussi</h2>
       <div class="ap-grille">
         ${fonction("Import en un collage", "Une liste copiée depuis Moxfield, Archidekt ou MTG Arena devient un deck, rangé par catégories.")}
-        ${fonction("Prix et budget", "Prix Cardmarket du jour pour chaque carte et chaque deck, avec une alerte au-delà de votre budget par carte.")}
+        ${fonction("Prix et budget", "Prix indicatif Cardmarket du jour pour chaque carte et chaque deck, avec une alerte au-delà de votre budget par carte.")}
         ${fonction("Simulations", "Un simulateur multijoueur joue des centaines de parties pour mesurer la régularité d'un deck et comparer deux versions.")}
         ${fonction("Partage simplifié", "Publication en un clic d'une page de présentation légère, comme celle-ci, à partager avec votre groupe de jeu.")}
       </div>
@@ -3573,14 +3631,25 @@ function vueAPropos() {
           sans aucune configuration IA.</li>
       </ul>
 
-      <h2>Installation</h2>
-      <p>Le dépôt de code et les instructions détaillées sont sur GitHub, testés et validés sous Windows.</p>
-      <p><a class="btn btn-accent" href="${depot}" target="_blank" rel="noopener">${ico("telecharger")}Télécharger l'Atelier MTG</a>
-        <a class="ap-depot" href="${depot}" target="_blank" rel="noopener">${depot.replace("https://", "")}</a></p>
-      <h3>Démarrage rapide, avec un assistant IA</h3>
-      <p>Si vous utilisez un agent de développement (Claude Code, Cursor, Copilot…), collez simplement cette consigne :</p>
+      <h2 id="installation">Installation</h2>
+      <p>L'Atelier s'installe une fois sur votre ordinateur, puis s'ouvre par un raccourci sur le bureau. Il est testé sous
+        Windows ; il devrait marcher aussi sous macOS et Linux.</p>
+      <h3>Le plus simple : avec un assistant IA</h3>
+      <p>Collez cette consigne à un assistant IA qui agit sur votre ordinateur (Claude Code, Cursor, Copilot…) : il installe
+        tout et vous pose trois questions.</p>
       <div class="ap-consigne"><code>${esc(consigne)}</code>
         <button type="button" class="btn btn-petit btn-discret" id="ap-copier">${ico("copier")}Copier</button></div>
+      <p>Pas encore d'assistant IA ? Installez <a href="${CLAUDE_BUREAU}" target="_blank" rel="noopener">l'application Claude
+        pour ordinateur</a> (abonnement Pro ou plus), ouvrez son onglet Code, choisissez le dossier où ranger l'Atelier, puis
+        collez-y la consigne.</p>
+      <h3>À la main</h3>
+      <p>Il faut Python 3.10 ou plus récent, et git. Les commandes sont sur GitHub :
+        <a class="ap-depot" href="${depot}" target="_blank" rel="noopener">${depot.replace("https://", "")}</a></p>
+
+      <h2>Questions fréquentes</h2>
+      ${FAQ_ATELIER.map(([groupe, questions]) => `<h3 class="ap-faq-groupe">${groupe}</h3>
+        ${questions.map(([q, r]) => `<details class="ap-faq"><summary>${insecables(q)}${ico("plus")}</summary>
+          <div class="ap-faq-rep">${insecables(r.startsWith("<") ? r : `<p>${r}</p>`)}</div></details>`).join("")}`).join("")}
 
       <h2>Genèse du projet</h2>
       <p class="ap-signature">Par ${esc(AUTEUR_ATELIER)}, créateur de l'Atelier</p>
@@ -3608,6 +3677,10 @@ function vueAPropos() {
   $("#ap-copier").onclick = async () => {
     try { await navigator.clipboard.writeText(consigne); toast("Consigne copiée."); } catch (e) { erreur(e); }
   };
+  // un saut, pas un défilement animé : les captures qui se chargent en chemin le feraient s'arrêter trop tôt
+  const aInstallation = () => $("#installation").scrollIntoView();
+  $("#ap-installer").onclick = (ev) => { ev.preventDefault(); aInstallation(); };      // même page : sans la redessiner
+  if (installation) aInstallation();
 }
 
 // une capture en grand, par-dessus la page ; un clic ou Échap la referme
