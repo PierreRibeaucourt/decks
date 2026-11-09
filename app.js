@@ -322,17 +322,19 @@ document.addEventListener("mousemove", (ev) => {
   if (fs.hidden) return;
   const w = fs.offsetWidth, h = fs.offsetHeight;
   const x = ev.clientX + 18 + w > innerWidth - 8 ? ev.clientX - w - 18 : ev.clientX + 18;
-  const y = ev.clientY + 18 + h > innerHeight - 8 ? Math.max(8, ev.clientY - h - 12) : ev.clientY + 18;
-  fs.style.left = Math.max(8, x) + "px";
-  fs.style.top = y + "px";
+  const y = ev.clientY + 18 + h > innerHeight - 8 ? ev.clientY - h - 12 : ev.clientY + 18;
+  fs.style.left = Math.max(8, Math.min(x, innerWidth - w - 8)) + "px";
+  fs.style.top = Math.max(8, Math.min(y, innerHeight - h - 8)) + "px";        // entière à l'écran, quitte à passer sous la souris
 });
 
 const souris = { x: 0, y: 0 };
 
+// l'image à côté de la souris, entière à l'écran (sa taille réelle : légende comprise, plus petite sur un écran bas)
 function placerApercu() {
-  const ap = $("#apercu");
-  ap.style.left = (souris.x + 24 + 244 > innerWidth ? souris.x - 268 : souris.x + 24) + "px";
-  ap.style.top = Math.max(8, Math.min(souris.y - 40, innerHeight - 390)) + "px";
+  const ap = $("#apercu"), w = ap.offsetWidth, h = ap.offsetHeight;
+  const x = souris.x + 24 + w > innerWidth - 8 ? souris.x - 24 - w : souris.x + 24;
+  ap.style.left = Math.max(8, x) + "px";
+  ap.style.top = Math.max(8, Math.min(souris.y - 40, innerHeight - h - 8)) + "px";
 }
 
 function montrerApercu(el) {
@@ -340,8 +342,8 @@ function montrerApercu(el) {
   survol = el;
   $("img", ap).src = el.dataset.image;
   majLegende();
-  placerApercu();
   ap.hidden = false;
+  placerApercu();
 }
 
 document.addEventListener("mouseover", (ev) => {
@@ -368,8 +370,9 @@ document.addEventListener("mousemove", (ev) => {
   const bu = $("#bulle");
   if (!bu.hidden) {
     const w = bu.offsetWidth, h = bu.offsetHeight;
+    const y = ev.clientY + 18 + h > innerHeight - 8 ? ev.clientY - h - 12 : ev.clientY + 18;
     bu.style.left = Math.max(8, Math.min(ev.clientX + 14, innerWidth - w - 8)) + "px";
-    bu.style.top = (ev.clientY + 18 + h > innerHeight ? Math.max(8, ev.clientY - h - 12) : ev.clientY + 18) + "px";
+    bu.style.top = Math.max(8, Math.min(y, innerHeight - h - 8)) + "px";
   }
 });
 
@@ -552,20 +555,22 @@ function ouvrirMenu(bouton, items, ev = null) {
     m.appendChild(b);
   }
   m.hidden = false;
+  // toujours entier à l'écran : sous le bouton (ou la souris), sinon au-dessus, sinon le plus bas possible, par-dessus le
+  // bouton ; plus haut que la fenêtre, il défile
+  m.style.maxHeight = "";
+  if (m.offsetHeight > innerHeight - 16) m.style.maxHeight = innerHeight - 16 + "px";
   const w = m.offsetWidth, hh = m.offsetHeight;
-  let x, y;
-  if (ev && ev.clientX) {                       // clic sur une image : le menu s'ouvre sous la souris
-    x = ev.clientX; y = ev.clientY;
-    m.style.left = Math.max(8, Math.min(x, innerWidth - w - 8)) + "px";
-    m.style.top = (y + hh + 8 > innerHeight ? Math.max(8, y - hh - 4) : y + 4) + "px";
-  } else {
-    const r = bouton.getBoundingClientRect();
-    m.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + "px";
-    m.style.top = (r.bottom + hh + 8 > innerHeight ? r.top - hh - 4 : r.bottom + 4) + "px";
-  }
+  const aLaSouris = ev && ev.clientX;            // clic sur une image : le menu s'ouvre à la souris
+  const r = aLaSouris ? { right: ev.clientX + w, top: ev.clientY, bottom: ev.clientY } : bouton.getBoundingClientRect();
+  m.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + "px";
+  m.style.top = (r.bottom + 4 + hh <= innerHeight - 8 ? r.bottom + 4
+    : r.top - hh - 4 >= 8 ? r.top - hh - 4 : Math.max(8, innerHeight - hh - 8)) + "px";
 }
 function fermerMenu() { $("#menu").hidden = true; }
 document.addEventListener("click", (ev) => { if (!ev.target.closest("#menu, .btn-menu, .ouvre-menu")) fermerMenu(); });
+// la page défile ou la fenêtre change de taille (autre écran) : le menu ne suivrait plus son bouton
+addEventListener("resize", fermerMenu);
+addEventListener("scroll", fermerMenu);
 
 function ouvrirModale(html, monte, { focus = true, large = false } = {}) {
   cacherApercu();
@@ -699,6 +704,13 @@ function deckDeLaPage() {
       + (decksTrouves.length ? (q.length >= 2 ? `<div class="aller-section">Decks</div>` : "") + items.slice(nc).map((it, j) => ligneDeck(it, nc + j)).join("") : "")
       + (q.length >= 2 && !enConstruction ? `<div class="aller-pied petit"><a href="${esc(tous(brut))}">Toutes les cartes « ${esc(brut)} » →</a></div>` : "");
     liste.hidden = !liste.innerHTML;
+    // plus large que le champ : sur un écran étroit, elle se décale vers la gauche pour ne pas dépasser à droite
+    // (largeur de la page, pas innerWidth : sur téléphone, innerWidth grandit avec ce qui dépasse)
+    liste.style.left = "";
+    if (!liste.hidden) {
+      const r = liste.getBoundingClientRect(), larg = document.documentElement.clientWidth;
+      if (r.right > larg - 8) liste.style.left = Math.max(8 - r.left, larg - 8 - r.right) + "px";
+    }
   };
   const choisir = (it) => {
     if (!it) return;
@@ -5023,27 +5035,32 @@ async function verifierVersion() {
   const d = v.disponible;
   if (!d || $("#bandeau-maj")) return;
   try { if (sessionStorage.getItem("maj-plus-tard") === d.version) return; } catch (_) {}
-  $(".barre").insertAdjacentHTML("afterend", `<div class="bandeau-maj" id="bandeau-maj">
-    <p><strong>Atelier ${esc(d.version)} disponible</strong>${d.nouveautes ? ` · ${esc(d.nouveautes)}` : ""}</p>
+  // une ligne sous l'en-tête : la version, ses nouveautés (en entier au survol), les deux boutons ; pendant la mise à
+  // jour, la barre garde sa hauteur (une roue à la place des boutons, un trait qui défile dessous)
+  $(".barre").insertAdjacentHTML("afterend", `<div class="bandeau-maj" id="bandeau-maj" role="status">
+    <p class="maj-texte"><strong><span class="maj-large">Nouvelle version</span><span class="maj-etroit">Version</span> ${esc(d.version)}</strong>${d.nouveautes
+      ? `<span class="maj-nouveautes" title="${esc(d.nouveautes)}">${esc(d.nouveautes)}</span>` : ""}</p>
     <div class="maj-actions">
       <button class="btn btn-accent btn-petit" id="maj-installer">${ico("telecharger")}Mettre à jour</button>
-      <button class="btn btn-petit btn-discret" id="maj-plus-tard">Plus tard</button>
+      <button class="btn btn-petit btn-discret" id="maj-plus-tard" aria-label="Plus tard">${ico("fermer")}<span class="maj-large">Plus tard</span></button>
     </div>
   </div>`);
   const b = $("#bandeau-maj"), actions = $(".maj-actions", b);
+  const etape = (t) => { b.classList.add("en-cours"); actions.innerHTML = `<span class="maj-etape">${t}</span>`; };
+  const echec = (t) => { b.classList.remove("en-cours"); actions.innerHTML = `<span class="erreur petit">${esc(t)}</span>`; };
   $("#maj-plus-tard").onclick = () => { try { sessionStorage.setItem("maj-plus-tard", d.version); } catch (_) {} b.remove(); };
   $("#maj-installer").onclick = async () => {
-    actions.innerHTML = `<span class="chargement">Mise à jour…</span>`;
+    etape("Mise à jour…");
     try {
       const r = await api("/api/mise-a-jour", { method: "POST", body: {} });
-      actions.innerHTML = `<span class="chargement">Redémarrage…</span>`;
+      etape("Redémarrage…");
       for (let i = 0; i < 90; i++) {
         await attendre(1000);
         try { if ((await api("/api/version")).version === r.version) return location.reload(); } catch (_) {}
       }
-      actions.innerHTML = `<span class="erreur petit">L'Atelier ne redémarre pas : relance-le depuis le raccourci du bureau.</span>`;
+      echec("L'Atelier ne redémarre pas : relance-le depuis le raccourci du bureau.");
     } catch (e) {
-      actions.innerHTML = `<span class="erreur petit">${esc(e.message || e)}</span>`;
+      echec(e.message || e);
     }
   };
 }
