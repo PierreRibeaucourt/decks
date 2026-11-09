@@ -1902,7 +1902,7 @@
  },
  "Deck Greven Elemental": {
   "slug": "greven-elemental",
-  "date": 1794219114.0543513,
+  "date": 1794220696.1531093,
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/b/d/bda22fc3-31a5-451a-9a8b-372884f7bc61.jpg?1783932799",
@@ -1918,7 +1918,7 @@
    "gc": [
     "Jeska's Will"
    ],
-   "id": "Deck Neriv Elemental",
+   "id": "Deck Greven Elemental",
    "identite": [
     "B",
     "R"
@@ -1928,7 +1928,7 @@
    "modifie": 1794160399.297893,
    "note": "",
    "prix_total": 143.32,
-   "titre": "Neriv Elemental",
+   "titre": "Greven Elemental",
    "total": 100,
    "trop_cher": [
     "Sneak Attack",
@@ -2252,7 +2252,6 @@
     "Coal Stoker",
     "Chauffeur de charbon"
    ]
-  ],
-  "a_refaire": true
+  ]
  }
 }
