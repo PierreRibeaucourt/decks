@@ -52,7 +52,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .barre { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 1rem; padding: .6rem 1rem;
   background: var(--surface); border-bottom: 1px solid var(--bord); }
 .logo { display: inline-flex; align-items: center; gap: .45rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
-.logo::before { content: ""; width: 22px; height: 22px; flex: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='11.5' cy='7' r='2.8' fill='%23f97316'/%3E%3Ccircle cx='18.5' cy='3.6' r='2' fill='%23f97316'/%3E%3Ccircle cx='19.8' cy='9.6' r='1.6' fill='%23f97316'/%3E%3Cpath d='M8 27.5 6.6 30.6M24 27.5l1.4 3.1' stroke='%239a3412' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M5 15h22c1 1.9 1.5 3.7 1.5 5.7 0 4.6-5.4 7.8-12.5 7.8S3.5 25.3 3.5 20.7c0-2 .5-3.8 1.5-5.7z' fill='%23c2410c'/%3E%3Crect x='2' y='11.5' width='28' height='5.2' rx='2.6' fill='%239a3412'/%3E%3Cpath d='M8 19.5c1.5 3.5 4.2 5 8 5' stroke='%23fdba74' stroke-width='1.6' fill='none' stroke-linecap='round' opacity='.7'/%3E%3C/svg%3E") center / contain no-repeat; }      /* le chaudron du favicon */
+.logo::before, .ap-tete h1::before { content: ""; width: 22px; height: 22px; flex: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='11.5' cy='7' r='2.8' fill='%23f97316'/%3E%3Ccircle cx='18.5' cy='3.6' r='2' fill='%23f97316'/%3E%3Ccircle cx='19.8' cy='9.6' r='1.6' fill='%23f97316'/%3E%3Cpath d='M8 27.5 6.6 30.6M24 27.5l1.4 3.1' stroke='%239a3412' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M5 15h22c1 1.9 1.5 3.7 1.5 5.7 0 4.6-5.4 7.8-12.5 7.8S3.5 25.3 3.5 20.7c0-2 .5-3.8 1.5-5.7z' fill='%23c2410c'/%3E%3Crect x='2' y='11.5' width='28' height='5.2' rx='2.6' fill='%239a3412'/%3E%3Cpath d='M8 19.5c1.5 3.5 4.2 5 8 5' stroke='%23fdba74' stroke-width='1.6' fill='none' stroke-linecap='round' opacity='.7'/%3E%3C/svg%3E") center / contain no-repeat; }      /* le chaudron du favicon */
 .espace { flex: 1; }
 /* « Aller à un deck » : une recherche plutôt qu'une liste, pour tenir avec 100 decks */
 .aller { position: relative; flex: 0 1 380px; min-width: 0; }
@@ -519,6 +519,7 @@ a.btn-accent { color: var(--accent-texte); }      /* un lien en bouton orange : 
 
 /* ---- recherche de cartes (moteur façon Magic-Ville) */
 .lien-recherche.actif { color: var(--accent); font-weight: 600; }
+#lien-options.actif { color: var(--accent); }
 .rch-deck { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; }
 .rch-deck .identite { margin-left: 0; }
 .rch-deck a { color: var(--accent); }
@@ -539,7 +540,6 @@ a.btn-accent { color: var(--accent-texte); }      /* un lien en bouton orange : 
 /* Couleurs : les symboles répartis sur la largeur, puis le coût */
 .fen-couleurs .rch-symboles { display: flex; justify-content: space-around; }
 .fen-couleurs .rch-sym .sym { width: 30px; height: 30px; }
-.rch-cout .champ { width: 7.5rem; }
 /* Types : deux colonnes lues de haut en bas, puis « Au moins un / Tous » et les types spéciaux sur une ligne */
 .rch-types { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(4, auto); grid-auto-flow: column; gap: .15rem .6rem; }
 .rch-ligne-types { align-items: center; }
@@ -587,6 +587,16 @@ a.btn-accent { color: var(--accent-texte); }      /* un lien en bouton orange : 
 .rch-sym { border: 1px solid transparent; background: transparent; border-radius: 999px; padding: 3px; cursor: pointer; line-height: 0; opacity: .32; filter: grayscale(.7); }
 .rch-sym:hover { opacity: .75; filter: none; }
 .rch-sym.actif { opacity: 1; filter: none; border-color: var(--accent); background: var(--accent-doux); }
+.rch-sym.oblig { background: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+/* sous une couleur choisie : « peut » ou « doit » (la place est gardée, rien ne bouge au clic) */
+.fen-couleurs .rch-symboles { padding-bottom: 1.05rem; }
+/* rangée du haut : sa hauteur est celle de la Recherche texte ; les menus du bas (cartes et types spéciaux) se calent en bas,
+   les symboles au milieu de ce qui reste */
+.fen-couleurs .rch-symboles, .fen-couleurs > :last-child, .fen-types .rch-types, .fen-types > :last-child { margin-top: auto; }
+.fen-couleurs .rch-sym { position: relative; }
+.fen-couleurs .rch-sym[data-etat]:not([data-etat=""])::after { content: attr(data-etat); position: absolute; top: calc(100% + 3px); left: 50%;
+  transform: translateX(-50%); font-size: .72rem; line-height: 1; color: var(--texte-2); white-space: nowrap; }
+.fen-couleurs .rch-sym.oblig[data-etat]::after { color: var(--accent); font-weight: 650; }
 .rch-sym .sym { width: 22px; height: 22px; vertical-align: 0; }
 .rch-sym:focus-visible, .rch-bascule:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .rch-bascules { display: flex; flex-wrap: wrap; gap: .3rem; }
@@ -650,42 +660,64 @@ a.btn-accent { color: var(--accent-texte); }      /* un lien en bouton orange : 
 .rch-bas { display: flex; justify-content: center; margin-top: .8rem; }
 .rch-base { text-align: center; margin-top: 1rem; }
 .rch-liste:not(.etale) { border-top: 1px solid var(--bord); }
-.rch-carte { display: grid; grid-template-columns: minmax(0, 1fr); gap: .9rem; padding: .7rem .3rem; border-bottom: 1px solid var(--bord); }
-.rch-liste.avec-images .rch-carte { grid-template-columns: 80px minmax(0, 1fr); }
+/* liste façon Magic-Ville : en-têtes Coul. · Nom VO · Nom VF · Type · Coût · Prix, puis une ligne par carte alignée dessous ;
+   sous les noms (sur leurs deux colonnes) le type complet, le texte et la force/endurance à droite */
+.rch-liste.avec-images { container: rch / inline-size; border-top: 0; }
+.rch-cols, .rch-liste.avec-images .rch-carte { display: grid; column-gap: .9rem;
+  grid-template-columns: 112px minmax(0, 1fr) minmax(0, 1fr) minmax(6rem, 9rem) minmax(5.5rem, 8rem) minmax(7.5rem, 9rem); }
+.rch-cols { margin-bottom: .2rem; }
+.rch-col { display: flex; align-items: center; justify-content: center; gap: .35em; border: 0; border-radius: 4px; padding: .35rem .5rem;
+  background: var(--texte); color: var(--fond); font: inherit; font-size: .74rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  cursor: pointer; white-space: nowrap; }
+.rch-col:not(:first-child) { justify-content: flex-start; }
+.rch-col:hover { background: var(--accent); color: var(--accent-texte); }
+.rch-col.actif { box-shadow: inset 0 -3px 0 var(--accent); }
+.rch-carte { padding: .8rem 0; border-bottom: 1px solid var(--bord); }
+.rch-liste.avec-images .rch-carte { grid-template-areas: "img vo vf type cout prix" "img det det . . prix"; grid-template-rows: auto 1fr;
+  row-gap: .3rem; align-items: start; }
 .rch-carte:hover { background: var(--surface); }
-.rch-vignette { border: 0; padding: 0; background: none; cursor: pointer; align-self: start; }
-.rch-vignette img, .rch-vignette .sans-image { display: block; width: 80px; aspect-ratio: 488 / 680; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
-.rch-corps { min-width: 0; }
-.rch-haut { display: flex; justify-content: space-between; align-items: baseline; gap: .6rem; }
-.rch-noms { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .7rem; min-width: 0; }
-.rch-nom { border: 0; background: none; padding: 0; font: inherit; font-weight: 650; font-size: 1.02rem; color: var(--texte); cursor: pointer; text-align: left; }
-.rch-nom:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
-.rch-vf { color: var(--texte-2); }
-.rch-type { font-size: .85rem; color: var(--texte-2); margin-top: .1rem; }
-.rch-pt { color: var(--texte); font-weight: 700; margin-left: .45rem; }
-.rch-texte { font-size: .88rem; margin-top: .35rem; max-width: 72ch; }
+.rch-vignette { grid-area: img; justify-self: center; border: 0; padding: 0; background: none; cursor: pointer; }
+.rch-vignette img, .rch-vignette .sans-image { display: block; width: 100px; aspect-ratio: 488 / 680; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.rch-vo { grid-area: vo; min-width: 0; } .rch-vf { grid-area: vf; min-width: 0; }
+.rch-typecourt { grid-area: type; font-size: .9rem; color: var(--texte-2); }
+.rch-cm { grid-area: cout; } .rch-cm .cout img { width: 17px; height: 17px; }
+.rch-nom { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; font-size: 1rem; color: var(--accent); cursor: pointer; text-align: left; }
+.rch-nom:hover { text-decoration: underline; text-underline-offset: 3px; }
+.rch-detail { grid-area: det; min-width: 0; }
+.rch-type { font-size: .85rem; color: var(--texte-2); }
+.rch-texte { font-size: .88rem; margin-top: .3rem; }
 .rch-texte p { margin: 0 0 .2rem; }
-.rch-pied { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .9rem; margin-top: .45rem; font-size: .85rem; }
-.rch-pied .prix { font-weight: 600; font-variant-numeric: tabular-nums; text-decoration: none; }
-.rch-pied .prix:hover { text-decoration: underline; }
-.rch-pied .prix.cher { color: var(--alerte); }
+.rch-pt { text-align: right; font-size: .88rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* colonne de droite : le prix, puis Deck et Maybe */
+.rch-prix { grid-area: prix; display: flex; flex-direction: column; align-items: flex-start; gap: .4rem; font-size: .85rem; }
+.rch-prix .prix { font-weight: 600; font-variant-numeric: tabular-nums; text-decoration: none; }
+.rch-prix .prix:hover { text-decoration: underline; }
+.rch-prix .prix.cher { color: var(--alerte); }
 .rch-badges { display: inline-flex; flex-wrap: wrap; gap: .25rem; }
 .badge-fn { background: transparent; border: 1px solid var(--bord); }
-.rch-actions { margin-left: auto; display: inline-flex; align-items: center; gap: .3rem; }
+.rch-actions { display: flex; flex-direction: column; align-items: flex-start; gap: .3rem; }
+/* liste étroite (discussion ouverte, petit écran) : sans en-têtes, les noms et le coût en haut, le reste dessous */
+@container rch (max-width: 780px) {
+  .rch-cols { display: none; }
+  .rch-liste.avec-images .rch-carte { grid-template-columns: 76px minmax(0, 1fr) auto;
+    grid-template-areas: "img vo cout" "img vf vf" "img det det" "img prix prix"; grid-template-rows: auto; }
+  .rch-vignette img, .rch-vignette .sans-image { width: 76px; }
+  .rch-typecourt { display: none; }
+  .rch-prix, .rch-actions { flex-direction: row; flex-wrap: wrap; align-items: center; }
+}
 .rch-carte-v { display: flex; flex-direction: column; }
 .rch-actions-v { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .3rem; }
 .rch-actions-v .badge { align-self: center; }
 .marque-ok { background: var(--bon); color: var(--accent-texte); }
 .marque-maybe { background: var(--surface); color: var(--texte-2); }
-@media (max-width: 600px) {
-  .rch-liste.avec-images .rch-carte { grid-template-columns: 60px minmax(0, 1fr); }
-  .rch-vignette img, .rch-vignette .sans-image { width: 60px; }
-  .rch-actions { margin-left: 0; }
-}
-.rch-deck .champ { width: auto; min-width: 14rem; }
-.rch-outils label { display: inline-flex; align-items: center; gap: .4rem; }
-.moteur .champ-petit, .rch-outils .champ-petit, .rch-pages .champ-petit { padding: .3rem .5rem; }
+.rch-deck .champ { width: auto; }
+.rch-outils label, .rch-deck label { display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap; }
+.moteur .champ-petit, .rch-outils .champ-petit, .rch-pages .champ-petit, .rch-deck .champ-petit { padding: .3rem .5rem; }
 .moteur select.champ-petit { padding: .35rem .5rem; }
+/* barres de la recherche : tous les contrôles à la même hauteur */
+.rch-entete .champ-petit, .rch-entete .btn-petit, .rch-bas .champ-petit, .rch-bas .btn-petit, .rch-deck .champ-petit { height: 2rem; }
+.rch-entete .btn-petit, .rch-bas .btn-petit { min-width: 2rem; }
+.rch-entete .segments button { height: calc(2rem - 2px); }
 .rch-nombres .champ { width: 3.8rem; }
 @media (max-width: 700px) { .lien-recherche .long, #btn-rafraichir { display: none; } .lien-recherche { padding: .4rem .5rem; } }
 /* fiche d'une carte trouvée : un seul bloc pour ajouter, les liens à part */
@@ -736,7 +768,7 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
 .aller-liste { max-height: min(70vh, 560px); overflow: auto; }
 
 /* page partagée (lecture seule) : ni ce qui modifie, ni la recherche, ni la discussion */
-.partage :is(.ecrit, .aller, #btn-rafraichir, #etat-maj, .ligne-outil) { display: none !important; }
+.partage :is(.ecrit, .aller, #btn-rafraichir, #etat-maj, .ligne-outil, #lien-options) { display: none !important; }
 /* nouvelle version de l'Atelier à installer */
 .bandeau-maj { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .45rem 1rem; padding: .5rem 1rem;
   background: var(--info-doux); border-bottom: 1px solid var(--bord); font-size: .9rem; text-align: center; }
@@ -752,9 +784,9 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
 .pied-partage nav a { color: var(--texte); }
 .pied-partage p { margin: 0 auto; max-width: 720px; }
 /* « L'Atelier MTG » : la page qui présente l'outil (#/a-propos) */
-.a-propos { max-width: 760px; margin: 0 auto; line-height: 1.65; }
-.a-propos h1 { font-size: 2rem; line-height: 1.2; margin: .7rem 0 .5rem; }
-.a-propos h2 { font-size: 1.2rem; margin: 2.4rem 0 .7rem; padding-top: 1.4rem; border-top: 1px solid var(--bord); }
+.a-propos { max-width: 760px; margin: 0 auto; line-height: 1.65; display: flow-root; }
+.a-propos h2 { font-size: 1.55rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.25; margin: 2.8rem 0 .9rem; padding-top: 1.6rem;
+  border-top: 1px solid var(--bord); }
 .a-propos h3 { font-size: 1rem; margin: 1.4rem 0 .3rem; }
 .a-propos p { margin: .6rem 0; }
 .a-propos .chapeau { font-size: 1.15rem; line-height: 1.5; color: var(--texte); border-left: 3px solid var(--accent); padding-left: .9rem; margin: .4rem 0 1rem; }
@@ -767,11 +799,48 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
 .ap-carte:last-child:nth-child(3n+1) { grid-column: 1 / -1; }      /* seule sur sa ligne : toute la largeur */
 .ap-carte h3 { margin: 0 0 .25rem; font-size: .95rem; }
 .ap-carte p { margin: 0; font-size: .88rem; line-height: 1.5; color: var(--texte-2); }
-.ap-depot { margin-left: .8rem; font-size: .88rem; }
-.ap-une { margin: 1.4rem 0 .6rem; }
-.ap-une img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--bord); box-shadow: var(--ombre); }
+.ap-portrait { float: right; width: min(40%, 230px); margin: .2rem 0 .8rem 1.5rem; }
+.ap-portrait img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--bord); box-shadow: var(--ombre); }
+/* en-tête pleine largeur : le titre, l'accroche et le bouton à gauche ; trois captures en perspective à droite */
+.vue.vue-pleine { max-width: none; padding: 0 0 4rem; }
+.vue-pleine .a-propos { max-width: calc(760px + 2rem); padding: 2.2rem 1rem 0; }
+.ap-tete { position: relative; overflow: hidden; border-bottom: 1px solid var(--bord);
+  background: radial-gradient(760px 460px at calc(50% - 470px) 100%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 65%),
+    radial-gradient(620px 380px at calc(50% + 520px) 0%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 65%), var(--surface); }
+.ap-tete::before { content: ""; position: absolute; inset: 0; pointer-events: none; background-size: 24px 24px;
+  background-image: linear-gradient(color-mix(in srgb, var(--texte) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--texte) 5%, transparent) 1px, transparent 1px);
+  -webkit-mask-image: linear-gradient(90deg, #000 30%, transparent 75%); mask-image: linear-gradient(90deg, #000 30%, transparent 75%); }
+.ap-tete-dedans { position: relative; max-width: 1180px; min-height: 470px; margin: 0 auto; padding: 0 1rem; display: flex; align-items: center; }
+.ap-scene { position: absolute; left: 47%; top: 0; width: 1200px; height: 100%; perspective: 1300px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%); mask-image: linear-gradient(90deg, transparent, #000 12%); }
+.ap-ecran { position: absolute; margin: 0; width: 540px; border-radius: 10px; overflow: hidden; background: #1f1e1b; border: 1px solid #45403a;
+  box-shadow: 0 24px 50px rgba(0,0,0,.5), 0 4px 12px rgba(0,0,0,.3); transform: rotateY(-24deg) rotateX(6deg) rotateZ(-2deg); transform-origin: 0 50%; }
+.ap-ecran img { display: block; width: 100%; height: auto; }
+.ap-ecran.e1 { left: 400px; top: -44px; filter: brightness(.78); }     /* en diagonale, jusqu'au bord de l'écran */
+.ap-ecran.e2 { left: 200px; top: 108px; filter: brightness(.9); }
+.ap-ecran.e3 { left: 0; top: 262px; }
+.ap-tete-texte { position: relative; z-index: 1; max-width: 46%; padding: 3rem 1.5rem 3rem 0; line-height: 1.5; }
+.ap-tete h1 { display: flex; align-items: center; gap: .3em; margin: 0; font-size: 3rem; font-weight: 800; letter-spacing: -.02em;
+  line-height: 1; white-space: nowrap; }
+.ap-tete h1 span { color: var(--accent); }
+.ap-tete h1::before { width: 1.15em; height: 1.15em; filter: drop-shadow(0 4px 12px color-mix(in srgb, var(--accent) 40%, transparent)); }
+.ap-accroche { font-size: 1.45rem; font-weight: 600; line-height: 1.3; margin: 1.2rem 0 1.2rem; }
+.ap-puces { list-style: none; padding: 0; margin: 0 0 1.5rem; display: flex; flex-wrap: wrap; gap: 7px; }
+.ap-puces li { font-size: .85rem; line-height: 1.5; padding: .15rem .7rem; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--bord);
+  color: var(--texte-2); }
+.ap-cta { margin: 0 0 .8rem; }
+.ap-mention { margin: 0; font-size: .85rem; color: var(--texte-2); }
+.ap-mention b { color: var(--accent); font-weight: 600; }
+@media (max-width: 900px) {                        /* écran étroit : le texte seul */
+  .ap-scene { display: none; }
+  .ap-tete-dedans { min-height: 0; }
+  .ap-tete-texte { max-width: none; padding: 2rem 0; }
+  .ap-tete h1 { font-size: 2.2rem; }
+  .ap-accroche { font-size: 1.2rem; }
+}
 .ap-module { margin: 1.4rem 0 2.6rem; }
-.ap-module h3 { margin: 0 0 .15rem; font-size: 1.05rem; }
+.ap-module h3 { margin: 0 0 .15rem; font-size: 1.02rem; color: var(--accent); }
 .ap-module p { margin: 0 0 .75rem; }
 /* la capture, cadrée sur le module, à la largeur du texte ; un clic l'agrandit */
 .ap-module figure { margin: 0; padding: 6px; background: var(--surface); border: 1px solid var(--bord); border-radius: 12px; box-shadow: var(--ombre); }
@@ -782,6 +851,23 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
 .ap-consigne { display: flex; align-items: center; gap: .6rem; background: var(--surface-2); border: 1px solid var(--bord); border-radius: 8px;
   padding: .55rem .6rem .55rem .9rem; }
 .ap-consigne code { flex: 1; min-width: 0; font-size: .9rem; overflow-wrap: anywhere; }
+#installation { scroll-margin-top: var(--haut-barre, 56px); }        /* bouton « Installer » : le titre sous la barre du haut */
+.ap-depot { white-space: nowrap; }                                   /* l'adresse du dépôt d'un seul tenant */
+/* questions fréquentes : une question par ligne, la réponse se déplie au clic ; le + tourne en × */
+.a-propos .ap-faq-groupe { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--texte-2); margin: 1.8rem 0 .1rem; }
+.a-propos h2 + .ap-faq-groupe { margin-top: .4rem; }
+.ap-faq { border-bottom: 1px solid var(--bord); }
+.ap-faq summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0; padding: .65rem 0;
+  color: var(--texte); font-weight: 600; line-height: 1.4; }
+.ap-faq summary::-webkit-details-marker { display: none; }
+.ap-faq summary:hover { color: var(--accent); }
+.ap-faq summary .ico { flex: none; color: var(--texte-2); transition: transform .15s; }
+.ap-faq[open] summary .ico { transform: rotate(45deg); }
+.ap-faq-rep { padding: 0 2rem .7rem 0; color: var(--texte-2); }
+.ap-faq-rep p { margin: 0 0 .5rem; }
+.ap-lexique { margin: 0 0 .3rem; padding-left: 1.2rem; }
+.ap-lexique li { margin: .15rem 0; }
+.ap-lexique dfn { font-style: normal; font-weight: 700; color: var(--texte); }   /* pas <b> : un mot en gras serait pris pour un nom de carte (Cut) */
 /* page partagée : la recherche et la discussion en vitrine, grisées, avec le lien pour installer l'Atelier */
 .vitrine { position: relative; }
 .vitrine-fond { opacity: .35; filter: grayscale(1); pointer-events: none; user-select: none; }
@@ -790,3 +876,42 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
 .vitrine-invite h2 { margin: 0 0 .4rem; font-size: 1.15rem; }
 .vitrine-invite p { color: var(--texte-2); margin: 0 0 1rem; }
 .chat .vitrine-invite { top: 40%; transform: translate(-50%, -50%); }
+
+/* ---- onglet Achats : à acheter | j'ai déjà, côte à côte sur un écran large */
+.achats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 0 2.2rem; align-items: start; }
+.achats .groupe-titre { flex-wrap: wrap; align-items: center; min-height: 2.1rem; }
+.achats-cout { font-variant-numeric: tabular-nums; }
+.achats-outils { margin-left: auto; display: inline-flex; flex-wrap: wrap; align-items: center; gap: .3rem; font-weight: 400; }
+.achats .groupe > p { padding: .5rem .25rem; margin: 0; }
+.ligne-achat { grid-template-columns: 2.4rem minmax(0, 1fr) auto 4.6rem 2rem; }
+@media (max-width: 700px) { .ligne-achat { grid-template-columns: 2rem minmax(0, 1fr) 4.2rem 2rem; } }
+button.badge { border: 0; font-family: inherit; cursor: pointer; }
+button.badge:hover { box-shadow: inset 0 0 0 1px currentColor; }
+
+/* ---- options : réglages de ce PC, puis le classeur (cartes qu'on a hors des decks) */
+.options h2 { margin-top: 0; }
+.opt-ligne { display: grid; grid-template-columns: 10.5rem minmax(0, 18rem); align-items: center; gap: .3rem 1rem; margin: .55rem 0; }
+.opt-euros { display: inline-flex; align-items: center; gap: .45rem; }
+.opt-euros .champ { width: 6rem; }
+.opt-case { display: flex; align-items: center; gap: .5rem; margin-top: .9rem; cursor: pointer; }
+.opt-titre { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem 1rem; }
+.opt-titre h2 { margin: 0; }
+.opt-titre .btn { margin-left: auto; align-self: center; }
+.cl-outils { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 16rem); gap: .6rem; margin-top: .8rem; align-items: start; }
+.cl-coller { margin: .2rem 0 0; }
+.cl-coller summary { cursor: pointer; color: var(--texte-2); }
+.cl-coller textarea { margin-top: .4rem; }
+/* le classeur en tableau, comme les résultats de la recherche, avec une colonne Qté (− n +) avant le prix */
+.rch-liste.cl-table .rch-cols, .rch-liste.cl-table .rch-carte {
+  grid-template-columns: 112px minmax(0, 1fr) minmax(0, 1fr) minmax(6rem, 9rem) minmax(5.5rem, 8rem) 6.5rem minmax(5.5rem, 7rem); }
+.rch-liste.cl-table .rch-carte { grid-template-areas: "img vo vf type cout qte prix" "img det det . . qte prix"; }
+.cl-qte { grid-area: qte; display: inline-flex; align-items: center; align-self: start; }
+.cl-qte .btn-menu { width: 1.7rem; }
+.cl-n { min-width: 1.5rem; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.rch-actions-v .cl-qte { margin: 0 auto; }
+@container rch (max-width: 780px) {
+  .rch-liste.cl-table .rch-carte { grid-template-columns: 76px minmax(0, 1fr) auto;
+    grid-template-areas: "img vo cout" "img vf vf" "img det det" "img prix qte"; }
+  .rch-liste.cl-table .rch-prix { align-self: center; }
+}
+@media (max-width: 600px) { .opt-ligne, .cl-outils { grid-template-columns: minmax(0, 1fr); } }
