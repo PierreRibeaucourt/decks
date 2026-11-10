@@ -1572,7 +1572,8 @@
  },
  "Deck Tromo": {
   "slug": "tromo",
-  "date": 1794319514.6512525,
+  "date": 1794320257.3207984,
+  "version": "1.5.0",
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/f/4/f40ad933-ddd9-4975-a222-21fe3305137c.jpg?1783915686",
