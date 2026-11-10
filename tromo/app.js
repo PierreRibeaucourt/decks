@@ -14,7 +14,8 @@ const etat = { decks: [], deck: null, filtre: "" };
 const PARTAGE = window.PARTAGE || null;
 if (PARTAGE) document.documentElement.classList.add("partage");
 // page partagée : à qui sont ces decks (reglages.json « nom », sinon le compte GitHub qui publie)
-const MES_DECKS = PARTAGE && PARTAGE.auteur ? `Decks de ${PARTAGE.auteur}` : "Mes decks";
+// titre_accueil : la page d'accueil de l'Atelier (site_atelier.py), qui n'est le site de decks de personne
+const MES_DECKS = PARTAGE && PARTAGE.titre_accueil || (PARTAGE && PARTAGE.auteur ? `Decks de ${PARTAGE.auteur}` : "Mes decks");
 let versionAtelier = (PARTAGE && PARTAGE.version) || "";       // version.py ; dans l'Atelier, lue par verifierVersion()
 // budget par carte (reglages.json, 5 € par défaut, 0 = pas d'alerte) : les cartes plus chères sont signalées
 const REGLAGES = (PARTAGE && PARTAGE.reglages) || window.REGLAGES || {};
@@ -146,12 +147,12 @@ const ICONES = {
 if (PARTAGE) $(".logo").href = PARTAGE.accueil === true ? "#/" : PARTAGE.accueil;
 const ico = (nom) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONES[nom] || ""}</svg>`;
 $$("[data-ico]").forEach((el) => el.insertAdjacentHTML("afterbegin", ico(el.dataset.ico)));
-// page partagée : à qui est la page, et l'Atelier à installer pour faire pareil avec ses decks (sauf sur a-propos/,
-// dont l'en-tête a déjà son bouton « Installer ») ; en bas, la licence, le code source et la page « C'est quoi,
-// l'Atelier MTG ? », une seule pour le site : a-propos/
+// page partagée : à qui est la page, et l'Atelier à installer pour faire pareil avec ses decks (sauf sur la page
+// d'accueil de l'Atelier, dont l'en-tête a déjà son bouton « Installer ») ; en bas, la licence, le code source et
+// « C'est quoi, l'Atelier MTG ? » : la page d'accueil de l'Atelier, la même pour tous les sites de decks
 const TITRE_PARTAGE = document.title;
-const A_PROPOS = !PARTAGE ? "#/a-propos" : PARTAGE.page === "a-propos" ? "./"
-  : (PARTAGE.accueil && PARTAGE.accueil !== true ? PARTAGE.accueil : "") + "a-propos/";
+const ACCUEIL_ATELIER = "https://pierreribeaucourt.github.io/atelier-mtg/";
+const A_PROPOS = !PARTAGE ? "#/a-propos" : PARTAGE.page === "a-propos" ? "./" : ACCUEIL_ATELIER;
 // « Installer l'Atelier MTG » : la section Installation de cette page, pas GitHub (un débutant y attend un fichier à
 // télécharger, il y trouve du code)
 const INSTALLER = !PARTAGE ? "#/a-propos/installation" : PARTAGE.page === "a-propos" ? "#installation" : A_PROPOS + "#installation";
@@ -162,7 +163,7 @@ if (PARTAGE) {
     <a class="btn btn-accent btn-petit" href="${INSTALLER}">${ico("telecharger")}Installer l'Atelier MTG</a>
   </div>`);
   $(".cadre").insertAdjacentHTML("afterend", `<footer class="pied-partage">
-    <nav><a href="${A_PROPOS}">C'est quoi, l'Atelier MTG ?</a>${depot ? `<a href="${depot}" target="_blank" rel="noopener">Code source sur GitHub</a>
+    <nav>${PARTAGE.page === "a-propos" ? "" : `<a href="${A_PROPOS}">C'est quoi, l'Atelier MTG ?</a>`}${depot ? `<a href="${depot}" target="_blank" rel="noopener">Code source sur GitHub</a>
       <a href="${depot}/blob/main/LICENSE" target="_blank" rel="noopener">Licence MIT</a>` : ""}</nav>
     <p>Magic: The Gathering est une marque de Wizards of the Coast. L'Atelier MTG n'est ni affilié à Wizards of the Coast ni approuvé par elle.
       Données des cartes : Scryfall.</p>
@@ -623,7 +624,8 @@ async function route() {
   vue.classList.toggle("vue-large", parts[0] === "recherche" || parts[0] === "options");
   vue.classList.remove("vue-pleine");                       // la page « C'est quoi » la remet : son en-tête prend toute la largeur
   try {
-    if (PARTAGE && parts[0] === "a-propos" && PARTAGE.page !== "a-propos") location.replace(A_PROPOS);   // ancienne adresse
+    if (PARTAGE && parts[0] === "a-propos" && PARTAGE.page !== "a-propos")                              // ancienne adresse
+      location.replace(A_PROPOS + (parts[1] === "installation" ? "#installation" : ""));
     else if (parts[0] === "a-propos") vueAPropos(parts[1] === "installation");
     else if (PARTAGE && PARTAGE.page === "a-propos" && (!parts[0] || parts[0] === "installation")) vueAPropos(parts[0] === "installation");
     else if (PARTAGE && parts[0] === "recherche") vueRechercheVitrine();
