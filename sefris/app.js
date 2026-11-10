@@ -38,7 +38,7 @@ async function api(chemin, opts = {}) {
   const r = await fetch(chemin, init);
   const type = r.headers.get("content-type") || "";
   const data = type.includes("json") ? await r.json() : await r.text();
-  if (!r.ok) throw new Error((data && data.erreur) || data || r.statusText);
+  if (!r.ok) throw Object.assign(new Error((data && data.erreur) || data || r.statusText), { statut: r.status });
   return data;
 }
 
@@ -139,6 +139,8 @@ const ICONES = {
   telecharger: '<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>',
   coche: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   moins: '<path d="M5 12h14"/>',
+  terminal: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7.5 9.5 3 2.5-3 2.5M13 15h4"/>',
+  dossier: '<path d="M3.5 7a2 2 0 0 1 2-2h3.8l2 2.5h7.2a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
   options: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
 };
 if (PARTAGE) $(".logo").href = PARTAGE.accueil === true ? "#/" : PARTAGE.accueil;
@@ -1415,11 +1417,57 @@ function modalePartage(d) {
     };
     const publier = async () => {
       zone.innerHTML = `<p class="chargement">Publication…</p>`;
-      try { rendre(await api(`/api/decks/${enc(d.id)}/partage`, { method: "POST" })); toast("Publié : en ligne d'ici une minute.", 4000); }
-      catch (e) { zone.innerHTML = `<p class="erreur">${esc(e.message)}</p>`; }
+      try { rendre(await api(`/api/decks/${enc(d.id)}/partage`, { method: "POST" })); toast("Publié : en ligne d'ici une minute ou deux.", 4000); }
+      catch (e) {
+        if (e.statut === 401) {
+          zone.innerHTML = `<p>${esc(e.message)}</p>
+            <div class="gh-action"><button class="btn btn-accent" id="gh-connecter">Se connecter à GitHub</button></div>`;
+          $("#gh-connecter", zone).onclick = () => connexionGithub(zone, publier);
+        }
+        else zone.innerHTML = `<p class="erreur">${esc(e.message)}</p>`;
+      }
     };
     const s = await api(`/api/decks/${enc(d.id)}/partage`).catch(() => ({}));
     if (s.url) rendre(s); else publier();
+  }, { focus: false });
+}
+
+// partage sans git : se connecter à GitHub par un code (github.py). Le code s'affiche tout de suite, avec les trois
+// gestes à faire sur github.com ; la page suit GitHub et appelle suite(compte) une fois connecté
+async function connexionGithub(zone, suite) {
+  zone.innerHTML = `<p class="chargement">Demande d'un code à GitHub…</p>`;
+  let c;
+  try { c = await api("/api/github/connexion", { method: "POST", body: {} }); }
+  catch (e) { zone.innerHTML = `<p class="erreur">${esc(e.message)}</p>`; return; }
+  zone.innerHTML = `<ol class="gh-etapes">
+      <li><p class="gh-code" aria-label="Code de connexion">${esc(c.code)}</p>
+        <a class="btn btn-accent" id="gh-ouvrir" href="${esc(c.url)}" target="_blank" rel="noopener">${ico("copier")}Copier le code et ouvrir GitHub</a></li>
+      <li>Sur GitHub, colle le code (Ctrl+V), puis clique sur « Continue ».</li>
+      <li>Clique sur « Authorize Atelier MTG », puis reviens ici.</li>
+    </ol>
+    <p class="muet petit">Pas encore de compte GitHub ? La page de GitHub propose d'en créer un, gratuitement.</p>
+    <p class="gh-attente" role="status">En attente de GitHub…</p>`;
+  $("#gh-ouvrir", zone).onclick = () => { navigator.clipboard.writeText(c.code).catch(() => {}); };
+  while (zone.isConnected) {
+    await attendre(2000);
+    let e;
+    try { e = await api("/api/github/connexion"); } catch (_) { continue; }
+    if (!zone.isConnected || e.etat === "attente") continue;
+    if (e.etat === "ok") { toast(`Connecté à GitHub : ${e.compte}.`); return suite(e.compte); }
+    zone.innerHTML = `<p>${esc({ refus: "Connexion refusée sur GitHub.", expire: "Le code a expiré." }[e.etat] || e.erreur || "Connexion impossible.")}</p>
+      <div class="gh-action"><button class="btn btn-accent" id="gh-encore">Recommencer</button></div>`;
+    $("#gh-encore", zone).onclick = () => connexionGithub(zone, suite);
+    return;
+  }
+}
+
+// la même chose dans sa propre fenêtre (Options)
+function modaleGithub(suite) {
+  ouvrirModale(`<div class="fc-tete"><h2>Connexion à GitHub</h2>
+      <button class="btn btn-discret btn-icone" id="gh-fermer" aria-label="Fermer">${ico("fermer")}</button></div>
+    <div id="gh-zone"></div>`, (b) => {
+    $("#gh-fermer", b).onclick = fermerModale;
+    connexionGithub($("#gh-zone", b), (compte) => { fermerModale(); suite(compte); });
   }, { focus: false });
 }
 
@@ -1480,10 +1528,11 @@ async function vueOptions() {
 // chaque champ s'enregistre quand on le quitte (ou Entrée), la case tout de suite
 function optionsGenerales(el, o) {
   const budget = (b) => (b == null ? "" : String(b).replace(".", ","));
-  el.innerHTML = `<h2>Général</h2>
+  el.innerHTML = `<div class="opt-titre"><h2>Général</h2>
+      <button type="button" class="btn btn-petit btn-discret" id="opt-dossier">${ico("dossier")}Ouvrir le dossier</button></div>
     <label class="opt-ligne"><span>Nom affiché</span><input class="champ" name="nom" maxlength="60" value="${esc(o.nom)}" placeholder="${esc(o.github)}"></label>
     <label class="opt-ligne"><span>Budget par carte</span><span class="opt-euros"><input class="champ" name="budget" inputmode="decimal" value="${budget(o.budget)}" placeholder="${budget(o.budget_defaut)}">€</span></label>
-    <label class="opt-ligne"><span>Compte GitHub</span><input class="champ" name="github" maxlength="39" value="${esc(o.github)}" autocomplete="off" spellcheck="false"></label>
+    <div id="opt-github"></div>
     ${o.demarrage == null ? "" : `<label class="opt-case"><input type="checkbox" name="demarrage" ${o.demarrage ? "checked" : ""}>Lancer l'Atelier au démarrage de Windows</label>`}`;
   el.onchange = async (ev) => {
     const c = ev.target;
@@ -1492,13 +1541,33 @@ function optionsGenerales(el, o) {
       const r = await api("/api/options", { method: "POST", body: { [c.name]: c.type === "checkbox" ? c.checked : c.value } });
       Object.assign(o, r);
       majBudget(r.budget);
-      $('[name="nom"]', el).placeholder = r.github;
+      $('[name="nom"]', el).placeholder = r.github || $('[name="nom"]', el).placeholder;
       toast("Enregistré.");
     } catch (e) { erreur(e); }
     if (c.type === "checkbox") c.checked = !!o.demarrage;
     else c.value = c.name === "budget" ? budget(o.budget) : o[c.name];       // la valeur gardée (nettoyée, ou l'ancienne)
   };
   el.onkeydown = (ev) => { if (ev.key === "Enter" && ev.target.matches("input.champ")) ev.target.blur(); };
+  $("#opt-dossier", el).onclick = () => api("/api/ouvrir-dossier", { method: "POST", body: {} }).catch(erreur);
+  ligneGithub($("#opt-github", el), o);
+}
+
+// le compte GitHub où vont les decks partagés : connecté par code (github.py), ou celui du partage avec git (reglages.json)
+async function ligneGithub(el, o) {
+  const g = await api("/api/github").catch(() => ({}));
+  const nom = $('[name="nom"]');
+  if (nom) nom.placeholder = g.compte || o.github || "";
+  if (g.git && !g.compte) {
+    el.innerHTML = `<label class="opt-ligne"><span>Compte GitHub</span><input class="champ" name="github" maxlength="39" value="${esc(o.github)}" autocomplete="off" spellcheck="false"></label>`;
+    return;
+  }
+  el.innerHTML = `<div class="opt-ligne"><span>GitHub</span><span class="opt-github">${g.compte
+    ? `<strong>${esc(g.compte)}</strong><button type="button" class="btn btn-petit btn-discret" id="gh-deconnecter">Se déconnecter</button>`
+    : `<button type="button" class="btn btn-accent btn-petit" id="gh-options">Se connecter à GitHub</button>`}</span></div>`;
+  if (g.compte) $("#gh-deconnecter", el).onclick = async () => {
+    try { await api("/api/github/deconnexion", { method: "POST", body: {} }); ligneGithub(el, o); } catch (e) { erreur(e); }
+  };
+  else $("#gh-options", el).onclick = () => modaleGithub(() => ligneGithub(el, o));
 }
 
 // le classeur, présenté comme les résultats de la recherche : en-têtes Coul. · Nom VO · Nom VF · Type · Coût · Qté · Prix
@@ -3820,12 +3889,12 @@ const MODULES_ATELIER = [
 // les questions des visiteurs (joueurs experts, débutants, non-informaticiens), repliées ; une réponse en HTML commence par « < »
 const FAQ_ATELIER = [
   ["Installation et sécurité", [
-    ["Il n'y a pas de fichier à télécharger ? Je ne suis pas informaticien.",
-      "L'Atelier se récupère sur GitHub, sous forme de code. Le plus simple est de confier l'installation à un assistant IA qui agit sur votre ordinateur, comme Claude Code : collez-lui la consigne ci-dessus. Il installe ce qu'il faut, vous pose trois questions et crée un raccourci sur le bureau. Ensuite, les mises à jour s'installent en un clic."],
+    ["Je ne suis pas informaticien : c'est compliqué à installer ?",
+      "Non. Sous Windows, téléchargez l'installeur et lancez-le, comme n'importe quel programme : il contient tout ce qu'il faut et crée un raccourci sur le bureau. Ensuite, les mises à jour s'installent en un clic. Sous macOS et Linux, confiez l'installation à un assistant IA qui agit sur votre ordinateur, comme Claude Code : collez-lui la consigne ci-dessus."],
     ["Ça marche sur Mac et Linux ?",
       "<p>En principe oui : c'est le même programme, lancé par <code>atelier.sh</code>. Mais pour l'instant, seul Windows est testé.</p>"],
     ["Est-ce sûr ?",
-      "L'Atelier ne s'ouvre que sur votre PC : il n'est pas accessible depuis le réseau. Il n'a pas d'installeur certifié, mais tout son code est public : vous, ou votre assistant IA, pouvez le lire avant de l'installer."],
+      "L'Atelier ne s'ouvre que sur votre PC : il n'est pas accessible depuis le réseau. Son installeur n'est pas signé (une signature coûte plusieurs centaines d'euros par an), d'où l'avertissement de Windows au premier lancement ; mais tout son code est public : vous, ou votre assistant IA, pouvez le lire avant de l'installer."],
   ]],
   ["Claude", [
     ["Faut-il payer pour Claude ?",
@@ -3927,18 +3996,49 @@ function vueAPropos(installation = false) {
       </ul>
 
       <h2 id="installation">Installation</h2>
-      <p>L'Atelier s'installe une fois sur votre ordinateur, puis s'ouvre par un raccourci sur le bureau. Il est testé sous
-        Windows ; il devrait marcher aussi sous macOS et Linux.</p>
-      <h3>Le plus simple : avec un assistant IA</h3>
-      <p>Collez cette consigne à un assistant IA qui agit sur votre ordinateur (Claude Code, Cursor, Copilot…) : il installe
-        tout et vous pose trois questions.</p>
-      <div class="ap-consigne"><code>${esc(consigne)}</code>
-        <button type="button" class="btn btn-petit btn-discret" id="ap-copier">${ico("copier")}Copier</button></div>
-      <p>Pas encore d'assistant IA ? Installez <a href="${CLAUDE_BUREAU}" target="_blank" rel="noopener">l'application Claude
-        pour ordinateur</a> (abonnement Pro ou plus), ouvrez son onglet Code, choisissez le dossier où ranger l'Atelier, puis
-        collez-y la consigne.</p>
-      <h3>À la main</h3>
-      <p>Il faut Python 3.10 ou plus récent, et git. Les commandes sont sur GitHub :
+      <p>L'Atelier s'installe une fois sur votre ordinateur, puis s'ouvre par un raccourci sur le bureau. Trois façons de
+        faire, au choix :</p>
+      <div class="ap-onglets" role="tablist" aria-label="Façon d'installer">
+        <button type="button" role="tab" id="ap-o-windows" aria-controls="ap-p-windows"><svg class="ico ap-logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8.4v8.4H3zM12.6 3H21v8.4h-8.4zM3 12.6h8.4V21H3zM12.6 12.6H21V21h-8.4z"/></svg>Installeur</button>
+        <button type="button" role="tab" id="ap-o-ia" aria-controls="ap-p-ia">${ico("discussion")}Assistant IA</button>
+        <button type="button" role="tab" id="ap-o-main" aria-controls="ap-p-main">${ico("terminal")}À la main</button>
+      </div>
+      <div class="ap-install" role="tabpanel" id="ap-p-windows" aria-labelledby="ap-o-windows">
+        <p class="ap-install-pour">Windows 10 et 11 · rien d'autre à installer</p>
+        <ol>
+          <li>Téléchargez l'installeur :
+            <a class="btn btn-accent ap-install-action" href="${depot}/releases/latest/download/Atelier-MTG-Windows.exe">${ico("telecharger")}Télécharger pour Windows</a></li>
+          <li>Double-cliquez sur le fichier, puis sur <b>Installer</b>. Si Windows affiche <b>Windows a protégé votre
+            ordinateur</b> : <b>Informations complémentaires</b>, puis <b>Exécuter quand même</b>.</li>
+          <li>L'Atelier s'ouvre dans votre navigateur. Pour le rouvrir : raccourci <b>Atelier MTG</b> sur le bureau.</li>
+        </ol>
+      </div>
+      <div class="ap-install" role="tabpanel" id="ap-p-ia" aria-labelledby="ap-o-ia" hidden>
+        <p class="ap-install-pour">Windows, macOS, Linux · il s'occupe de tout</p>
+        <ol>
+          <li>Ouvrez un assistant IA qui agit sur votre ordinateur : Claude Code, Cursor, Copilot… Sinon,
+            <a href="${CLAUDE_BUREAU}" target="_blank" rel="noopener">l'application Claude pour ordinateur</a>
+            (abonnement Pro ou plus), onglet <b>Code</b>.</li>
+          <li>Collez-lui cette consigne :
+            <div class="ap-commande"><code>${esc(consigne)}</code><button type="button" data-copier>Copier</button></div></li>
+          <li>Répondez à ses trois questions : il installe tout et crée le raccourci sur le bureau.</li>
+        </ol>
+      </div>
+      <div class="ap-install" role="tabpanel" id="ap-p-main" aria-labelledby="ap-o-main" hidden>
+        <p class="ap-install-pour">Windows, macOS, Linux · Python et git</p>
+        <ol>
+          <li>Installez <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">Python</a> 3.10 ou plus
+            récent, et <a href="https://git-scm.com/downloads" target="_blank" rel="noopener">git</a>.</li>
+          <li>Dans un terminal :
+            <div class="ap-commande"><code>git clone ${depot}.git "Atelier MTG"
+cd "Atelier MTG"
+python installer.py</code><button type="button" data-copier>Copier</button></div></li>
+          <li>Pour rouvrir l'Atelier : raccourci <b>Atelier MTG</b> sur le bureau, ou <code>./atelier.sh</code> sous macOS et
+            Linux.</li>
+        </ol>
+      </div>
+      <p class="ap-install-sous">Les trois donnent le même Atelier, gratuit et open source. Les nouvelles versions s'annoncent
+        dans l'Atelier et s'installent en un clic ; vos decks sont conservés. Code source :
         <a class="ap-depot" href="${depot}" target="_blank" rel="noopener">${depot.replace("https://", "")}</a></p>
 
       <h2>Questions fréquentes</h2>
@@ -3969,9 +4069,38 @@ function vueAPropos(installation = false) {
     };
     if (img.closest(".ap-module")) img.onclick = () => zoomer(img);
   });
-  $("#ap-copier").onclick = async () => {
-    try { await navigator.clipboard.writeText(consigne); toast("Consigne copiée."); } catch (e) { erreur(e); }
+  const onglets = $$(".ap-onglets [role=tab]", vue);
+  const choisir = (o, focus = false) => {
+    onglets.forEach((x) => {
+      const oui = x === o;
+      x.setAttribute("aria-selected", oui);
+      x.tabIndex = oui ? 0 : -1;
+      $("#" + x.getAttribute("aria-controls"), vue).hidden = !oui;
+    });
+    if (focus) o.focus();
   };
+  onglets.forEach((o, i) => {
+    o.onclick = () => choisir(o);
+    o.onkeydown = (ev) => {
+      const d = { ArrowRight: 1, ArrowLeft: -1 }[ev.key];
+      if (d) { ev.preventDefault(); choisir(onglets[(i + d + onglets.length) % onglets.length], true); }
+    };
+  });
+  const plateforme = ((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "") + " " + navigator.userAgent;
+  choisir($(/Mac|iPhone|iPad|Linux|X11|CrOS/i.test(plateforme) && !/Windows|Android/i.test(plateforme) ? "#ap-o-ia" : "#ap-o-windows", vue));
+  $$("[data-copier]", vue).forEach((b) => b.onclick = async () => {
+    const code = b.previousElementSibling;
+    try {
+      await navigator.clipboard.writeText(code.textContent);
+      b.textContent = "Copié";
+      setTimeout(() => { b.textContent = "Copier"; }, 1800);
+    } catch (_) {                                 // presse-papiers refusé : le texte sélectionné, prêt pour Ctrl+C
+      const r = document.createRange();
+      r.selectNodeContents(code);
+      getSelection().removeAllRanges();
+      getSelection().addRange(r);
+    }
+  });
   // un saut, pas un défilement animé : les captures qui se chargent en chemin le feraient s'arrêter trop tôt
   const aInstallation = () => $("#installation").scrollIntoView();
   $("#ap-installer").onclick = (ev) => { ev.preventDefault(); aInstallation(); };      // même page : sans la redessiner
