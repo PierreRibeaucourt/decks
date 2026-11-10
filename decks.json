@@ -753,7 +753,8 @@
  },
  "Deck Sefris": {
   "slug": "sefris",
-  "date": 1794319498.4959407,
+  "date": 1794320239.9916832,
+  "version": "1.5.0",
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/d/3/d30255f6-e058-476a-b377-2ee4c9178ed1.jpg?1783926260",
