@@ -751,7 +751,7 @@
  },
  "Deck Sefris": {
   "slug": "sefris",
-  "date": 1794254630.4401999,
+  "date": 1794291900.9831064,
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/d/3/d30255f6-e058-476a-b377-2ee4c9178ed1.jpg?1783926260",
@@ -774,7 +774,7 @@
    "maybe": 1,
    "modifie": 1793822475.3802023,
    "note": "",
-   "prix_total": 70.02,
+   "prix_total": 70.6,
    "titre": "Sefris",
    "total": 100,
    "trop_cher": [
