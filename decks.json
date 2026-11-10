@@ -1907,7 +1907,8 @@
  },
  "Deck Greven Elemental": {
   "slug": "greven-elemental",
-  "date": 1794319522.2704666,
+  "date": 1794320265.3608077,
+  "version": "1.5.0",
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/b/d/bda22fc3-31a5-451a-9a8b-372884f7bc61.jpg?1783932799",
