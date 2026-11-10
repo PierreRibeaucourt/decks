@@ -1902,7 +1902,7 @@
  },
  "Deck Greven Elemental": {
   "slug": "greven-elemental",
-  "date": 1794254607.865552,
+  "date": 1794291879.9735487,
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/b/d/bda22fc3-31a5-451a-9a8b-372884f7bc61.jpg?1783932799",
@@ -1927,7 +1927,7 @@
    "maybe": 4,
    "modifie": 1794160399.297893,
    "note": "",
-   "prix_total": 143.32,
+   "prix_total": 143.65,
    "titre": "Greven Elemental",
    "total": 100,
    "trop_cher": [
