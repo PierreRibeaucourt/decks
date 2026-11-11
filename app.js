@@ -619,7 +619,7 @@ async function route() {
   majTitre();
   const [chemin, qs] = location.hash.replace(/^#\/?/, "").split(/\?(.*)/s);
   const parts = chemin.split("/");
-  $("#lien-recherche").classList.toggle("actif", parts[0] === "recherche");
+  $("#lien-recherche").classList.toggle("actif", parts[0] === "recherche" && !new URLSearchParams(qs || "").get("deck"));   // pour un deck : son bandeau
   $("#lien-options").classList.toggle("actif", parts[0] === "options");
   vue.classList.toggle("vue-large", parts[0] === "recherche" || parts[0] === "options");
   vue.classList.remove("vue-pleine");                       // la page « C'est quoi » la remet : son en-tête prend toute la largeur
@@ -917,8 +917,8 @@ function modaleNouveauDeck() {
       $("#nd-cmd", b).innerHTML = cmd ? `
         <div class="cmd-choisi">
           <img src="${esc(cmd.image)}" alt="" data-image="${esc(cmd.image)}">
-          <div><strong>${esc(cmd.nom)}</strong> ${mana(cmd.cout)}${cmd.fr ? `<div class="muet petit">${esc(cmd.fr)}</div>` : ""}
-            <div class="muet petit">${esc(cmd.type || "")}</div></div>
+          <div><strong>${esc(cmd.fr || cmd.nom)}</strong> ${mana(cmd.cout)}${cmd.fr && cmd.fr !== cmd.nom ? `<div class="muet petit">${esc(cmd.nom)}</div>` : ""}
+            <div class="muet petit">${esc(cmd.type_fr || cmd.type || "")}</div></div>
           <button class="btn btn-petit" id="nd-autre">Changer</button>
         </div>` : "";
       $("#nd-rech", b).hidden = !!cmd;
@@ -975,7 +975,7 @@ async function vueDeck(id, onglet, extra = null, donnees = null) {
         </div>
         <div class="actions">
           <a class="btn" href="${PARTAGE ? "jouer/" : `/jouer?deck=${enc(id)}`}" target="_blank" rel="noopener">${ico("lancer")}Jouer</a>
-          <a class="btn ecrit" href="#/recherche?deck=${enc(id)}">${ico("chercher")}Chercher des cartes</a>
+          <a class="btn ecrit" href="#/recherche?deck=${enc(id)}">${ico("chercher")}Chercher pour ce deck</a>
           <button class="btn btn-icone ouvre-menu" id="btn-deck-menu" aria-label="Autres actions sur le deck" title="Autres actions">${ico("plus_de")}</button>
         </div>
       </div>
@@ -1041,10 +1041,7 @@ const jaugeSugg = (note) => {
   return `<span class="sg-jauge" role="img" aria-label="Intérêt : ${n} sur 5">${[1, 2, 3, 4, 5].map((k) => `<i class="${k <= n ? "plein" : ""}"></i>`).join("")}</span>`;
 };
 
-const badgesSugg = (x, d) => [
-  badgesRch(x, d),
-  x.classeur ? `<span class="badge badge-ok">Classeur${x.classeur > 1 ? " ×" + x.classeur : ""}</span>` : "",
-].join("");
+const badgesSugg = (x, d) => badgesRch(x, d);
 
 function actionsSugg(x, images = false) {                  // en images : « Écarter » en icône, pour tenir sous la carte
   if (x.dans === "deck") return `<span class="badge badge-ok">✓ dans le deck</span>`;
@@ -2098,10 +2095,10 @@ function ouvrirCarte(c) {
   ouvrirModale(`
     <div class="fiche-carte">
       <div class="fc-image">${f.image ? `<img src="${esc(f.image)}" alt="${esc(c.nom)}" data-recto="${esc(f.image)}" data-verso="${esc((f.dos && f.dos.image) || "")}">` : `<div class="sans-image">${esc(c.nom)}</div>`}
-        ${boutonVerso(f.dos)}${lienVersion(c.version)}</div>
+        ${boutonVerso(f.dos)}${lienVersion(c.version || c.image_ed, c.versions)}</div>
       <div class="fc-infos">
         <div class="fc-tete">
-          <div><h2>${esc(c.nom)} ${mana(f.cout)}</h2>${f.fr && f.fr !== c.nom ? `<div class="muet">${esc(f.fr)}</div>` : ""}</div>
+          <div><h2>${esc(f.fr || c.nom)} ${mana(f.cout)}</h2>${f.fr && f.fr !== c.nom ? `<div class="muet">${esc(c.nom)}</div>` : ""}</div>
           <button class="btn btn-discret btn-icone" id="fc-fermer" aria-label="Fermer">${ico("fermer")}</button>
         </div>
         <div class="petit muet">${esc(f.fr_type || f.type || "")}${f.pt ? " · " + esc(f.pt) : ""}${cmd ? " · commandant" : maybe ? " · Maybeboard" : ""}</div>
@@ -2199,7 +2196,7 @@ function modaleTags(c, retourFiche = false) {
   const tags = c.tags.filter((t) => t !== "Maybeboard" && t !== "Commander");
   const tous = (etat.deck && etat.deck.categories) || [];
   ouvrirModale(`
-    <h2>Tags de ${esc(c.nom)}</h2>
+    <h2>Tags de ${esc(nomAffiche(c))}</h2>
     <div id="tags-carte" class="puces"></div>
     <div class="form-ligne">
       <input class="champ" id="tag-nouveau" list="liste-cat" placeholder="Nouveau tag" style="flex:1;min-width:200px">
@@ -2251,10 +2248,11 @@ function modaleTags(c, retourFiche = false) {
 const memeVersion = (a, b) => !!a && !!b && a.set === b.set && a.num === b.num && (a.lang || "en") === (b.lang || "en");
 const editionVersion = (p) => p ? { set: p.set, num: p.num, lang: p.lang, nom_edition: p.edition } : null;
 
-function lienVersion(v) {
+// sous l'image : l'édition de l'image affichée, et le lien vers les autres impressions (comme la fiche de la recherche)
+function lienVersion(v, n = 0) {
   return `<div class="fc-version">
     ${v ? `<span class="petit muet">${esc(v.edition)}${v.annee ? " · " + esc(v.annee) : ""}${v.lang === "fr" ? " · en français" : ""}</span>` : ""}
-    <button type="button" class="lien-discret ecrit" data-act="version">Changer la version</button>
+    <button type="button" class="lien-discret ecrit" data-act="version">${n > 1 ? `${n} versions` : "Changer la version"}</button>
   </div>`;
 }
 
@@ -2436,22 +2434,27 @@ async function chargerFiche(zone, nom, { version = null, surVersion = null } = {
   const d = etat.deck;
   const deja = d && d.cartes.some((c) => c.nom === f.nom);
   const hors = d && d.identite && (f.couleurs || []).some((x) => !d.identite.includes(x));
+  // mêmes éléments, dans le même ordre, que les fiches du deck et de la recherche (ouvrirCarte, ficheRecherche)
+  const texte = (t) => (t || "").split("\n").map((l) => l.trim() === "//" ? "<hr>" : l.trim() ? `<p>${texteMana(l)}</p>` : "").join("");
   zone.innerHTML = `
     <div class="fiche">
-      <div class="fiche-image"><img src="${esc(f.image)}" alt="${esc(f.nom)}">${surVersion ? lienVersion(f.version) : ""}</div>
-      <div>
-        <h3 style="margin-top:0">${esc(f.nom)} ${mana(f.cout)}</h3>
-        ${f.fr ? `<div class="muet">${esc(f.fr)}</div>` : ""}
-        <div class="chiffres" style="margin:.5rem 0">
-          <span class="badge ${f.trop_cher ? "badge-cher" : "badge-ok"}">${euros(f.prix)}${f.prix_edition ? ` · ${esc(f.prix_edition)}` : ""}</span>
+      <div class="fiche-image"><img src="${esc(f.image)}" alt="${esc(f.nom)}">${surVersion ? lienVersion(f.version || f.image_ed, f.versions) : ""}</div>
+      <div class="fc-infos">
+        <div><h3 style="margin:0">${esc(f.fr || f.nom)} ${mana(f.cout)}</h3>${f.fr && f.fr !== f.nom ? `<div class="muet">${esc(f.nom)}</div>` : ""}</div>
+        <div class="petit muet">${esc(f.fr_type || f.type || "")}${f.pt ? " · " + esc(f.pt) : ""}</div>
+        <div class="chiffres">
+          <span class="badge ${f.trop_cher ? "badge-cher" : ""}" title="Le moins cher, toutes éditions (prix Cardmarket du jour)">${euros(f.prix)}${f.prix_edition ? ` · ${esc(f.prix_edition)}` : ""}</span>
           ${f.gc ? `<span class="badge badge-gc">Game Changer</span>` : ""}
           ${f.legal === "banned" ? `<span class="badge badge-alerte">interdite</span>` : ""}
           ${hors ? `<span class="badge badge-alerte">hors couleurs</span>` : ""}
           ${deja ? `<span class="badge badge-alerte">déjà dans ce deck</span>` : ""}
-          ${f.prix_lien ? `<a class="badge" href="${esc(f.prix_lien)}" target="_blank" rel="noopener">Cardmarket ↗</a>` : ""}
         </div>
-        <div class="petit muet">${esc(f.type)}</div>
-        <div class="texte">${esc(f.texte)}</div>
+        ${f.fr_texte || f.texte ? `<div class="texte fs-texte">${texte(f.fr_texte || f.texte)}</div>` : ""}
+        ${f.fr_texte && f.texte ? `<details class="petit"><summary>Texte anglais</summary><div class="fs-texte" style="margin-top:.4rem">${texte(f.texte)}</div></details>` : ""}
+        <div class="fc-liens">
+          <a href="${esc(f.prix_lien || lienCardmarket(f.nom))}" target="_blank" rel="noopener">${ico("panier")}Cardmarket ↗</a>
+          <a href="${esc(f.gatherer || lienGatherer(f.nom))}" target="_blank" rel="noopener">${ico("livre")}Gatherer ↗</a>
+        </div>
       </div>
     </div>`;
   const lien = $('[data-act="version"]', zone);
@@ -3755,12 +3758,11 @@ function resumeCrit(c) {
 
 // ---- la page
 async function vueRecherche(params) {
-  // la page sans critère : le formulaire, avec les critères de la dernière recherche du même genre. Lien du haut : la
-  // dernière recherche sans deck ; bouton « Chercher des cartes » d'un deck : la dernière recherche pour ce deck
-  const deckDemande = params.get("deck") || "";
-  if ([...params.keys()].every((k) => k === "deck")) {
-    let derniere = new URLSearchParams(PREF.get(cleDerniere(deckDemande), ""));
-    if ((derniere.get("deck") || "") !== deckDemande) derniere = new URLSearchParams();   // mémorisée pour un autre deck
+  // lien du haut, sans critère : le formulaire avec les critères de la dernière recherche sans deck. Bouton « Chercher
+  // des cartes » d'un deck : un formulaire vierge, aux couleurs du deck (une ancienne recherche pourrait en sortir)
+  if (![...params.keys()].length) {
+    let derniere = new URLSearchParams(PREF.get(cleDerniere(""), ""));
+    if (derniere.get("deck")) derniere = new URLSearchParams();
     derniere.delete("r");                          // le formulaire, prérempli, sans relancer la recherche
     derniere.delete("page");
     if ([...derniere.keys()].length) {
@@ -3791,21 +3793,24 @@ async function vueRecherche(params) {
   vue.innerHTML = `
     <div class="rch-tete">
       <nav class="fil" aria-label="Fil d'Ariane"><a href="#/">Mes decks</a><span aria-hidden="true">›</span>${rch.deck ? `<a href="#/deck/${enc(rch.deck.id)}">${esc(rch.deck.titre)}</a><span aria-hidden="true">›</span>` : ""}<span aria-current="page">Recherche de cartes</span></nav>
-      <div class="rch-deck">
+      ${rch.deck ? "" : `<div class="rch-deck">
         <label class="petit muet" for="rch-deck">Pour le deck</label>
         <select class="champ champ-petit" id="rch-deck">
           <option value="">— aucun —</option>
           ${[...ds].sort((a, b) => recence(b) - recence(a) || a.titre.localeCompare(b.titre)).map((d) =>
-            `<option value="${esc(d.id)}" ${d.id === c.deck ? "selected" : ""}>${esc(d.titre)}</option>`).join("")}
+            `<option value="${esc(d.id)}">${esc(d.titre)}</option>`).join("")}
         </select>
-        <span id="rch-deck-info" class="petit muet"></span>
-      </div>
+      </div>`}
     </div>
+    ${rch.deck ? `<div class="rch-bandeau ${rch.deck.art ? "" : "sans-art"}"${rch.deck.art ? ` style="background-image:url('${esc(rch.deck.art)}')"` : ""}>
+      <span class="rch-bandeau-nom">${esc(rch.deck.titre)}</span>
+      <span id="rch-deck-info" class="petit"></span>
+      <button type="button" class="btn btn-discret btn-icone" id="rch-sans-deck" aria-label="Chercher sans deck" title="Chercher sans deck">${ico("fermer")}</button>
+    </div>` : ""}
     <div id="rch-form"></div>
     <div id="rch-resultats"></div>`;
   majInfosDeck();
-  $("#rch-deck").onchange = async (ev) => {
-    const id = ev.target.value;
+  const changerDeck = (id) => {
     if (id) choisirDiscussion(id);                 // chercher pour un autre deck : sa discussion suit
     const nc = { ...rch.crit, deck: id };
     if (!id) delete nc.horsdeck;
@@ -3814,6 +3819,8 @@ async function vueRecherche(params) {
     rch.ouvrir = rch.ouvert;
     location.hash = "#/recherche?" + critVersHash(nc);
   };
+  if (rch.deck) $("#rch-sans-deck").onclick = () => changerDeck("");
+  else $("#rch-deck").onchange = (ev) => changerDeck(ev.target.value);
   rendreFormulaire();
   if (c.r === "1") await lancerRecherche();
 }
@@ -4326,9 +4333,9 @@ async function lancerRecherche() {
   rendreResultats(z, r);
 }
 
-// la dernière recherche : sans deck pour le lien du haut, et celle de chaque deck (bouton « Chercher des cartes » du deck)
+// la dernière recherche sans deck, que rouvre le lien du haut
 function memoriser() {
-  PREF.set(cleDerniere(rch.crit.deck || ""), critVersHash(rch.crit));
+  if (!rch.crit.deck) PREF.set(cleDerniere(""), critVersHash(rch.crit));
 }
 
 async function attendreBase(z) {
