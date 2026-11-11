@@ -3392,6 +3392,7 @@ async function ongletSimulation(conteneur, d, rapportInitial = null) {
   const cov = o.couverture;
   const partCov = cov && cov.total ? cov.comprises / cov.total : null;
   const nivCov = partCov == null ? null : partCov >= 0.9 ? "bon" : partCov >= 0.7 ? "juste" : "alerte";
+  const premier = rapportInitial || rapports.find((r) => r.verdict)?.fichier;   // les rapports d'avant la refonte ne s'ouvrent plus seuls
   el.innerHTML = `
     <div class="panneau sim-lancer ecrit">
       <div class="sim-boutons">
@@ -3403,7 +3404,7 @@ async function ongletSimulation(conteneur, d, rapportInitial = null) {
         <span class="jauge-val">${cov.comprises} / ${cov.total}</span></span>${o.affine ? `<span class="badge badge-gc">Avec Claude</span>` : ""}</div>` : ""}
       <div id="s-prog"></div>
     </div>
-    <div id="s-rapport">${PARTAGE && !rapports.length ? `<p class="muet">Aucun test.</p>` : ""}</div>
+    <div id="s-rapport">${PARTAGE && !premier ? `<p class="muet">Aucun test.</p>` : ""}</div>
     <details class="sim-replie ecrit" id="s-comparer" ${comparer ? "open" : ""}><summary>Comparer deux versions</summary>
       <div class="grille-2">
         <label>Version A<select class="champ" id="s-a">${optionsVersions(o.versions, choixA)}</select></label>
@@ -3411,7 +3412,7 @@ async function ongletSimulation(conteneur, d, rapportInitial = null) {
       </div>
       <div class="boutons"><button class="btn" id="s-comparer-lancer">${ico("comparer")}Comparer</button></div>
     </details>
-    ${rapports.length > 1 || (rapports.length && rapportInitial && rapportInitial !== rapports[0].fichier) ? `
+    ${rapports.some((r) => r.fichier !== premier) ? `
     <details class="sim-replie"><summary>Tests précédents</summary>
       <div class="defile"><table class="tableau"><tbody>
       ${rapports.map((r, i) => `<tr><td class="petit">${esc(dateSim(r.date, "short"))}</td>
@@ -3427,7 +3428,6 @@ async function ongletSimulation(conteneur, d, rapportInitial = null) {
     try { afficheRapport(z, await api(`/api/decks/${enc(d.id)}/simulations/${enc(f)}`)); }
     catch (e) { z.innerHTML = `<p class="erreur">${esc(e.message)}</p>`; }
   };
-  const premier = rapportInitial || rapports[0]?.fichier;
   if (premier) await montrer(premier);
 
   $$("[data-rap]", el).forEach((b) => b.addEventListener("click", async () => {
