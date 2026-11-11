@@ -391,7 +391,7 @@
  },
  "Deck Kels": {
   "slug": "kels",
-  "date": 1794380481.1358361,
+  "date": 1794381183.4327078,
   "version": "1.5.1",
   "resume": {
    "alertes": {},
@@ -415,9 +415,9 @@
    ],
    "image_cmd": "https://cards.scryfall.io/normal/front/b/7/b70d445b-d3d6-4f7c-b9ea-bed6a26d4a2a.jpg?1783930505",
    "maybe": 0,
-   "modifie": 1794379763.5508983,
+   "modifie": 1794381054.396183,
    "note": "",
-   "prix_total": 203.14,
+   "prix_total": 204.79,
    "titre": "Kels",
    "total": 100,
    "trop_cher": [
@@ -429,7 +429,8 @@
     "Bitterblossom",
     "Baleful Strix",
     "Damnation",
-    "Clearwater Pathway"
+    "Clearwater Pathway",
+    "Academy Ruins"
    ]
   },
   "cartes": [
