@@ -3864,7 +3864,7 @@ const MODULES_BASES = [
 ];
 // « Ce qui fait la différence » : ce que les autres outils n'ont pas, du plus marquant au moins marquant
 const MODULES_ATOUTS = [
-  ["simulateur", "Simulateur de parties", "En un clic, le simulateur joue un millier de parties à quatre joueurs et dit si votre deck est régulier : le mana arrive-t-il à l'heure, jouez-vous vos cartes, tenez-vous votre board, gérez-vous celui des adversaires, quand arrive votre commandant. Il compare aussi deux versions du deck sur les mêmes parties, et indique combien de vos cartes il comprend. Avec Claude, il va plus loin : Claude lui apprend celles qu'il lit mal, rejoue et vous explique le résultat, taux de victoire compris."],
+  ["simulateur", "Simulateur de parties", "En un clic, le simulateur joue un millier de parties à quatre joueurs et dit si votre deck est régulier : le mana arrive-t-il à l'heure, jouez-vous vos cartes, tenez-vous votre board, gérez-vous celui des adversaires, quand arrive votre commandant. Il indique combien de vos cartes il comprend, et vous pouvez comparer deux versions d'un même deck. Avec Claude, il va plus loin : Claude lui apprend les cartes qu'il lit mal, rejoue et vous explique le résultat, taux de victoire compris."],
   ["bracket", "Bracket", "Le bracket est estimé automatiquement selon les règles officielles : Game Changers, combos infinies à deux cartes, tuteurs… et comparé à l'estimation de Commander Spellbook."],
   ["statistiques", "Statistiques et base de mana", "Courbe de mana, types, fonctions des cartes et surtout la répartition des sources de couleur : elle compte les terrains et les cartes de ramp, et dit si chaque couleur est confortable."],
   ["suggestions", "Suggestions de cartes", "Des cartes proposées pour votre deck, d'après son commandant et les cartes déjà dedans : celles qui suivent ses thèmes, celles qui complètent une combo, explication comprise, et celles qui attendent dans votre classeur. Toujours dans vos couleurs et votre budget, triées par intérêt, avec des filtres par type, fonction, coût et prix. Le calcul se fait sans IA."],
@@ -3948,7 +3948,7 @@ function vueAPropos(installation = false) {
         <div class="ap-tete-texte">
           <h1>L'Atelier <span>MTG</span></h1>
           <p class="ap-accroche">Vos decks Commander,<br>de la liste à la table.</p>
-          <ul class="ap-puces">${["Suggestions", "Base de mana", "Combos", "Bracket", "Table de jeu", "Recherche avancée", "Claude"].map((x) => `<li>${x}</li>`).join("")}</ul>
+          <ul class="ap-puces">${["Suggestions", "Base de mana", "Combos", "Bracket", "Simulation", "Table de jeu", "Recherche avancée", "Claude"].map((x) => `<li>${x}</li>`).join("")}</ul>
           <p class="ap-cta"><a class="btn btn-accent" href="${INSTALLER}" id="ap-installer">${ico("telecharger")}Installer l'Atelier MTG</a>
             <a class="btn" href="${EXEMPLES_ATELIER}">${ico("partager")}Voir des decks partagés</a></p>
           <p class="ap-mention"><b>Gratuit</b> · open source · tout reste sur votre PC${versionAtelier ? ` · version ${esc(versionAtelier)}` : ""}</p>
