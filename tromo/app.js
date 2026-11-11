@@ -3302,7 +3302,7 @@ function verdictSim(reg) {
 function afficheRapport(zone, r) {
   const t0 = r.tables.includes("Mixte") ? "Mixte" : r.tables[0];
   const L = r.resultats[t0];
-  if (!L.A.regularite) return rapportAncien(zone, r);          // rapport d'avant les jauges
+  if (!L.A.regularite) return void (zone.innerHTML = "");       // rapport d'avant les jauges (effacés au démarrage)
   const cles = r.versions.B ? ["A", "B"] : ["A"];
   const reg = Object.fromEntries(cles.map((k) => [k, L[k].regularite]));
   const deux = cles.length > 1;
@@ -3343,43 +3343,6 @@ function afficheRapport(zone, r) {
     + ` (python outils/atelier/demander.py rapport) : qu'est-ce qui ressort, et que me conseilles-tu ?`);
 }
 
-function couvertureHtml(v) {
-  const c = v.couverture || {};
-  const parts = [];
-  if (c.corps?.length) parts.push(`${c.corps.length} créature${c.corps.length > 1 ? "s" : ""} jouée${c.corps.length > 1 ? "s" : ""} comme simple corps (${c.corps.map((n) => nc(n)).join(", ")})`);
-  if (c.sans_effet?.length) parts.push(`${c.sans_effet.length} sort${c.sans_effet.length > 1 ? "s" : ""} sans effet (${c.sans_effet.map((n) => nc(n)).join(", ")})`);
-  if (c.partiel?.length) parts.push(`${c.partiel.length} carte${c.partiel.length > 1 ? "s" : ""} lue${c.partiel.length > 1 ? "s" : ""} en partie (${c.partiel.map((n) => nc(n)).join(", ")})`);
-  return parts.length ? `<p class="note petit"><strong>${esc(v.nom)} :</strong> ${parts.join(" ; ")}.</p>` : "";
-}
-
-// les rapports d'avant les jauges de régularité : victoires et détails par table
-function rapportAncien(zone, r) {
-  const A = r.versions.A, B = r.versions.B;
-  const lignes = r.tables.map((t) => {
-    const x = r.resultats[t];
-    return `<tr>
-      <td><strong>${esc(t)}</strong></td>
-      <td class="num">${pct(x.A.victoire)}</td>
-      ${B ? `<td class="num">${pct(x.B.victoire)}</td><td class="num">${ecartHtml(x.ecart)}</td>` : ""}
-      <td class="num">T${(x.A.tour_fin ?? 0).toFixed(1).replace(".", ",")}</td>
-      <td class="num">${x.A.pv8 == null ? "—" : Math.round(x.A.pv8)}</td>
-      <td class="num">${pct(x.A.cmd5, 0)}</td>
-    </tr>`;
-  }).join("");
-  zone.innerHTML = `
-    <div class="panneau">
-      <h2 style="margin-top:0">Rapport du ${esc(dateSim(r.date))}</h2>
-      <p class="muet petit">${r.n} parties</p>
-      <p><strong>A</strong> = ${esc(A.nom)}${B ? ` · <strong>B</strong> = ${esc(B.nom)}` : ""}</p>
-      ${couvertureHtml(A)}${B ? couvertureHtml(B) : ""}
-      <div class="defile"><table class="tableau">
-        <thead><tr><th>Adversaires</th><th class="num">Victoires A</th>${B ? `<th class="num">Victoires B</th><th class="num">Écart A − B</th>` : ""}
-          <th class="num">Fin moyenne</th><th class="num">Tes PV au tour 8</th><th class="num">Commandant au tour 5</th></tr></thead>
-        <tbody>${lignes}</tbody>
-      </table></div>
-    </div>`;
-}
-
 async function ongletSimulation(conteneur, d, rapportInitial = null) {
   conteneur.innerHTML = "";
   const el = document.createElement("div");          // zone neuve : pas d'écouteurs en double quand on réaffiche
@@ -3417,7 +3380,7 @@ async function ongletSimulation(conteneur, d, rapportInitial = null) {
       <div class="defile"><table class="tableau"><tbody>
       ${rapports.map((r, i) => `<tr><td class="petit">${esc(dateSim(r.date, "short"))}</td>
         <td class="petit">${esc(r.versions.A)}${r.versions.B ? ` · ${esc(r.versions.B)}` : ""}</td>
-        <td>${r.verdict ? verdictSim(r) : r.affine ? pct(r.victoire_a) : ""}</td>
+        <td>${verdictSim(r)}</td>
         <td class="num"><button class="btn btn-petit" data-rap="${i}">Ouvrir</button></td></tr>`).join("")}
       </tbody></table></div>
     </details>` : ""}`;
@@ -3901,7 +3864,7 @@ const MODULES_BASES = [
 ];
 // « Ce qui fait la différence » : ce que les autres outils n'ont pas, du plus marquant au moins marquant
 const MODULES_ATOUTS = [
-  ["simulateur", "Simulateur de parties", "En un clic, le simulateur joue un millier de parties à quatre joueurs et dit si votre deck est régulier : le mana arrive-t-il à l'heure, jouez-vous vos cartes, tenez-vous votre board, gérez-vous celui des adversaires, quand arrive votre commandant. Avec Claude, il va plus loin : Claude lui apprend les cartes qu'il lit mal, rejoue, compare deux versions de votre deck sur les mêmes parties et vous explique le résultat."],
+  ["simulateur", "Simulateur de parties", "En un clic, le simulateur joue un millier de parties à quatre joueurs et dit si votre deck est régulier : le mana arrive-t-il à l'heure, jouez-vous vos cartes, tenez-vous votre board, gérez-vous celui des adversaires, quand arrive votre commandant. Il indique combien de vos cartes il comprend, et vous pouvez comparer deux versions d'un même deck. Avec Claude, il va plus loin : Claude lui apprend les cartes qu'il lit mal, rejoue et vous explique le résultat, taux de victoire compris."],
   ["bracket", "Bracket", "Le bracket est estimé automatiquement selon les règles officielles : Game Changers, combos infinies à deux cartes, tuteurs… et comparé à l'estimation de Commander Spellbook."],
   ["statistiques", "Statistiques et base de mana", "Courbe de mana, types, fonctions des cartes et surtout la répartition des sources de couleur : elle compte les terrains et les cartes de ramp, et dit si chaque couleur est confortable."],
   ["suggestions", "Suggestions de cartes", "Des cartes proposées pour votre deck, d'après son commandant et les cartes déjà dedans : celles qui suivent ses thèmes, celles qui complètent une combo, explication comprise, et celles qui attendent dans votre classeur. Toujours dans vos couleurs et votre budget, triées par intérêt, avec des filtres par type, fonction, coût et prix. Le calcul se fait sans IA."],
@@ -3923,7 +3886,7 @@ const FAQ_ATELIER = [
     ["Faut-il payer pour Claude ?",
       "Claude est facultatif : sans lui, tout le reste fonctionne. Pour s'en servir, il faut un abonnement Claude payant (Pro ou plus), car le compte gratuit ne donne pas accès à Claude Code."],
     ["Va-t-il épuiser mon abonnement ?",
-      "Il ne travaille que quand vous lui écrivez, ou quand vous demandez l'analyse des synergies d'un deck : rien ne tourne en arrière-plan. Les suggestions, les combos, le bracket, les statistiques et les fonctions des cartes ne passent pas par lui. « Compacter » résume une longue discussion pour qu'elle consomme moins."],
+      "Il ne travaille que quand vous lui écrivez, ou quand vous cliquez sur un bouton qui l'appelle, comme l'analyse des synergies d'un deck ou « Affiner avec Claude » : rien ne tourne en arrière-plan. Les suggestions, les combos, le bracket, les statistiques, les fonctions des cartes et le test du simulateur ne passent pas par lui. « Compacter » résume une longue discussion pour qu'elle consomme moins."],
   ]],
   ["Vos cartes et vos données", [
     ["Comment entrent mes cartes ?",
@@ -3937,7 +3900,7 @@ const FAQ_ATELIER = [
     ["Peut-on jouer en ligne contre d'autres joueurs ?",
       "Non, ce n'est pas un jeu vidéo. La table de jeu se joue seul, à la main, pour tester les mains de départ et les premiers tours."],
     ["Comment simuler des parties à quatre ?",
-      "En simplifiant. Les trois adversaires sont des archétypes (aggro, contrôle, jetons, combo…). Selon des probabilités, ils posent des créatures, retirent vos menaces, rasent la table ou gagnent sur une combo, mais sans politique. Seul, le simulateur juge la régularité du deck : le mana, les cartes jouées, le board, le commandant. Il comprend une partie des cartes en lisant leur texte, et joue les autres sans leur effet : c'est Claude qui lui apprend celles-là, pour que les victoires et la comparaison de deux versions aient un sens."],
+      "En simplifiant. Les trois adversaires sont des archétypes (aggro, contrôle, jetons, combo…). Selon des probabilités, ils posent des créatures, retirent vos menaces, rasent la table ou gagnent sur une combo, mais sans politique. Seul, le simulateur juge la régularité du deck : le mana, les cartes jouées, le board, le commandant. Il comprend une partie des cartes en lisant leur texte, et joue les autres sans leur effet, ou avec une partie seulement : c'est Claude qui lui apprend celles-là. Les taux de victoire ne s'affichent qu'ensuite, quand ils ont un sens."],
     ["Je débute, est-ce pour moi ?",
       `<p>Oui. Les statistiques comparent votre deck à un modèle type, et Claude peut expliquer une règle, une carte ou proposer des ajouts dans votre budget. Les mots de cette page :</p>
       <ul class="ap-lexique">
@@ -3985,7 +3948,7 @@ function vueAPropos(installation = false) {
         <div class="ap-tete-texte">
           <h1>L'Atelier <span>MTG</span></h1>
           <p class="ap-accroche">Vos decks Commander,<br>de la liste à la table.</p>
-          <ul class="ap-puces">${["Suggestions", "Base de mana", "Combos", "Bracket", "Table de jeu", "Recherche avancée", "Claude"].map((x) => `<li>${x}</li>`).join("")}</ul>
+          <ul class="ap-puces">${["Suggestions", "Base de mana", "Combos", "Bracket", "Simulation", "Table de jeu", "Recherche avancée", "Claude"].map((x) => `<li>${x}</li>`).join("")}</ul>
           <p class="ap-cta"><a class="btn btn-accent" href="${INSTALLER}" id="ap-installer">${ico("telecharger")}Installer l'Atelier MTG</a>
             <a class="btn" href="${EXEMPLES_ATELIER}">${ico("partager")}Voir des decks partagés</a></p>
           <p class="ap-mention"><b>Gratuit</b> · open source · tout reste sur votre PC${versionAtelier ? ` · version ${esc(versionAtelier)}` : ""}</p>
@@ -4017,8 +3980,8 @@ function vueAPropos(installation = false) {
         <li><strong>Données souveraines.</strong> Vos decks restent sur votre disque dur et rien n'est collecté. Seules sortent les
           requêtes nécessaires : données, images et prix des cartes (Scryfall), combos et bracket (Commander Spellbook, MTGPics),
           la discussion avec Claude si vous l'utilisez, et les pages que vous choisissez de partager.</li>
-        <li><strong>IA strictement modulaire.</strong> Tri, statistiques, simulations et jeu en solo restent 100 % opérationnels
-          sans aucune configuration IA.</li>
+        <li><strong>IA strictement modulaire.</strong> Tri, statistiques, suggestions, test du simulateur et jeu en solo
+          fonctionnent sans aucune configuration IA.</li>
       </ul>
 
       <h2 id="installation">Installation</h2>
@@ -4086,7 +4049,7 @@ python installer.py</code><button type="button" data-copier>Copier</button></div
         <li><strong>les règles officielles</strong> pour le contrôle direct des cartes interdites, des brackets et des Game Changers.</li>
       </ul>
       <p>L'Atelier est né de cette synthèse : une interface locale fluide pour gérer ses cartes, connectable à la demande à un
-        assistant IA pour auditer un deck, automatiser le classement ou simuler des parties.</p>
+        assistant IA pour auditer un deck, automatiser le classement ou affiner les simulations.</p>
     </article>`;
   $$(".ap-tete img[data-f], .a-propos img[data-f]").forEach((img) => {
     img.onerror = () => {                       // dans l'Atelier : la capture de ce PC, sinon celle du site de l'auteur
