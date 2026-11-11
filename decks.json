@@ -1145,11 +1145,11 @@
  },
  "Deck Forgeur de soleil": {
   "slug": "forgeur-de-soleil",
-  "date": 1794386627.5366328,
+  "date": 1794389727.370123,
   "version": "1.6.2",
   "resume": {
    "alertes": {},
-   "art": "https://cards.scryfall.io/art_crop/front/d/0/d0efa0b4-83fb-4577-a6d7-ecbc8375d7e0.jpg?1782947288",
+   "art": "https://cards.scryfall.io/art_crop/front/5/5/557fcd17-6cb3-414a-b2b1-ea9ae32e5aec.jpg?1783937084",
    "bracket": 3,
    "bracket_raisons": [
     "2 Game Changers : Smothering Tithe, Enlightened Tutor",
@@ -1171,9 +1171,9 @@
     "U",
     "W"
    ],
-   "image_cmd": "https://cards.scryfall.io/normal/front/d/0/d0efa0b4-83fb-4577-a6d7-ecbc8375d7e0.jpg?1782947288",
+   "image_cmd": "https://cards.scryfall.io/normal/front/5/5/557fcd17-6cb3-414a-b2b1-ea9ae32e5aec.jpg?1783937084",
    "maybe": 2,
-   "modifie": 1794381855.9688854,
+   "modifie": 1794389593.208363,
    "note": "",
    "prix_total": 419.07,
    "titre": "Forgeur de soleil",
