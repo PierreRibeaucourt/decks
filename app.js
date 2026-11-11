@@ -3302,7 +3302,7 @@ function verdictSim(reg) {
 function afficheRapport(zone, r) {
   const t0 = r.tables.includes("Mixte") ? "Mixte" : r.tables[0];
   const L = r.resultats[t0];
-  if (!L.A.regularite) return rapportAncien(zone, r);          // rapport d'avant les jauges
+  if (!L.A.regularite) return void (zone.innerHTML = "");       // rapport d'avant les jauges (effacés au démarrage)
   const cles = r.versions.B ? ["A", "B"] : ["A"];
   const reg = Object.fromEntries(cles.map((k) => [k, L[k].regularite]));
   const deux = cles.length > 1;
@@ -3343,43 +3343,6 @@ function afficheRapport(zone, r) {
     + ` (python outils/atelier/demander.py rapport) : qu'est-ce qui ressort, et que me conseilles-tu ?`);
 }
 
-function couvertureHtml(v) {
-  const c = v.couverture || {};
-  const parts = [];
-  if (c.corps?.length) parts.push(`${c.corps.length} créature${c.corps.length > 1 ? "s" : ""} jouée${c.corps.length > 1 ? "s" : ""} comme simple corps (${c.corps.map((n) => nc(n)).join(", ")})`);
-  if (c.sans_effet?.length) parts.push(`${c.sans_effet.length} sort${c.sans_effet.length > 1 ? "s" : ""} sans effet (${c.sans_effet.map((n) => nc(n)).join(", ")})`);
-  if (c.partiel?.length) parts.push(`${c.partiel.length} carte${c.partiel.length > 1 ? "s" : ""} lue${c.partiel.length > 1 ? "s" : ""} en partie (${c.partiel.map((n) => nc(n)).join(", ")})`);
-  return parts.length ? `<p class="note petit"><strong>${esc(v.nom)} :</strong> ${parts.join(" ; ")}.</p>` : "";
-}
-
-// les rapports d'avant les jauges de régularité : victoires et détails par table
-function rapportAncien(zone, r) {
-  const A = r.versions.A, B = r.versions.B;
-  const lignes = r.tables.map((t) => {
-    const x = r.resultats[t];
-    return `<tr>
-      <td><strong>${esc(t)}</strong></td>
-      <td class="num">${pct(x.A.victoire)}</td>
-      ${B ? `<td class="num">${pct(x.B.victoire)}</td><td class="num">${ecartHtml(x.ecart)}</td>` : ""}
-      <td class="num">T${(x.A.tour_fin ?? 0).toFixed(1).replace(".", ",")}</td>
-      <td class="num">${x.A.pv8 == null ? "—" : Math.round(x.A.pv8)}</td>
-      <td class="num">${pct(x.A.cmd5, 0)}</td>
-    </tr>`;
-  }).join("");
-  zone.innerHTML = `
-    <div class="panneau">
-      <h2 style="margin-top:0">Rapport du ${esc(dateSim(r.date))}</h2>
-      <p class="muet petit">${r.n} parties</p>
-      <p><strong>A</strong> = ${esc(A.nom)}${B ? ` · <strong>B</strong> = ${esc(B.nom)}` : ""}</p>
-      ${couvertureHtml(A)}${B ? couvertureHtml(B) : ""}
-      <div class="defile"><table class="tableau">
-        <thead><tr><th>Adversaires</th><th class="num">Victoires A</th>${B ? `<th class="num">Victoires B</th><th class="num">Écart A − B</th>` : ""}
-          <th class="num">Fin moyenne</th><th class="num">Tes PV au tour 8</th><th class="num">Commandant au tour 5</th></tr></thead>
-        <tbody>${lignes}</tbody>
-      </table></div>
-    </div>`;
-}
-
 async function ongletSimulation(conteneur, d, rapportInitial = null) {
   conteneur.innerHTML = "";
   const el = document.createElement("div");          // zone neuve : pas d'écouteurs en double quand on réaffiche
@@ -3417,7 +3380,7 @@ async function ongletSimulation(conteneur, d, rapportInitial = null) {
       <div class="defile"><table class="tableau"><tbody>
       ${rapports.map((r, i) => `<tr><td class="petit">${esc(dateSim(r.date, "short"))}</td>
         <td class="petit">${esc(r.versions.A)}${r.versions.B ? ` · ${esc(r.versions.B)}` : ""}</td>
-        <td>${r.verdict ? verdictSim(r) : r.affine ? pct(r.victoire_a) : ""}</td>
+        <td>${verdictSim(r)}</td>
         <td class="num"><button class="btn btn-petit" data-rap="${i}">Ouvrir</button></td></tr>`).join("")}
       </tbody></table></div>
     </details>` : ""}`;
