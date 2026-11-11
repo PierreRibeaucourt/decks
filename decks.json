@@ -1,8 +1,8 @@
 {
  "Deck Malfegor": {
   "slug": "malfegor",
-  "date": 1794380870.990016,
-  "version": "1.5.1",
+  "date": 1794381352.3735693,
+  "version": "1.6.0",
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/7/5/75316a5d-b25f-4e66-8477-1decb87f1225.jpg?1783936228",
@@ -24,7 +24,7 @@
    "maybe": 1,
    "modifie": 1793820260.4356208,
    "note": "",
-   "prix_total": 478.49,
+   "prix_total": 505.16,
    "titre": "Malfegor",
    "total": 100,
    "trop_cher": [
@@ -34,6 +34,7 @@
     "Brallin, Skyshark Rider",
     "Necromancy",
     "Animate Dead",
+    "Seize the Day",
     "Volrath's Stronghold",
     "Blightstep Pathway",
     "Luxury Suite",
@@ -391,8 +392,8 @@
  },
  "Deck Kels": {
   "slug": "kels",
-  "date": 1794381183.4327078,
-  "version": "1.5.1",
+  "date": 1794381349.444534,
+  "version": "1.6.0",
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/b/7/b70d445b-d3d6-4f7c-b9ea-bed6a26d4a2a.jpg?1783930505",
@@ -754,8 +755,8 @@
  },
  "Deck Sefris": {
   "slug": "sefris",
-  "date": 1794380873.0981805,
-  "version": "1.5.1",
+  "date": 1794381355.0090594,
+  "version": "1.6.0",
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/d/c/dc26f632-89f9-4eed-9403-306b696d5da1.jpg?1782873174",
@@ -778,7 +779,7 @@
    "maybe": 1,
    "modifie": 1793822475.3802023,
    "note": "",
-   "prix_total": 77.85,
+   "prix_total": 78.99,
    "titre": "Sefris",
    "total": 100,
    "trop_cher": [
@@ -1576,8 +1577,8 @@
  },
  "Deck Tromo": {
   "slug": "tromo",
-  "date": 1794380875.2334805,
-  "version": "1.5.1",
+  "date": 1794381358.0235455,
+  "version": "1.6.0",
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/f/1/f1a4dff1-8c2a-4a5e-94db-d4711c53f05d.jpg?1782817896",
@@ -1600,12 +1601,13 @@
    "maybe": 5,
    "modifie": 1794139120.275628,
    "note": "",
-   "prix_total": 117.82,
+   "prix_total": 127.49,
    "titre": "Tromo",
    "total": 100,
    "trop_cher": [
     "Sapphire Medallion",
     "Misleading Signpost",
+    "Cryptic Command",
     "Cyclonic Rift",
     "Minamo, School at Water's Edge",
     "Maze of Ith"
@@ -1912,8 +1914,8 @@
  },
  "Deck Greven Elemental": {
   "slug": "greven-elemental",
-  "date": 1794380868.1686747,
-  "version": "1.5.1",
+  "date": 1794381346.597129,
+  "version": "1.6.0",
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/c/0/c01871e7-77e0-4671-9f56-b0a61e73cbb3.jpg?1782915586",
@@ -1938,7 +1940,7 @@
    "maybe": 4,
    "modifie": 1794160399.297893,
    "note": "",
-   "prix_total": 150.15,
+   "prix_total": 151.24,
    "titre": "Greven Elemental",
    "total": 100,
    "trop_cher": [
