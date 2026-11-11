@@ -3889,7 +3889,7 @@ const MODULES_ATOUTS = [
   ["suggestions", "Suggestions de cartes", "Des recommandations ciblées selon votre commandant, vos combos et votre classeur. Triées par pertinence, adaptées à vos couleurs et à votre budget, avec filtres par type, coût et prix."],
   ["budget", "Prix Cardmarket et budget", "Les prix Cardmarket pour vos cartes et vos decks, avec alerte en cas de dépassement de budget. Exportez les cartes manquantes au format liste de souhaits Cardmarket en un clic pour calculer directement votre panier."],
   ["combos", "Combos", "Les combos du deck sont repérées automatiquement, en croisant plusieurs sources : MTGPics (la base de Magic-Ville) et Commander Spellbook."],
-  ["discussion", "Discussion avec Claude", "Un copilote optionnel qui a accès à tout votre Atelier (decks, stats, combos, classeur). Il vous aide à faire vos cuts, explorer des synergies ou vérifier des règles complexes. Aucune clé d'API à configurer : il utilise directement votre abonnement Claude payant (Pro ou supérieur)."],
+  ["discussion", "Discussion avec Claude (optionnel)", "Un copilote optionnel qui a accès à tout votre Atelier (decks, stats, combos, classeur). Il vous aide à faire vos cuts, explorer des synergies ou vérifier des règles complexes. Aucune clé d'API à configurer : il utilise directement votre abonnement Claude payant (Pro ou supérieur)."],
 ];
 // les questions des visiteurs (joueurs experts, débutants, non-informaticiens), repliées ; une réponse en HTML commence par « < »
 const FAQ_ATELIER = [
@@ -3975,9 +3975,11 @@ function vueAPropos(installation = false) {
       </div>
     </header>
     <article class="a-propos">
-      <p>L'Atelier est une application locale, qui s'ouvre dans votre navigateur, pensée pour concevoir, tester et faire évoluer
-        des decks Magic: The Gathering en Commander. Zéro pub, zéro compte, zéro cloud : l'Atelier tourne uniquement sur
-        votre PC.</p>
+      <div class="ap-bandeau">
+        <p class="ap-promesse">Zéro pub, zéro compte, zéro cloud : l'Atelier tourne <em>uniquement sur votre PC</em>.</p>
+        <p>L'Atelier est une application locale, qui s'ouvre dans votre navigateur, pensée pour concevoir, tester et faire
+          évoluer des decks Magic: The Gathering en Commander.</p>
+      </div>
 
       <h2>Les bases : un outil complet</h2>
       ${modules(MODULES_BASES)}
