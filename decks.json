@@ -1,7 +1,7 @@
 {
  "Deck Malfegor": {
   "slug": "malfegor",
-  "date": 1794320753.4332135,
+  "date": 1794380870.990016,
   "version": "1.5.1",
   "resume": {
    "alertes": {},
@@ -24,7 +24,7 @@
    "maybe": 1,
    "modifie": 1793820260.4356208,
    "note": "",
-   "prix_total": 466.71,
+   "prix_total": 478.49,
    "titre": "Malfegor",
    "total": 100,
    "trop_cher": [
@@ -753,11 +753,11 @@
  },
  "Deck Sefris": {
   "slug": "sefris",
-  "date": 1794320769.6052604,
+  "date": 1794380873.0981805,
   "version": "1.5.1",
   "resume": {
    "alertes": {},
-   "art": "https://cards.scryfall.io/art_crop/front/d/3/d30255f6-e058-476a-b377-2ee4c9178ed1.jpg?1783926260",
+   "art": "https://cards.scryfall.io/art_crop/front/d/c/dc26f632-89f9-4eed-9403-306b696d5da1.jpg?1782873174",
    "bracket": 2,
    "bracket_raisons": [
     "aucun Game Changer, aucune combo infinie à 2 cartes : bracket 2 (ou 1 si le deck est très décontracté)"
@@ -773,14 +773,15 @@
     "U",
     "W"
    ],
-   "image_cmd": "https://cards.scryfall.io/normal/front/d/3/d30255f6-e058-476a-b377-2ee4c9178ed1.jpg?1783926260",
+   "image_cmd": "https://cards.scryfall.io/normal/front/d/c/dc26f632-89f9-4eed-9403-306b696d5da1.jpg?1782873174",
    "maybe": 1,
    "modifie": 1793822475.3802023,
    "note": "",
-   "prix_total": 70.6,
+   "prix_total": 77.85,
    "titre": "Sefris",
    "total": 100,
    "trop_cher": [
+    "Sefris of the Hidden Ways",
     "Bone Miser",
     "Monument to Endurance"
    ]
@@ -1142,11 +1143,11 @@
  },
  "Deck Forgeur de soleil": {
   "slug": "forgeur-de-soleil",
-  "date": 1794320778.9705737,
+  "date": 1794380865.5965972,
   "version": "1.5.1",
   "resume": {
    "alertes": {},
-   "art": "https://cards.scryfall.io/art_crop/front/5/5/557fcd17-6cb3-414a-b2b1-ea9ae32e5aec.jpg?1783937084",
+   "art": "https://cards.scryfall.io/art_crop/front/d/0/d0efa0b4-83fb-4577-a6d7-ecbc8375d7e0.jpg?1782947288",
    "bracket": 3,
    "bracket_raisons": [
     "2 Game Changers : Smothering Tithe, Enlightened Tutor",
@@ -1168,11 +1169,11 @@
     "U",
     "W"
    ],
-   "image_cmd": "https://cards.scryfall.io/normal/front/5/5/557fcd17-6cb3-414a-b2b1-ea9ae32e5aec.jpg?1783937084",
+   "image_cmd": "https://cards.scryfall.io/normal/front/d/0/d0efa0b4-83fb-4577-a6d7-ecbc8375d7e0.jpg?1782947288",
    "maybe": 0,
    "modifie": 1793823226.4562619,
    "note": "",
-   "prix_total": 362.84,
+   "prix_total": 389.35,
    "titre": "Forgeur de soleil",
    "total": 100,
    "trop_cher": [
@@ -1180,6 +1181,7 @@
     "Sword of Fire and Ice",
     "Sacred Foundry",
     "Smothering Tithe",
+    "Aurelia, the Warleader",
     "Olórin's Searing Light",
     "Minamo, School at Water's Edge",
     "Stoneforge Mystic",
@@ -1189,6 +1191,7 @@
     "Raugrin Triome",
     "Enlightened Tutor",
     "Sea of Clouds",
+    "Steelshaper's Gift",
     "Esper Sentinel",
     "Training Center",
     "Spectator Seating",
@@ -1572,11 +1575,11 @@
  },
  "Deck Tromo": {
   "slug": "tromo",
-  "date": 1794320787.8580544,
+  "date": 1794380875.2334805,
   "version": "1.5.1",
   "resume": {
    "alertes": {},
-   "art": "https://cards.scryfall.io/art_crop/front/f/4/f40ad933-ddd9-4975-a222-21fe3305137c.jpg?1783915686",
+   "art": "https://cards.scryfall.io/art_crop/front/f/1/f1a4dff1-8c2a-4a5e-94db-d4711c53f05d.jpg?1782817896",
    "bracket": 3,
    "bracket_raisons": [
     "1 Game Changer : Cyclonic Rift"
@@ -1592,15 +1595,16 @@
    "identite": [
     "U"
    ],
-   "image_cmd": "https://cards.scryfall.io/normal/front/f/4/f40ad933-ddd9-4975-a222-21fe3305137c.jpg?1783915686",
+   "image_cmd": "https://cards.scryfall.io/normal/front/f/1/f1a4dff1-8c2a-4a5e-94db-d4711c53f05d.jpg?1782817896",
    "maybe": 5,
    "modifie": 1794139120.275628,
    "note": "",
-   "prix_total": 106.86,
+   "prix_total": 117.82,
    "titre": "Tromo",
    "total": 100,
    "trop_cher": [
     "Sapphire Medallion",
+    "Misleading Signpost",
     "Cyclonic Rift",
     "Minamo, School at Water's Edge",
     "Maze of Ith"
@@ -1907,11 +1911,11 @@
  },
  "Deck Greven Elemental": {
   "slug": "greven-elemental",
-  "date": 1794320796.5802944,
+  "date": 1794380868.1686747,
   "version": "1.5.1",
   "resume": {
    "alertes": {},
-   "art": "https://cards.scryfall.io/art_crop/front/b/d/bda22fc3-31a5-451a-9a8b-372884f7bc61.jpg?1783932799",
+   "art": "https://cards.scryfall.io/art_crop/front/c/0/c01871e7-77e0-4671-9f56-b0a61e73cbb3.jpg?1782915586",
    "bracket": 3,
    "bracket_raisons": [
     "1 Game Changer : Jeska's Will",
@@ -1929,11 +1933,11 @@
     "B",
     "R"
    ],
-   "image_cmd": "https://cards.scryfall.io/normal/front/b/d/bda22fc3-31a5-451a-9a8b-372884f7bc61.jpg?1783932799",
+   "image_cmd": "https://cards.scryfall.io/normal/front/c/0/c01871e7-77e0-4671-9f56-b0a61e73cbb3.jpg?1782915586",
    "maybe": 4,
    "modifie": 1794160399.297893,
    "note": "",
-   "prix_total": 143.65,
+   "prix_total": 150.15,
    "titre": "Greven Elemental",
    "total": 100,
    "trop_cher": [
