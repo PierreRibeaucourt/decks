@@ -1435,14 +1435,21 @@ async function connexionGithub(zone, suite) {
   zone.innerHTML = `<p class="chargement">Demande d'un code à GitHub…</p>`;
   let c;
   try { c = await api("/api/github/connexion", { method: "POST", body: {} }); }
-  catch (e) { zone.innerHTML = `<p class="erreur">${esc(e.message)}</p>`; return; }
-  zone.innerHTML = `<ol class="gh-etapes">
+  catch (e) {
+    zone.innerHTML = `<p class="erreur">${esc(e.message)}</p>
+      <div class="gh-action"><button class="btn btn-accent" id="gh-encore">Réessayer</button></div>`;
+    $("#gh-encore", zone).onclick = () => connexionGithub(zone, suite);
+    return;
+  }
+  // GitHub ne dit rien à qui n'est pas développeur : pourquoi lui, et qu'un compte gratuit suffit
+  zone.innerHTML = `<p class="gh-pourquoi">GitHub, un service gratuit, héberge les pages de tes decks. Pas encore de compte ?
+      La page de GitHub propose d'en créer un.</p>
+    <ol class="gh-etapes">
       <li><p class="gh-code" aria-label="Code de connexion">${esc(c.code)}</p>
         <a class="btn btn-accent" id="gh-ouvrir" href="${esc(c.url)}" target="_blank" rel="noopener">${ico("copier")}Copier le code et ouvrir GitHub</a></li>
       <li>Sur GitHub, colle le code (Ctrl+V), puis clique sur « Continue ».</li>
       <li>Clique sur « Authorize Atelier MTG », puis reviens ici.</li>
     </ol>
-    <p class="muet petit">Pas encore de compte GitHub ? La page de GitHub propose d'en créer un, gratuitement.</p>
     <p class="gh-attente" role="status">En attente de GitHub…</p>`;
   $("#gh-ouvrir", zone).onclick = () => { navigator.clipboard.writeText(c.code).catch(() => {}); };
   while (zone.isConnected) {
@@ -1525,22 +1532,25 @@ async function vueOptions() {
 
 // les champs des options ; ceux des préférences sont aussi demandés une fois au premier lancement (modalePreferences)
 const bascule = (nom, oui, texte) => `<label class="opt-bascule"><span>${texte}</span><input type="checkbox" role="switch" name="${nom}" ${oui ? "checked" : ""}></label>`;
-const champFermeture = (o) => `<label class="opt-champ"><span>Page fermée</span><select class="champ" name="fermeture">
-      <option value="garder">Garder l'Atelier prêt</option>
-      <option value="arreter" ${o.fermeture === "arreter" ? "selected" : ""}>Arrêter l'Atelier</option></select></label>`;
-const champVisuel = (o) => `<label class="opt-champ"><span>Visuel par défaut</span><select class="champ" name="langue_cartes">
+const champFermeture = (o) => `<label class="opt-champ"><span>Quand je ferme la page</span><select class="champ" name="fermeture">
+      <option value="garder">L'Atelier reste prêt</option>
+      <option value="arreter" ${o.fermeture === "arreter" ? "selected" : ""}>L'Atelier s'arrête</option></select></label>`;
+const champVisuel = (o) => `<label class="opt-champ"><span>Image des cartes</span><select class="champ" name="langue_cartes">
       <option value="">L'édition la moins chère</option>
       ${Object.entries(o.langues || {}).map(([k, l]) => `<option value="${k}" ${o.langue_cartes === k ? "selected" : ""}>La moins chère en ${esc(l)}</option>`).join("")}</select></label>`;
-const basculesUB = (o) => bascule("sans_ub_illustrations", o.sans_ub_illustrations, "Éviter les illustrations Universes Beyond quand c'est possible")
+// « Universes Beyond » ne dit rien à qui débute : des exemples à la première mention
+const basculesUB = (o) => bascule("sans_ub_illustrations", o.sans_ub_illustrations, "Éviter les illustrations Universes Beyond (Marvel, Final Fantasy, Seigneur des anneaux…) quand c'est possible")
   + bascule("sans_ub_suggestions", o.sans_ub_suggestions, "Ne pas suggérer de cartes Universes Beyond");
 
+// premier lancement : pas la question de la page fermée, qu'on ne comprend pas avant d'avoir vu que l'Atelier tourne sur
+// le PC (elle reste dans les Options)
 function modalePreferences(o) {
-  ouvrirModale(`<h2>Préférences</h2><div class="opt-lignes">${champFermeture(o)}${champVisuel(o)}${basculesUB(o)}</div>
+  ouvrirModale(`<h2>Préférences</h2><div class="opt-lignes">${champVisuel(o)}${basculesUB(o)}</div>
     <div class="boutons"><button class="btn btn-accent" id="ok">Enregistrer</button></div>`, (b) => {
     const champ = (n) => $(`[name="${n}"]`, b);
     $("#ok", b).onclick = async () => {
       try {
-        await api("/api/options", { method: "POST", body: { fermeture: champ("fermeture").value,
+        await api("/api/options", { method: "POST", body: {
           langue_cartes: champ("langue_cartes").value, sans_ub_illustrations: champ("sans_ub_illustrations").checked,
           sans_ub_suggestions: champ("sans_ub_suggestions").checked, preferences: true } });
         fermerModale();
@@ -1600,7 +1610,7 @@ async function ligneGithub(el, o) {
     el.innerHTML = `<label class="opt-champ"><span>Compte GitHub</span><input class="champ" name="github" maxlength="39" value="${esc(o.github)}" autocomplete="off" spellcheck="false"></label>`;
     return;
   }
-  el.innerHTML = `<div class="opt-champ"><span>GitHub</span><span class="opt-github">${g.compte
+  el.innerHTML = `<div class="opt-champ"><span>Hébergement des pages</span><span class="opt-github">${g.compte
     ? `<strong>${esc(g.compte)}</strong><button type="button" class="btn btn-petit btn-discret" id="gh-deconnecter">Se déconnecter</button>`
     : `<button type="button" class="btn btn-accent btn-petit" id="gh-options">Se connecter à GitHub</button>`}</span></div>`;
   if (g.compte) $("#gh-deconnecter", el).onclick = async () => {
