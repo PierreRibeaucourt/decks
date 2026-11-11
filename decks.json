@@ -1145,8 +1145,8 @@
  },
  "Deck Forgeur de soleil": {
   "slug": "forgeur-de-soleil",
-  "date": 1794380865.5965972,
-  "version": "1.5.1",
+  "date": 1794381502.3277621,
+  "version": "1.6.0",
   "resume": {
    "alertes": {},
    "art": "https://cards.scryfall.io/art_crop/front/d/0/d0efa0b4-83fb-4577-a6d7-ecbc8375d7e0.jpg?1782947288",
@@ -1173,9 +1173,9 @@
    ],
    "image_cmd": "https://cards.scryfall.io/normal/front/d/0/d0efa0b4-83fb-4577-a6d7-ecbc8375d7e0.jpg?1782947288",
    "maybe": 0,
-   "modifie": 1793823226.4562619,
+   "modifie": 1794381352.9284592,
    "note": "",
-   "prix_total": 389.35,
+   "prix_total": 419.07,
    "titre": "Forgeur de soleil",
    "total": 100,
    "trop_cher": [
@@ -1185,6 +1185,7 @@
     "Smothering Tithe",
     "Aurelia, the Warleader",
     "Olórin's Searing Light",
+    "Academy Ruins",
     "Minamo, School at Water's Edge",
     "Stoneforge Mystic",
     "Maze of Ith",
@@ -1192,6 +1193,7 @@
     "Fighter Class",
     "Raugrin Triome",
     "Enlightened Tutor",
+    "Umezawa's Jitte",
     "Sea of Clouds",
     "Steelshaper's Gift",
     "Esper Sentinel",
