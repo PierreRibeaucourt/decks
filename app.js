@@ -13,6 +13,10 @@ const etat = { decks: [], deck: null, filtre: "" };
 // et tout ce qui modifie (classe « ecrit »), la recherche et la discussion sont masqués
 const PARTAGE = window.PARTAGE || null;
 if (PARTAGE) document.documentElement.classList.add("partage");
+// appli du téléphone (static/telephone/telephone.js) : les données viennent de la sauvegarde en ligne, préparées par le
+// PC ; la discussion, la simulation et la recherche restent sur le PC
+const TELEPHONE = window.TELEPHONE || null;
+const PC = !PARTAGE && !TELEPHONE;              // l'Atelier du PC : serveur Python, tâches en fond, mises à jour
 // page partagée : à qui sont ces decks (reglages.json « nom », sinon le compte GitHub qui publie)
 // titre_accueil : la page d'accueil de l'Atelier (site_atelier.py), qui n'est le site de decks de personne
 const MES_DECKS = PARTAGE && PARTAGE.titre_accueil || (PARTAGE && PARTAGE.auteur ? `Decks de ${PARTAGE.auteur}` : "Mes decks");
@@ -34,6 +38,7 @@ const PREF = {
 
 async function api(chemin, opts = {}) {
   if (PARTAGE) return apiPartage(chemin, opts);
+  if (TELEPHONE) return TELEPHONE.api(chemin, opts);
   const init = { ...opts, headers: { "Content-Type": "application/json" } };
   if (opts.body !== undefined) init.body = JSON.stringify(opts.body);
   const r = await fetch(chemin, init);
@@ -63,8 +68,8 @@ function apiPartage(chemin, opts) {
 }
 
 // comparaison de deux versions, comme /api/decks/…/comparer, à partir des listes figées
-function comparerPartage(fa, fb) {
-  const { listes, infos } = PARTAGE.comparer, A = listes[fa], B = listes[fb];
+function comparerPartage(fa, fb, cmp = PARTAGE.comparer) {
+  const { listes, infos } = cmp, A = listes[fa], B = listes[fb];
   if (!A || !B) throw new Error("Version introuvable.");
   const reste = (x, y) => Object.entries(x.cartes).flatMap(([n, k]) => Array(Math.max(0, k - (y.cartes[n] || 0))).fill(n)).sort();
   const sa = reste(A, B), sb = reste(B, A);
@@ -139,6 +144,7 @@ const ICONES = {
   ouvrir: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/>',
   telecharger: '<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>',
   nuage: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
+  telephone: '<rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/>',
   imprimer: '<path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/>',
   coche: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   moins: '<path d="M5 12h14"/>',
@@ -622,6 +628,7 @@ async function route() {
   fermerMenu();
   if (!$("#modale").hidden) fermerModale();
   cacherApercu();
+  if (TELEPHONE && !TELEPHONE.pret) return TELEPHONE.attente(vue);     // téléphone pas encore relié, ou decks en route
   majTitre();
   const [chemin, qs] = location.hash.replace(/^#\/?/, "").split(/\?(.*)/s);
   const parts = chemin.split("/");
@@ -784,15 +791,18 @@ async function vueAccueil() {
             <td class="num"><button class="btn btn-petit" data-recup="${i}">${ico("annuler")}Récupérer</button></td></tr>`).join("")}
         </tbody></table>
       </details>` : "";
-  if (!ds.length && !PARTAGE) {                    // premier lancement, ou nouveau PC : les deux façons de commencer
+  if (!ds.length && PC) {                    // premier lancement, ou nouveau PC : les deux façons de commencer
     vue.innerHTML = `<div class="titre-page"><h1>${esc(MES_DECKS)}</h1></div>
       <div class="accueil-vide">
         <button type="button" class="av-choix" id="av-creer">${ico("plus")}<strong>Créer mon premier deck</strong>
           <span>À partir de son commandant, ou d'une liste copiée depuis Moxfield, Archidekt ou MTG Arena.</span></button>
         <button type="button" class="av-choix" id="av-recuperer">${ico("nuage")}<strong>Récupérer mes decks</strong>
           <span>Tu les as sauvegardés en ligne depuis un autre PC.</span></button>
+        <button type="button" class="av-choix" id="av-importer">${ico("dossier")}<strong>Importer mes decks</strong>
+          <span>Exportés de ManaBox, Moxfield, Archidekt… : un fichier par deck.</span></button>
       </div>${decksSupprimes}`;
     $("#av-creer").onclick = modaleNouveauDeck;
+    $("#av-importer").onclick = modaleImportDecks;
     $("#av-recuperer").onclick = () => modaleSauvegarde("recuperer", () => route());
     brancherCorbeille(corbeille);
     return;
@@ -817,7 +827,7 @@ async function vueAccueil() {
     <div id="d-resultats"></div>
     ${decksSupprimes}`;
   $("#btn-nouveau").onclick = modaleNouveauDeck;
-  if (!PARTAGE) etatSauvegarde($("#etat-sauvegarde"), $("#bandeau-sauvegarde"));
+  if (PC) etatSauvegarde($("#etat-sauvegarde"), $("#bandeau-sauvegarde"));
   const zone = $("#d-resultats");
   let cartes = {}, numero = 0, minuteur;
   const rendre = () => rendreDecks(zone, cartes);
@@ -941,7 +951,9 @@ function modaleNouveauDeck() {
     <details class="bloc"><summary>Coller une liste</summary>
       <textarea class="champ" id="nd-liste" rows="8" placeholder="1x Sol Ring [Ramp]&#10;1 Arcane Signet&#10;10 Mountain&#10;…"></textarea>
     </details>
-    <div class="boutons"><button class="btn" id="annuler">Annuler</button><button class="btn btn-accent" id="ok">Créer le deck</button></div>`, (b) => {
+    <div class="boutons"><button class="btn btn-discret a-gauche" id="nd-importer">${ico("dossier")}Importer des fichiers…</button>
+      <button class="btn" id="annuler">Annuler</button><button class="btn btn-accent" id="ok">Créer le deck</button></div>`, (b) => {
+    $("#nd-importer", b).onclick = modaleImportDecks;
     const montreCmd = () => {
       $("#nd-cmd", b).innerHTML = cmd ? `
         <div class="cmd-choisi">
@@ -975,6 +987,57 @@ function modaleNouveauDeck() {
   });
 }
 
+// plusieurs decks d'un coup, exportés d'une autre appli (ManaBox, Moxfield, Archidekt…) : un fichier par deck, qui lui
+// donne son nom. Déjà montés (coché) : leurs cartes sont notées comme là, dans l'onglet Achats.
+function modaleImportDecks() {
+  ouvrirModale(`
+    <h2>Importer des decks</h2>
+    <label class="import-zone"><input type="file" class="fichier-cache" id="im-fichiers" multiple accept=".txt,.csv,text/plain,text/csv">
+      ${ico("dossier")}<span id="im-choix">Choisir les fichiers (.txt ou .csv, un par deck)</span></label>
+    <label class="petit"><input type="checkbox" id="im-montes" checked> Decks déjà montés</label>
+    <div id="im-res"></div>
+    <div class="boutons"><button class="btn" id="annuler">Annuler</button><button class="btn btn-accent" id="ok" disabled>Importer</button></div>`, (b) => {
+    let fichiers = [];
+    const ok = $("#ok", b);
+    $("#im-fichiers", b).onchange = async (ev) => {
+      fichiers = await Promise.all([...ev.target.files].map(async (f) => ({ nom: f.name, texte: await f.text() })));
+      $("#im-choix", b).textContent = fichiers.length
+        ? `${fichiers.length} fichier${fichiers.length > 1 ? "s" : ""} : ${fichiers.map((f) => f.nom).join(", ")}`
+        : "Choisir les fichiers (.txt ou .csv, un par deck)";
+      ok.disabled = !fichiers.length;
+    };
+    $("#annuler", b).onclick = fermerModale;
+    ok.onclick = async () => {
+      ok.disabled = true;
+      ok.textContent = "Import…";
+      try {
+        const r = await api("/api/decks/importer", { method: "POST", body: { fichiers, montes: $("#im-montes", b).checked } });
+        etat.decks = await api("/api/decks");
+        const fini = () => {
+          fermerModale();
+          if (r.decks.length === 1) location.hash = `#/deck/${enc(r.decks[0])}`;
+          else if (location.hash.replace(/^#\/?/, "")) location.hash = "#/";
+          else route();
+        };
+        if (!r.echecs.length) {
+          fini();
+          return toast(`${r.decks.length} deck${r.decks.length > 1 ? "s" : ""} importé${r.decks.length > 1 ? "s" : ""}.`);
+        }
+        $("#im-res", b).innerHTML = `<p class="petit">${r.decks.length} deck${r.decks.length > 1 ? "s" : ""} importé${r.decks.length > 1 ? "s" : ""}. Pas importés :</p>
+          <ul class="petit">${r.echecs.map((x) => `<li>${esc(x.nom)} : ${esc(x.erreur)}</li>`).join("")}</ul>`;
+        $("#annuler", b).hidden = true;
+        ok.disabled = false;
+        ok.textContent = "Fermer";
+        ok.onclick = fini;
+      } catch (e) {
+        erreur(e);
+        ok.disabled = false;
+        ok.textContent = "Importer";
+      }
+    };
+  });
+}
+
 // ------------------------------------------------------------------ page d'un deck
 const ONGLETS = [["liste", "Liste"], ["suggestions", "Suggestions"],      // en page partagée : figées, sans le classeur
   ["stats", "Statistiques"], ["combos", "Combos"], ["versions", "Versions"], ["bracket", "Bracket"], ["simulation", "Simulation"],
@@ -1003,7 +1066,7 @@ async function vueDeck(id, onglet, extra = null, donnees = null) {
           <div class="chiffres" style="margin-top:.5rem">${chiffresDeck(d)}</div>
         </div>
         <div class="actions">
-          <a class="btn" href="${PARTAGE ? "jouer/" : `/jouer?deck=${enc(id)}`}" target="_blank" rel="noopener">${ico("lancer")}Jouer</a>
+          <a class="btn pc-seulement" href="${PARTAGE ? "jouer/" : `/jouer?deck=${enc(id)}`}" target="_blank" rel="noopener">${ico("lancer")}Jouer</a>
           <a class="btn ecrit" href="#/recherche?deck=${enc(id)}">${ico("chercher")}Chercher pour ce deck</a>
           <button class="btn btn-icone ouvre-menu" id="btn-deck-menu" aria-label="Autres actions sur le deck" title="Autres actions">${ico("plus_de")}</button>
         </div>
@@ -1018,12 +1081,12 @@ async function vueDeck(id, onglet, extra = null, donnees = null) {
   $("#btn-ajouter").onclick = () => modaleAjout();
   $$(".cmd-entete").forEach((x) => { x.onclick = () => ouvrirCarte(d.cartes[+x.dataset.carte]); });
   $("#btn-deck-menu").onclick = (ev) => ouvrirMenu(ev.currentTarget, [
-    ...(PARTAGE ? [] : [["Partager le deck…", () => modalePartage(d), "", "partager"],
+    ...(!PC ? [] : [["Partager le deck…", () => modalePartage(d), "", "partager"],
       ["Imprimer les proxies…", () => { location.hash = `#/proxies?deck=${enc(d.id)}`; }, "", "imprimer"], null]),
     "Copier la liste pour",
     ...EXPORTS.map(([fmt, lib]) => [lib, () => copierListe(fmt, lib), "", "copier"]),
     ...(PARTAGE ? [] : [["Cardmarket (à acheter)", () => copierCardmarket(d), "", "panier"]]),
-    ...(PARTAGE ? [] : [null, ["Renommer…", () => modaleRenommer(d), "", "crayon"], ["Supprimer ce deck…", () => supprimerDeck(d), "btn-danger", "corbeille"]]),
+    ...(!PC ? [] : [null, ["Renommer…", () => modaleRenommer(d), "", "crayon"], ["Supprimer ce deck…", () => supprimerDeck(d), "btn-danger", "corbeille"]]),
   ]);
   const contenu = $("#contenu");
   if (onglet === "stats") return ongletStats(contenu, d);
@@ -1352,8 +1415,10 @@ async function copierCardmarket(d) {
 // bord à bord pour couper d'un trait. Les images ne sont ni recadrées, ni déformées, ni décolorées (règles de Scryfall).
 const PROXIES_PAR_PAGE = 9;
 
-// les cartes à imprimer : celles à acheter, ou tout le deck (sans le Maybeboard), avec ou sans les terrains de base
-function proxiesDuDeck(d, poss, cartes, bases) {
+// les cartes à imprimer : celles à acheter, tout le deck (sans le Maybeboard), avec ou sans les terrains de base, ou ses
+// jetons (un de chaque)
+function proxiesDuDeck(d, poss, cartes, bases, jetons = []) {
+  if (cartes === "jetons") return jetons.map((j) => ({ c: { nom: j.nom, cat: "", info: { image: j.image, type: j.type, texte: j.texte, pt: j.pt } }, n: 1 }));
   const garde = (c) => bases || !estBase(c);
   const l = cartes === "acheter" ? bilanAchats(d, poss).acheter.filter((x) => garde(x.c))
     : d.cartes.filter((c) => c.cat !== "Maybeboard" && garde(c)).map((c) => ({ c, n: c.n }));
@@ -1404,11 +1469,12 @@ async function vueProxies(p) {
   vue.innerHTML = `<p class="chargement">Préparation des proxies…</p>`;
   const [d, poss] = await Promise.all([api(`/api/decks/${enc(id)}`),
     api(`/api/decks/${enc(id)}/achats`).then((r) => r.possedees).catch(() => ({}))]);
-  const compte = (cartes, bases) => nbAchats(proxiesDuDeck(d, poss, cartes, bases));
-  let cartes = compte("acheter", PREF.get("proxies-bases", "") === "1") ? "acheter" : "tout";
+  const jetons = await jetonsDuDeck(d);
+  const compte = (cartes, bases) => nbAchats(proxiesDuDeck(d, poss, cartes, bases, jetons));
+  let cartes = p.get("cartes") === "jetons" && jetons.length ? "jetons" : compte("acheter", PREF.get("proxies-bases", "") === "1") ? "acheter" : "tout";
   const rendre = () => {
     const format = PREF.get("proxies-format", "texte"), langue = PREF.get("proxies-langue", "fr"), bases = PREF.get("proxies-bases", "") === "1";
-    const proxies = proxiesDuDeck(d, poss, cartes, bases).flatMap(({ c, n }) =>
+    const proxies = proxiesDuDeck(d, poss, cartes, bases, jetons).flatMap(({ c, n }) =>
       Array.from({ length: n }, () => (format === "images" ? proxyImages(c) : [proxyTexte(c, langue)])).flat());
     const pages = [];
     for (let i = 0; i < proxies.length; i += PROXIES_PAR_PAGE) pages.push(proxies.slice(i, i + PROXIES_PAR_PAGE));
@@ -1419,8 +1485,9 @@ async function vueProxies(p) {
           ${format === "texte" ? segments("proxies-langue", [["fr", "Français"], ["en", "Anglais"]], "fr") : ""}
           <select class="champ champ-petit" id="px-cartes" aria-label="Cartes à imprimer">
             <option value="acheter" ${cartes === "acheter" ? "selected" : ""}>Les cartes à acheter (${compte("acheter", bases)})</option>
-            <option value="tout" ${cartes === "tout" ? "selected" : ""}>Tout le deck (${compte("tout", bases)})</option></select>
-          <label class="petit"><input type="checkbox" id="px-bases" ${bases ? "checked" : ""}> Terrains de base</label>
+            <option value="tout" ${cartes === "tout" ? "selected" : ""}>Tout le deck (${compte("tout", bases)})</option>
+            ${jetons.length ? `<option value="jetons" ${cartes === "jetons" ? "selected" : ""}>Les jetons (${jetons.length})</option>` : ""}</select>
+          ${cartes === "jetons" ? "" : `<label class="petit"><input type="checkbox" id="px-bases" ${bases ? "checked" : ""}> Terrains de base</label>`}
           <span class="px-compte muet petit">${proxies.length} proxie${proxies.length > 1 ? "s" : ""} · ${pages.length} page${pages.length > 1 ? "s" : ""} A4</span>
           <button class="btn btn-accent" id="px-imprimer" ${proxies.length ? "" : "disabled"}>${ico("imprimer")}Imprimer</button>
         </div>
@@ -1431,7 +1498,7 @@ async function vueProxies(p) {
     if (format === "texte") ajusterProxies(vue);
     $$(".px-reglages .segments button", vue).forEach((b) => b.addEventListener("click", () => { PREF.set(b.dataset.pref, b.dataset.val); rendre(); }));
     $("#px-cartes", vue).onchange = (ev) => { cartes = ev.target.value; rendre(); };
-    $("#px-bases", vue).onchange = (ev) => { PREF.set("proxies-bases", ev.target.checked ? "1" : ""); rendre(); };
+    if ($("#px-bases", vue)) $("#px-bases", vue).onchange = (ev) => { PREF.set("proxies-bases", ev.target.checked ? "1" : ""); rendre(); };
     $("#px-imprimer", vue).onclick = async (ev) => {
       const b = ev.currentTarget;
       b.disabled = true;
@@ -1473,7 +1540,7 @@ async function ongletAchats(el, d, poss = null) {
     const c = x.c, f = c.info || {}, cher = (f.prix || 0) > BUDGET, lib = achat ? "Je l'ai" : "À acheter";
     return `<div class="ligne ligne-carte ligne-achat" data-carte="${c.index}">
       <span class="qte">${x.n > 1 ? x.n + "×" : ""}</span>
-      <span class="nom"><span class="en" data-image="${esc(f.image)}" data-legende="${esc(legendeCarte(c))}" ${cher ? 'data-cher="1"' : ""}>${esc(c.nom)}</span>${f.fr && f.fr !== c.nom ? `<span class="fr">${esc(f.fr)}</span>` : ""}</span>
+      <span class="nom"><span class="en" data-image="${esc(f.image)}" data-legende="${esc(legendeCarte(c))}" ${cher ? 'data-cher="1"' : ""}>${esc(c.nom)}</span>${f.fr && f.fr !== c.nom ? `<span class="fr">${esc(f.fr)}</span>` : ""}${achat ? `<span class="ou-hint" data-ou="${esc(c.nom)}" hidden></span>` : ""}</span>
       ${mana(f.cout)}
       ${f.prix_lien ? `<a class="prix ${cher ? "cher" : ""}" href="${esc(f.prix_lien)}" target="_blank" rel="noopener">${euros(f.prix)}</a>` : `<span class="prix muet">${euros(f.prix)}</span>`}
       <button type="button" class="btn-menu" data-bascule="${esc(c.nom)}" data-v="${achat ? x.total : 0}" aria-label="${lib} : ${esc(c.nom)}" title="${lib}">${ico(achat ? "coche" : "panier")}</button>
@@ -1493,6 +1560,18 @@ async function ongletAchats(el, d, poss = null) {
       ${ai.length ? ai.map((x) => ligne(x, false)).join("") : `<p class="muet petit">Aucune.</p>`}
     </section>
   </div>`;
+  // à acheter, mais déjà là ailleurs : au classeur, ou dans un autre deck (où je l'ai)
+  if (acheter.length) api("/api/ou-sont").then((idx) => {
+    for (const s of $$("[data-ou]", el)) {
+      const x = idx[s.dataset.ou];
+      if (!x) continue;
+      const bouts = [x.classeur ? `Classeur${x.classeur > 1 ? " : " + x.classeur : ""}` : "",
+        ...x.decks.filter(([id, , ai]) => id !== d.id && ai > 0).map(([id, , ai]) => id.replace(/^Deck /, "") + (ai > 1 ? " : " + ai : ""))].filter(Boolean);
+      if (!bouts.length) continue;
+      s.textContent = "J'en ai : " + bouts.join(", ");
+      s.hidden = false;
+    }
+  }).catch(() => {});
   const marquer = async (changements) => {
     try { ongletAchats(el, d, await marquerPossedees(d, changements)); } catch (e) { erreur(e); }
   };
@@ -1771,10 +1850,95 @@ try { for (const k of Object.keys(localStorage)) if (k.startsWith("pref-rch-dern
 // ------------------------------------------------------------------ options : réglages de ce PC (reglages.json), démarrage, classeur
 // Options : trois blocs (les cartes, le partage, le programme), puis le classeur
 async function vueOptions() {
+  if (TELEPHONE) return optionsTelephone();
   vue.innerHTML = `<nav class="fil" aria-label="Fil d'Ariane"><a href="#/">Mes decks</a><span aria-hidden="true">›</span><span aria-current="page">Options</span></nav>
     <div class="opt-grille" id="opt-general"><p class="chargement">Chargement…</p></div>
     <section class="panneau options" id="opt-classeur"></section>`;
   optionsGenerales($("#opt-general"), await api("/api/options"));
+  classeurOptions($("#opt-classeur"));
+}
+
+// Options › Téléphone (sur le PC) : préparer les decks pour l'appli du téléphone, et la relier par un QR code
+async function ligneTelephone(el) {
+  let t;
+  try { t = await api("/api/telephone"); } catch (e) { el.innerHTML = `<p class="erreur petit">${esc(e.message)}</p>`; return; }
+  const action = async (a) => { try { t = await api("/api/telephone", { method: "POST", body: { action: a } }); rendre(); } catch (e) { erreur(e); } };
+  const rendre = () => {
+    if (!t.possible) {
+      el.innerHTML = `<p class="muet">Il faut d'abord la sauvegarde en ligne.</p>`;
+      return;
+    }
+    if (!t.voulu) {
+      el.innerHTML = `<button type="button" class="btn btn-accent" id="tel-activer">${ico("telephone")}Installer sur mon téléphone</button>`;
+      $("#tel-activer", el).onclick = async () => { await action("activer"); if (t.lien) modaleQrTelephone(t.lien); };
+      return;
+    }
+    el.innerHTML = `<p class="${t.erreur ? "erreur" : "muet"} petit">${t.erreur ? esc(t.erreur)
+        : t.en_cours ? "Préparation des decks…" : t.derniere ? `${t.decks} deck${t.decks > 1 ? "s" : ""} prêt${t.decks > 1 ? "s" : ""} pour le téléphone · ${esc(new Date(t.derniere * 1000).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }))}` : "Préparation des decks…"}</p>
+      <div class="opt-boutons">
+        ${t.lien ? `<button type="button" class="btn btn-petit" id="tel-qr">${ico("telephone")}Relier un téléphone</button>` : ""}
+        <button type="button" class="btn btn-petit btn-discret" id="tel-couper">Arrêter</button></div>`;
+    if ($("#tel-qr", el)) $("#tel-qr", el).onclick = () => modaleQrTelephone(t.lien);
+    $("#tel-couper", el).onclick = () => { if (confirm("Arrêter l'appli du téléphone ? Elle ne recevra plus tes decks.")) action("couper"); };
+    if (t.en_cours || (!t.derniere && !t.erreur)) setTimeout(async () => {
+      if (!el.isConnected) return;
+      try { t = await api("/api/telephone"); rendre(); } catch (_) {}
+    }, 3000);
+  };
+  rendre();
+}
+
+// le QR code qui relie un téléphone : l'adresse de l'appli, avec le dépôt et la clé GitHub (qui ne quittent pas l'écran)
+async function modaleQrTelephone(lien) {
+  if (!window.qrcode) {
+    await new Promise((ok, ko) => { const s = document.createElement("script"); s.src = "/static/vendor/qrcode.js"; s.onload = ok; s.onerror = ko; document.head.appendChild(s); })
+      .catch(() => null);
+  }
+  if (!window.qrcode) return erreur(new Error("QR code indisponible : recharge la page."));
+  const q = qrcode(0, "M");
+  q.addData(lien);
+  q.make();
+  ouvrirModale(`<div class="fc-tete"><h2>Atelier sur ton téléphone</h2>
+      <button class="btn btn-discret btn-icone" id="qr-fermer" aria-label="Fermer">${ico("fermer")}</button></div>
+    <div class="qr-telephone">${q.createSvgTag({ cellSize: 6, margin: 3, scalable: true })}</div>
+    <ol class="gh-etapes">
+      <li>Scanne ce QR code avec l'appareil photo du téléphone.</li>
+      <li>Installe l'appli. Android : «&nbsp;Installer l'application&nbsp;». iPhone : Partager › «&nbsp;Sur l'écran d'accueil&nbsp;», puis ouvre l'appli et scanne à nouveau ce code.</li>
+    </ol>
+    <p class="muet petit">Ce code ouvre tes decks : ne le montre qu'à tes téléphones.</p>
+    <div class="boutons"><button class="btn btn-petit" id="qr-copier">${ico("copier")}Copier le lien</button></div>`, (b) => {
+    $("#qr-fermer", b).onclick = fermerModale;
+    $("#qr-copier", b).onclick = async () => { try { await navigator.clipboard.writeText(lien); toast("Lien copié."); } catch (e) { erreur(e); } };
+  });
+}
+
+// téléphone : à quel Atelier il est relié, quand les decks sont arrivés, et le classeur (en lecture)
+function optionsTelephone() {
+  const a = TELEPHONE.acces();
+  vue.innerHTML = `<nav class="fil" aria-label="Fil d'Ariane"><a href="#/">Mes decks</a><span aria-hidden="true">›</span><span aria-current="page">Options</span></nav>
+    <section class="panneau options"><div class="opt-titre"><h2>${ico("telephone")}Téléphone</h2></div>
+      <div class="opt-lignes">
+        <p>Relié à la sauvegarde <strong>${esc(a ? a.depot : "")}</strong></p>
+        <p class="muet petit" id="tel-attente"></p>
+        <div class="form-ligne"><button class="btn" id="tel-maj">${ico("rafraichir")}Synchroniser</button>
+          <button class="btn btn-danger" id="tel-delier">Délier ce téléphone</button></div>
+      </div></section>
+    <section class="panneau options" id="opt-classeur"></section>`;
+  const attente = async () => {
+    const n = await TELEPHONE.enAttente();
+    $("#tel-attente").textContent = n ? `${n} modification${n > 1 ? "s" : ""} pas encore envoyée${n > 1 ? "s" : ""}` : "";
+  };
+  attente();
+  $("#tel-maj").onclick = async (ev) => {
+    const b = ev.currentTarget;
+    b.disabled = true;
+    try { await TELEPHONE.envoyer(); } catch (e) { toast(e.message); }
+    await TELEPHONE.synchroniser();
+    await attente();
+    toast(TELEPHONE.erreur || "À jour.");
+    b.disabled = false;
+  };
+  $("#tel-delier").onclick = () => { if (confirm("Délier ce téléphone ? Ses decks en seront effacés (ils restent sur ton PC).")) TELEPHONE.delier(); };
   classeurOptions($("#opt-classeur"));
 }
 
@@ -1820,6 +1984,7 @@ function optionsGenerales(el, o) {
         dans un espace privé et publie ceux que tu partages.</p>
       <div id="opt-github"></div>
       <label class="opt-champ"><span>Nom sur les pages partagées</span><input class="champ" name="nom" maxlength="60" value="${esc(o.nom)}" placeholder="${esc(o.github)}"></label>`)
+    + bloc("telephone", "Téléphone", `<div id="opt-telephone"></div>`)
     + bloc("options", "L'Atelier", `
       ${o.demarrage == null ? "" : bascule("demarrage", o.demarrage, "Lancer au démarrage de Windows")}
       ${champFermeture(o)}
@@ -1849,6 +2014,7 @@ function optionsGenerales(el, o) {
     } catch (e) { erreur(e); }
   };
   ligneGithub($("#opt-github", el), o);
+  ligneTelephone($("#opt-telephone", el));
 }
 
 // le compte GitHub (connecté par code, github.py ; ou celui du partage avec git, reglages.json) et la sauvegarde en ligne
@@ -1942,9 +2108,9 @@ const carteClasseur = (x) => {
 };
 
 const qteClasseur = (x) => `<span class="cl-qte">
-    <button type="button" class="btn-menu" data-n="${x.n - 1}" aria-label="Un de moins : ${esc(x.nom)}" title="Un de moins">${ico("moins")}</button>
+    <button type="button" class="btn-menu ecrit" data-n="${x.n - 1}" aria-label="Un de moins : ${esc(x.nom)}" title="Un de moins">${ico("moins")}</button>
     <span class="cl-n">${x.n}</span>
-    <button type="button" class="btn-menu" data-n="${x.n + 1}" aria-label="Un de plus : ${esc(x.nom)}" title="Un de plus">${ico("plus")}</button></span>`;
+    <button type="button" class="btn-menu ecrit" data-n="${x.n + 1}" aria-label="Un de plus : ${esc(x.nom)}" title="Un de plus">${ico("plus")}</button></span>`;
 
 function ligneClasseur(x, i) {
   const cher = (x.prix || 0) > BUDGET;
@@ -1984,11 +2150,13 @@ async function classeurOptions(el) {
   let sens = PREF.get("sens-classeur", TRI_CLASSEUR_DESC[tri] ? "desc" : "asc");
   let vueImages = PREF.get("vue-classeur", "liste") === "images";
   el.innerHTML = `<div class="opt-titre"><h2>${ico("livre")}Classeur</h2>
+      <label class="btn btn-petit btn-discret ecrit" id="cl-importer">${ico("dossier")}Importer une collection…<input type="file" class="fichier-cache" accept=".csv,.txt,text/csv,text/plain"></label>
       <button type="button" class="btn btn-petit btn-discret" id="cl-copier">${ico("copier")}Copier la liste</button></div>
-    <div class="cl-outils"><div id="cl-ajout"></div><input class="champ" id="cl-filtre" type="search" placeholder="Filtrer…" aria-label="Filtrer le classeur"></div>
-    <details class="cl-coller"><summary>Coller une liste</summary>
+    <div class="cl-outils"><div id="cl-ajout" class="ecrit"></div><input class="champ" id="cl-filtre" type="search" placeholder="Filtrer…" aria-label="Filtrer le classeur"></div>
+    <details class="cl-coller ecrit"><summary>Coller une liste</summary>
       <textarea class="champ" id="cl-liste" rows="6" placeholder="1 Sol Ring&#10;2 Lightning Bolt&#10;…"></textarea>
       <div class="boutons"><button class="btn btn-accent btn-petit" id="cl-ajouter">Ajouter au classeur</button></div></details>
+    <details class="cl-coller" id="cl-partagees"><summary>Dans plusieurs decks</summary><div id="cl-partagees-res"></div></details>
     <div id="cl-res"><p class="chargement">Chargement…</p></div>`;
   const res = $("#cl-res", el), filtre = $("#cl-filtre", el);
   const nb = (l) => l.reduce((s, x) => s + x.n, 0);
@@ -2078,6 +2246,12 @@ async function classeurOptions(el) {
     } catch (e) { erreur(e); }
     b.disabled = false;
   };
+  $("#cl-importer input", el).onchange = async (ev) => {
+    const f = ev.target.files[0];
+    ev.target.value = "";
+    if (f) importerCollection(f, cartes.length, (nouv) => { cartes = nouv; page = 1; rendre(); });
+  };
+  $("#cl-partagees", el).ontoggle = (ev) => { if (ev.target.open) cartesPartagees($("#cl-partagees-res", el)); };
   $("#cl-copier", el).onclick = async () => {
     try {
       await navigator.clipboard.writeText(cartes.map((x) => `${x.n} ${x.nom}`).join("\n") + "\n");
@@ -2088,6 +2262,62 @@ async function classeurOptions(el) {
     cartes = (await api("/api/classeur")).cartes;
     rendre();
   } catch (e) { res.innerHTML = `<p class="erreur">${esc(e.message)}</p>`; }
+}
+
+// une collection exportée d'une autre appli (CSV de ManaBox, Moxfield, Archidekt… ou liste) : aperçu, puis ajout au
+// classeur, sans les exemplaires déjà notés dans les decks (le classeur, c'est ce qui n'est pas dans un deck)
+async function importerCollection(fichier, dejaLa, fin) {
+  let texte, a;
+  try {
+    texte = await fichier.text();
+    toast("Lecture de la collection…", 60000);
+    a = await api("/api/classeur/importer", { method: "POST", body: { texte, apercu: true } });
+    toast("Collection lue.", 1);
+  } catch (e) { return erreur(e); }
+  if (!a.cartes) return toast("Aucune carte reconnue dans ce fichier.");
+  ouvrirModale(`
+    <h2>Importer une collection</h2>
+    <p><strong>${sepMilliers(a.cartes)} carte${a.cartes > 1 ? "s" : ""}</strong> dans ${esc(fichier.name)}</p>
+    ${a.en_decks ? `<label class="petit"><input type="checkbox" id="ic-sans" checked> Sans les ${sepMilliers(a.en_decks)} déjà dans mes decks</label>` : ""}
+    ${a.inconnues.length ? `<details class="petit"><summary>${a.inconnues.length} introuvable${a.inconnues.length > 1 ? "s" : ""}</summary>
+      <p class="muet">${a.inconnues.map(esc).join(", ")}</p></details>` : ""}
+    <div class="boutons"><button class="btn" id="annuler">Annuler</button>
+      ${dejaLa ? `<button class="btn" id="ic-remplacer">Remplacer le classeur</button>` : ""}
+      <button class="btn btn-accent" id="ok">Ajouter au classeur</button></div>`, (b) => {
+    $("#annuler", b).onclick = fermerModale;
+    const importer = async (remplacer, bouton) => {
+      $$(".boutons .btn", b).forEach((x) => { x.disabled = true; });
+      bouton.textContent = "Import…";
+      try {
+        const sans = $("#ic-sans", b);
+        const r = await api("/api/classeur/importer", { method: "POST", body: { texte, remplacer, sans_decks: !!(sans && sans.checked) } });
+        fermerModale();
+        fin(r.classeur);
+        toast("Collection importée.");
+      } catch (e) {
+        erreur(e);
+        $$(".boutons .btn", b).forEach((x) => { x.disabled = false; });
+      }
+    };
+    $("#ok", b).onclick = (ev) => importer(false, ev.currentTarget);
+    if ($("#ic-remplacer", b)) $("#ic-remplacer", b).onclick = (ev) => importer(true, ev.currentTarget);
+  });
+}
+
+// les cartes jouées dans plusieurs decks : combien j'en ai (classeur et decks) pour combien il en faut
+async function cartesPartagees(el) {
+  el.innerHTML = `<p class="chargement">Chargement…</p>`;
+  try {
+    const idx = await api("/api/ou-sont");
+    const l = Object.entries(idx).filter(([, x]) => x.decks.length > 1)
+      .map(([nom, x]) => ({ nom, fr: x.fr, decks: x.decks, ai: x.classeur + x.decks.reduce((s, y) => s + y[2], 0), faut: x.decks.reduce((s, y) => s + y[1], 0) }))
+      .sort((a, b) => b.decks.length - a.decks.length || (a.fr || a.nom).localeCompare(b.fr || b.nom, "fr"));
+    el.innerHTML = l.length ? `<div class="cl-partagees">${l.map((x) => `<div class="ligne ligne-partagee">
+        <span class="nom"><span class="en">${esc(x.nom)}</span>${x.fr && x.fr !== x.nom ? `<span class="fr">${esc(x.fr)}</span>` : ""}</span>
+        <span class="petit muet">${x.decks.map(([id]) => esc(id.replace(/^Deck /, ""))).join(", ")}</span>
+        <span class="petit ${x.ai < x.faut ? "manque" : "muet"}" title="J'en ai ${x.ai}, les decks en jouent ${x.faut}">${x.ai} / ${x.faut}</span>
+      </div>`).join("")}</div>` : `<p class="muet petit">Aucune.</p>`;
+  } catch (e) { el.innerHTML = `<p class="erreur">${esc(e.message)}</p>`; }
 }
 
 async function supprimerDeck(d) {
@@ -2369,6 +2599,22 @@ document.addEventListener("click", (ev) => {
 }, true);
 
 // fiche d'une carte (clic gauche sur une carte, en liste ou en visuel) : grande image, texte, prix, tags et actions
+// où est cette carte : le classeur et les autres decks qui la jouent, pour ne pas racheter une carte qu'on a déjà
+// (« à acheter » : ce deck la joue, mais elle n'y est pas encore)
+async function ouEst(el, nom, deckId = null) {
+  if (PARTAGE || !el) return;
+  try {
+    const x = (await api("/api/ou-sont?nom=" + enc(nom)))[nom] || { classeur: 0, decks: [] };
+    const autres = x.decks.filter(([id]) => id !== deckId);
+    const morceaux = [];
+    if (x.classeur) morceaux.push(`${ico("livre")}Classeur : ${x.classeur}`);
+    if (autres.length) morceaux.push(`${ico("cartes")}${deckId ? "Aussi dans" : "Dans"} ${autres.map(([id, n, ai]) =>
+      `<a href="#/deck/${enc(id)}">${esc(id.replace(/^Deck /, ""))}</a>${ai < n ? ` <span class="muet">(à acheter)</span>` : ""}`).join(", ")}`);
+    el.innerHTML = morceaux.map((m) => `<span>${m}</span>`).join("");
+    el.hidden = !morceaux.length;
+  } catch (_) { el.hidden = true; }
+}
+
 function ouvrirCarte(c) {
   if (!c) return;
   const d = etat.deck;
@@ -2398,6 +2644,7 @@ function ouvrirCarte(c) {
           ${f.gc ? `<span class="badge badge-gc">Game Changer</span>` : ""}
           ${badgesAlerte(c)}
         </div>
+        <div class="ou-est petit" hidden></div>
         ${assembleHtml(f.assemble)}
         ${f.fr_texte || f.texte ? `<div class="texte fs-texte">${(f.fr_texte || f.texte).split("\n").map((l) => l.trim() === "//" ? "<hr>" : l.trim() ? `<p>${texteMana(l)}</p>` : "").join("")}</div>` : ""}
         ${f.fr_texte && f.texte ? `<details class="petit"><summary>Texte anglais</summary><div class="fs-texte" style="margin-top:.4rem">${f.texte.split("\n").map((l) => l.trim() === "//" ? "<hr>" : `<p>${texteMana(l)}</p>`).join("")}</div></details>` : ""}
@@ -2436,6 +2683,7 @@ function ouvrirCarte(c) {
     $("#fc-fermer", b).onclick = fermerModale;
     const achat = $('[data-act="achat"]', b);
     if (achat) possedeesDeck(d).then((poss) => boutonAchat(achat, d, c, poss)).catch(() => {});
+    ouEst($(".ou-est", b), c.nom, d.id);
     b.addEventListener("click", async (ev) => {
       const x = ev.target.closest("[data-act]");
       if (!x || x.disabled) return;
@@ -2748,6 +2996,7 @@ async function chargerFiche(zone, nom, { version = null, surVersion = null } = {
           ${hors ? `<span class="badge badge-alerte">hors couleurs</span>` : ""}
           ${deja ? `<span class="badge badge-alerte">déjà dans ce deck</span>` : ""}
         </div>
+        <div class="ou-est petit" hidden></div>
         ${f.fr_texte || f.texte ? `<div class="texte fs-texte">${texte(f.fr_texte || f.texte)}</div>` : ""}
         ${f.fr_texte && f.texte ? `<details class="petit"><summary>Texte anglais</summary><div class="fs-texte" style="margin-top:.4rem">${texte(f.texte)}</div></details>` : ""}
         <div class="fc-liens">
@@ -2756,6 +3005,7 @@ async function chargerFiche(zone, nom, { version = null, surVersion = null } = {
         </div>
       </div>
     </div>`;
+  ouEst($(".ou-est", zone), f.nom, d && d.id);
   const lien = $('[data-act="version"]', zone);
   if (lien) lien.onclick = () => choixVersion(zone, {
     nom: f.nom, titre: f.fr || f.nom, actuelle: f.version,
@@ -3057,6 +3307,7 @@ function ongletStats(el, d) {
       <h3 style="margin-top:0">Base de mana</h3>
       ${tableauBaseMana(S, d)}
     </div>
+    <div class="panneau" id="st-jetons" hidden></div>
     <div class="panneau">
       <h3 style="margin-top:0">Main de départ</h3>
       <div class="form-ligne" style="margin-top:0">
@@ -3086,7 +3337,23 @@ function ongletStats(el, d) {
   };
   roles();
   montageMain(el, S);
+  if (!PARTAGE) jetonsDuDeck(d).then((jetons) => {
+    const z = $("#st-jetons", el);
+    if (!z || !jetons.length) return;
+    const fr = (n) => { const c = d.cartes.find((x) => x.nom === n); return c ? nomAffiche(c) : n; };
+    z.innerHTML = `<div class="panneau-tete"><h3>Jetons</h3>
+        <a class="btn btn-petit" href="#/proxies?deck=${enc(d.id)}&cartes=jetons">${ico("imprimer")}Imprimer</a></div>
+      ${jetons.map((j) => `<div class="ligne ligne-jeton">
+        <span class="nom"><span class="en" data-image="${esc(j.image)}">${esc(j.nom)}</span>${j.pt ? ` <span class="muet">${esc(j.pt)}</span>` : ""}</span>
+        <span class="petit muet">${esc(j.type)}</span>
+        <span class="petit muet">${j.cartes.map((n) => esc(fr(n))).join(", ")}</span>
+      </div>`).join("")}`;
+    z.hidden = false;
+  });
 }
+
+// les jetons (et donjons) que créent les cartes du deck, d'après Scryfall : à prévoir pour jouer, ou à imprimer
+const jetonsDuDeck = (d) => api(`/api/jouer/jetons?deck=${enc(d.id)}`).then((r) => r.jetons || []).catch(() => []);
 
 // tirage d'une main de départ, comme les testeurs d'Archidekt ou de Moxfield
 function montageMain(el, S) {
@@ -4957,6 +5224,7 @@ function ficheRecherche(i, ctx = null) {
           <span class="badge ${cher ? "badge-cher" : ""}" id="rf-prix-badge" title="Le moins cher, toutes éditions (prix Cardmarket du jour)">${prixRch(x)}</span>
           ${badgesRch(x, d)}
         </div>
+        <div class="ou-est petit" hidden></div>
         <div id="rf-assemble"></div>
         ${x.texte_fr || x.texte ? `<div class="texte fs-texte">${texte(x.texte_fr || x.texte)}</div>` : ""}
         ${x.texte_fr && x.texte ? `<details class="petit"><summary>Texte anglais</summary><div class="fs-texte" style="margin-top:.4rem">${texte(x.texte)}</div></details>` : ""}
@@ -4975,6 +5243,7 @@ function ficheRecherche(i, ctx = null) {
       </div>
     </div>`, (b) => {
     let dest = x.dans === "maybe" ? "deck" : PREF.get("rf-dest", "deck");
+    ouEst($(".ou-est", b), x.nom, d && d.id);
     b.addEventListener("click", async (ev) => {
       const s = ev.target.closest("[data-dest]");
       if (s) {
@@ -5056,7 +5325,7 @@ document.addEventListener("visibilitychange", async () => {
 // ------------------------------------------------------------------ état de la mise à jour (prix, Game Changers)
 // cette page est ouverte : elle le dit à chaque nouvelle, et prévient quand on la ferme (réglage « Arrêter l'Atelier »)
 const ID_PAGE = Math.random().toString(36).slice(2, 12);
-if (!PARTAGE) addEventListener("pagehide", () => navigator.sendBeacon("/api/presence/fin", ID_PAGE));
+if (PC) addEventListener("pagehide", () => navigator.sendBeacon("/api/presence/fin", ID_PAGE));
 
 async function suivreMaj() {
   try {
@@ -5435,7 +5704,7 @@ async function arreterChat() {
 }
 
 $("#btn-chat").addEventListener("click", () => basculeChat());
-if (!PARTAGE) {
+if (PC) {
   chat.contexte = deckDeLaPage();
   chat.cle = chat.contexte ?? PREF.get("chat-discussion", "");
   window.addEventListener("hashchange", changerDiscussion);
@@ -5446,9 +5715,9 @@ if (!PARTAGE) {
 }
 
 route();
-if (!PARTAGE) suivreMaj();
+if (PC) suivreMaj();
 // les préférences, demandées une fois : fermeture de la page, visuel par défaut des cartes, Universes Beyond
-if (!PARTAGE) setTimeout(() => api("/api/options").then((o) => { if (!o.preferences && $("#modale").hidden) modalePreferences(o); })
+if (PC) setTimeout(() => api("/api/options").then((o) => { if (!o.preferences && $("#modale").hidden) modalePreferences(o); })
   .catch(() => {}), 800);
 
 // nouvelle version de l'Atelier (mise_a_jour.py) : un bandeau propose de l'installer ; l'Atelier redémarre et la page se recharge
@@ -5488,13 +5757,13 @@ async function verifierVersion() {
     }
   };
 }
-if (!PARTAGE) {
+if (PC) {
   verifierVersion();
   setTimeout(verifierVersion, 30000);                // l'Atelier lit le dépôt quelques secondes après son lancement
   setInterval(verifierVersion, 3 * 3600 * 1000);
 }
 // le navigateur garde la page « L'Atelier n'est pas lancé » (avec de quoi le lancer) pour quand l'adresse ne répond plus (sw.js)
-if (!PARTAGE && "serviceWorker" in navigator) {
+if (PC && "serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js").catch(() => {});
   caches.open("atelier-eteint").then((c) => c.add("/eteint")).catch(() => {});     // sa version du jour : bouton Lancer ou non
 }

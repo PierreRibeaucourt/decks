@@ -1588,7 +1588,7 @@
  },
  "Deck Tromo": {
   "slug": "tromo",
-  "date": 1794494025.3757215,
+  "date": 1794508331.889343,
   "version": "1.7.6",
   "resume": {
    "alertes": {},
@@ -1609,12 +1609,12 @@
     "U"
    ],
    "image_cmd": "https://cards.scryfall.io/normal/front/f/1/f1a4dff1-8c2a-4a5e-94db-d4711c53f05d.jpg?1782817896",
-   "maybe": 5,
-   "modifie": 1794431233.6526468,
+   "maybe": 6,
+   "modifie": 1794508197.1953983,
    "note": "",
-   "prix_total": 127.64,
+   "prix_total": 126.95,
    "titre": "Tromo",
-   "total": 100,
+   "total": 99,
    "trop_cher": [
     "Sapphire Medallion",
     "Misleading Signpost",
@@ -1708,10 +1708,6 @@
    [
     "Freeze in Place",
     "Congelé sur place"
-   ],
-   [
-    "Floodpits Drowner",
-    "Noyeur de Fossecrue"
    ],
    [
     "Hylda's Crown of Winter",
@@ -1900,6 +1896,10 @@
    [
     "Maze of Ith",
     "Labyrinthe d'Ith"
+   ],
+   [
+    "Floodpits Drowner",
+    "Noyeur de Fossecrue"
    ],
    [
     "Crashing Wave",
