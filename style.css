@@ -52,7 +52,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .barre { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 1rem; padding: .6rem 1rem;
   background: var(--surface); border-bottom: 1px solid var(--bord); }
 .logo { display: inline-flex; align-items: center; gap: .45rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
-.logo::before, .ap-tete h1::before { content: ""; width: 22px; height: 22px; flex: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='11.5' cy='7' r='2.8' fill='%23f97316'/%3E%3Ccircle cx='18.5' cy='3.6' r='2' fill='%23f97316'/%3E%3Ccircle cx='19.8' cy='9.6' r='1.6' fill='%23f97316'/%3E%3Cpath d='M8 27.5 6.6 30.6M24 27.5l1.4 3.1' stroke='%239a3412' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M5 15h22c1 1.9 1.5 3.7 1.5 5.7 0 4.6-5.4 7.8-12.5 7.8S3.5 25.3 3.5 20.7c0-2 .5-3.8 1.5-5.7z' fill='%23c2410c'/%3E%3Crect x='2' y='11.5' width='28' height='5.2' rx='2.6' fill='%239a3412'/%3E%3Cpath d='M8 19.5c1.5 3.5 4.2 5 8 5' stroke='%23fdba74' stroke-width='1.6' fill='none' stroke-linecap='round' opacity='.7'/%3E%3C/svg%3E") center / contain no-repeat; }      /* le chaudron du favicon */
+.logo::before, .ap-tete h1::before, .tel-accueil h1::before { content: ""; width: 22px; height: 22px; flex: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='11.5' cy='7' r='2.8' fill='%23f97316'/%3E%3Ccircle cx='18.5' cy='3.6' r='2' fill='%23f97316'/%3E%3Ccircle cx='19.8' cy='9.6' r='1.6' fill='%23f97316'/%3E%3Cpath d='M8 27.5 6.6 30.6M24 27.5l1.4 3.1' stroke='%239a3412' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M5 15h22c1 1.9 1.5 3.7 1.5 5.7 0 4.6-5.4 7.8-12.5 7.8S3.5 25.3 3.5 20.7c0-2 .5-3.8 1.5-5.7z' fill='%23c2410c'/%3E%3Crect x='2' y='11.5' width='28' height='5.2' rx='2.6' fill='%239a3412'/%3E%3Cpath d='M8 19.5c1.5 3.5 4.2 5 8 5' stroke='%23fdba74' stroke-width='1.6' fill='none' stroke-linecap='round' opacity='.7'/%3E%3C/svg%3E") center / contain no-repeat; }      /* le chaudron du favicon */
 .espace { flex: 1; }
 /* « Aller à un deck » : une recherche plutôt qu'une liste, pour tenir avec 100 decks */
 .aller { position: relative; flex: 0 1 380px; min-width: 0; }
@@ -72,6 +72,21 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (max-width: 700px) { .etat-maj { display: none; } }
 @media (max-width: 560px) { .barre { gap: .5rem; padding: .5rem .6rem; } .logo { font-size: 0; gap: 0; }
   .lien-recherche > span, #btn-chat .txt { display: none; } }
+/* site de l'Atelier, sur téléphone : le champ du haut et « Recherche avancée » sur une 2e ligne */
+@media (max-width: 560px) {
+  .site-atelier .barre { flex-wrap: wrap; row-gap: 0; }
+  .site-atelier .barre::after { content: ""; order: 2; flex-basis: 100%; }
+  .site-atelier .barre-droite { order: 1; }
+  .site-atelier :is(.aller, #lien-recherche) { order: 3; margin-top: .5rem; }
+  .site-atelier .aller { flex: 1 1 0; }
+  .site-atelier .logo { font-size: inherit; gap: .45rem; }
+  .site-atelier #lien-recherche > span, .site-atelier #lien-recherche .long { display: inline; }
+}
+@media (max-width: 400px) { .site-atelier #lien-recherche .ico { display: none; } }
+/* « Installer », sans « l'Atelier MTG » ; plus étroit : le chaudron seul, puis les boutons sans icône (une seule ligne) */
+@media (max-width: 560px) { #btn-installer .long { display: none; } }
+@media (max-width: 440px) { .site-atelier .logo { font-size: 0; gap: 0; } }
+@media (max-width: 380px) { :is(#btn-installer, #btn-creer) .ico { display: none; } }
 .fil { display: flex; gap: .45rem; align-items: center; font-size: .85rem; color: var(--texte-2); margin: -.25rem 0 .6rem; }
 .fil a { color: var(--texte-2); }
 .fil a:hover { color: var(--accent); }
@@ -85,6 +100,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .btn-accent { background: var(--accent); color: var(--accent-texte); border-color: var(--accent); }
 .btn-accent:hover { background: var(--accent); filter: brightness(1.08); }
 .btn-discret { border-color: transparent; background: transparent; color: var(--texte-2); }
+/* l'autre choix, à côté d'un bouton orange : le contour seul (page d'accueil : Installer / Créer un deck) */
+.btn.btn-contour { border-color: var(--accent); background: transparent; color: var(--accent); }
+.btn.btn-contour:hover { background: var(--accent-doux); }
 .btn-danger { color: var(--alerte); }
 .btn-petit { padding: .2rem .55rem; font-size: .85rem; }
 
@@ -604,10 +622,16 @@ a.btn-accent { color: var(--accent-texte); }      /* un lien en bouton orange : 
 .rch-deck { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; }
 .rch-deck .identite { margin-left: 0; }
 .rch-deck a { color: var(--accent); }
-.mt-pied { display: flex; justify-content: flex-end; margin-top: .8rem; }
+/* « Rechercher » collé en bas de l'écran, sauf quand le gros bouton du milieu se voit déjà */
+.mt-pied { position: sticky; bottom: 0; z-index: 4; display: flex; justify-content: flex-end; align-items: center; gap: .4rem 1.2rem;
+  margin-top: .4rem; padding: .6rem 0 calc(.6rem + env(safe-area-inset-bottom)); background: var(--fond); border-top: 1px solid var(--bord);
+  transition: opacity .15s; }
+.mt-pied.doublon { opacity: 0; pointer-events: none; }
+.telephone.appli-prete .mt-pied { bottom: calc(56px + env(safe-area-inset-bottom) + var(--tel-bandeau, 0px)); padding-bottom: .6rem; }
 .vue.vue-large { max-width: 1500px; }
 .rch-tete { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .4rem 1rem; margin-bottom: .6rem; }
 .rch-tete .fil { margin: 0; }
+.rch-h1 { margin: 0 0 .8rem; }                 /* atelier-mtg.com/recherche/ */
 /* recherche pour un deck : bandeau à l'image de son commandant, la croix repasse en recherche sans deck */
 .rch-bandeau { position: relative; display: flex; align-items: center; gap: .5rem 1rem; min-height: 60px; padding: .5rem .6rem .5rem 1.1rem;
   margin-bottom: .8rem; border-radius: 10px; overflow: hidden; color: #fff; background: #1f1e1b center 28% / cover no-repeat; }
@@ -667,6 +691,8 @@ a.btn-accent { color: var(--accent-texte); }      /* un lien en bouton orange : 
   .mt-plus { grid-template-columns: minmax(0, 1fr); }
 }
 @container moteur (max-width: 600px) {
+  .mt-go { display: none; }                         /* étroit : « Rechercher » seulement en bas */
+  .mt-pied .btn { flex: 1; }
   .mt-haut { grid-template-columns: minmax(0, 1fr); }
   .rch-nb label { grid-template-columns: minmax(0, 1fr); gap: .1rem; }
   .mt-go, .mt-milieu .fen-format, .mt-milieu .fen-rarete { grid-column: 1 / -1; }
@@ -862,7 +888,9 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
 .aller-liste { max-height: min(70vh, 560px); overflow: auto; }
 
 /* page partagée (lecture seule) : ni ce qui modifie, ni la recherche, ni la discussion */
-.partage :is(.ecrit, .aller, #btn-rafraichir, #etat-maj, .ligne-outil, #lien-options, #lien-classeur) { display: none !important; }
+.partage:not(.site-atelier) .aller { display: none !important; }      /* site de l'Atelier : le champ du haut cherche une carte */
+.partage :is(.ecrit, #btn-rafraichir, #etat-maj, .ligne-outil, #lien-options, #lien-classeur) { display: none !important; }
+.voir-attente .barre > :not(.logo) { visibility: hidden; }     /* lien instantané (voir/) : rien d'inerte avant app.js */
 /* nouvelle version de l'Atelier à installer */
 /* une ligne fine, de la couleur de l'en-tête, avec une pastille orange ; les nouveautés sur une ligne (en entier au survol) */
 .bandeau-maj { position: relative; display: flex; align-items: center; justify-content: center; gap: .4rem 1rem; padding: .35rem 1rem;
@@ -897,11 +925,23 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
 .bandeau-partage { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .45rem 1rem; padding: .5rem 1rem;
   background: var(--accent-doux); border-bottom: 1px solid var(--bord); font-size: .9rem; text-align: center; }
 .bandeau-partage p { margin: 0; }
+/* fenêtre « Partager » : le lien instantané, puis la page permanente */
+.pt-bloc h3 { margin: 0 0 .5rem; font-size: 1rem; }
+.pt-bloc + .pt-bloc { margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--bord); }
 .bandeau-partage p a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .pied-partage { border-top: 1px solid var(--bord); padding: 1.2rem 1rem 1.6rem; text-align: center; font-size: .82rem; color: var(--texte-2); }
 .pied-partage nav { display: flex; flex-wrap: wrap; justify-content: center; gap: .3rem 1.4rem; margin-bottom: .5rem; }
 .pied-partage nav a { color: var(--texte); }
 .pied-partage p { margin: 0 auto; max-width: 720px; }
+.pied-partage p + p { margin-top: .3rem; }
+.pied-partage p a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+/* mentions légales et confidentialité de la page d'accueil (site_atelier.py) */
+.legal h1 { font-size: 2rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.2; margin: 0 0 .3rem; }
+.legal .legal-date { color: var(--texte-2); font-size: .88rem; margin-top: 0; }
+.legal .legal-bref { font-size: 1.08rem; }
+.legal h2 { font-size: 1.3rem; margin-top: 2.2rem; }
+.legal ul { padding-left: 1.2rem; }
+.legal li { margin: .35rem 0; }
 /* « L'Atelier MTG » : la page qui présente l'outil (#/a-propos) */
 .a-propos { max-width: 760px; margin: 0 auto; line-height: 1.65; display: flow-root; }
 .a-propos h2 { font-size: 1.55rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.25; margin: 2.8rem 0 .9rem; padding-top: 1.6rem;
@@ -953,7 +993,9 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
 .ap-puces { list-style: none; padding: 0; margin: 0 0 1.5rem; display: flex; flex-wrap: wrap; gap: 7px; }
 .ap-puces li { font-size: .85rem; line-height: 1.5; padding: .15rem .7rem; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--bord);
   color: var(--texte-2); }
-.ap-cta { margin: 0 0 .8rem; display: flex; flex-wrap: wrap; gap: .6rem; }
+.ap-cta { margin: 0 0 .8rem; display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.ap-voir { color: var(--texte-2); text-underline-offset: 3px; }
+.ap-voir:hover { color: var(--accent); }
 .ap-mention { margin: 0; font-size: .85rem; color: var(--texte-2); }
 .ap-mention b { color: var(--accent); font-weight: 600; }
 @media (max-width: 900px) {                        /* écran étroit : le texte seul */
@@ -972,15 +1014,6 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
 .ap-zoom { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 2vh 2vw;
   background: rgba(0,0,0,.86); cursor: zoom-out; }
 .ap-zoom img { max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
-/* installation : quatre façons, une par onglet ; la carte de l'onglet choisi dessous */
-.ap-onglets { display: inline-flex; gap: 4px; padding: 4px; margin-top: .4rem; background: var(--surface); border: 1px solid var(--bord);
-  border-radius: 10px; }
-.ap-onglets [role=tab] { display: inline-flex; align-items: center; gap: .5rem; padding: .5rem 1rem; border: 0; border-radius: 7px;
-  background: none; color: var(--texte-2); font: inherit; font-weight: 600; cursor: pointer; }
-.ap-onglets [role=tab]:hover { color: var(--texte); }
-.ap-onglets [role=tab][aria-selected=true] { background: var(--texte); color: var(--fond); }
-.ap-onglets .ico { width: 1.15em; height: 1.15em; }
-.ap-onglets .ap-logo { fill: currentColor; stroke: none; }
 .ap-install { margin-top: .7rem; background: var(--surface); border: 1px solid var(--bord); border-radius: var(--rayon); padding: 1.1rem 1.3rem 1.3rem; }
 .a-propos .ap-install-pour { margin: 0 0 .9rem; font-size: .85rem; color: var(--texte-2); }
 .ap-install ol { margin: 0; padding-left: 1.25rem; display: grid; gap: .65rem; }
@@ -995,10 +1028,52 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
   cursor: pointer; }
 .ap-commande button:hover { filter: brightness(1.08); }
 .a-propos .ap-install-sous { margin-top: 1rem; font-size: .9rem; color: var(--texte-2); }
-@media (max-width: 600px) {                        /* téléphone : les quatre onglets sur deux lignes, toute la largeur */
-  .ap-onglets { display: grid; grid-template-columns: 1fr 1fr; }
-  .ap-onglets [role=tab] { justify-content: center; padding: .55rem .4rem; gap: .35rem; font-size: .88rem; }
+/* « Vos decks, à votre façon » : la même page sur ordinateur, et sur téléphone posé devant l'écran */
+.ap-appareils { position: relative; padding: 0 11% 9% 0; }
+.ap-appareils .ap-ecran-pc { margin: 0; padding: 0; border-radius: 12px; overflow: hidden; background: var(--surface); border: 1px solid var(--bord);
+  box-shadow: var(--ombre); }
+.ap-fenetre { display: flex; gap: 6px; padding: 9px 12px; background: var(--surface-2); border-bottom: 1px solid var(--bord); }
+.ap-fenetre i { width: 9px; height: 9px; border-radius: 50%; background: var(--bord); }
+.ap-appareils .ap-ecran-pc img { display: block; width: 100%; height: auto; border-radius: 0; }
+.ap-appareils .ap-ecran-tel { position: absolute; right: 0; bottom: 0; width: 25%; margin: 0; padding: 6px; background: #0b0a09; border: 0;
+  border-radius: 26px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .1), 0 22px 48px rgba(0, 0, 0, .5); transform: rotate(3deg);
+  transform-origin: bottom right; }
+.ap-appareils .ap-ecran-tel img { display: block; width: 100%; height: auto; border-radius: 20px; }
+@media (max-width: 560px) {
+  .ap-appareils { padding-right: 16%; }
+  .ap-appareils .ap-ecran-tel { width: 30%; padding: 4px; border-radius: 18px; }
+  .ap-appareils .ap-ecran-tel img { border-radius: 14px; }
 }
+/* installation : Windows et le téléphone côte à côte ; les autres façons en dessous, repliées */
+.ap-install-duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: .9rem; align-items: start; }
+.ap-install-duo .ap-install { margin-top: 0; display: grid; gap: .85rem; align-content: start; }
+.ap-install-tete { display: flex; align-items: center; gap: .6rem; }
+.a-propos .ap-install-tete h3 { margin: 0; font-size: 1.15rem; }
+.ap-install-tete .ico { width: 1.35em; height: 1.35em; flex: none; }
+.ap-install-tete .ap-logo { fill: currentColor; stroke: none; }
+.a-propos .ap-install-duo .ap-install-pour { margin: -.55rem 0 0; }
+.ap-install-duo .ap-install-action { display: flex; justify-content: center; padding: .7rem 1rem; font-weight: 600; }
+.ap-install-duo ol { font-size: .93rem; }
+.ap-qr-ligne { display: flex; align-items: center; gap: .9rem; }
+.ap-qr-ligne .ap-qr-cadre { margin: 0; flex: none; }
+.a-propos .ap-qr-ligne p { margin: 0; font-size: .93rem; }
+.ap-qr-ligne .ap-qr { width: 112px; height: 112px; }
+.a-propos .ap-autres-titre { margin: 1.7rem 0 .15rem; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--texte-2); }
+.a-propos .ap-autres-texte { margin: 0 0 .7rem; font-size: .92rem; color: var(--texte-2); }
+.ap-autres { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; align-items: start; }
+.ap-autre { border: 1px solid var(--bord); border-radius: var(--rayon); padding: .75rem 1rem; }
+.ap-autre summary { list-style: none; display: flex; align-items: center; gap: .7rem; cursor: pointer; }
+.ap-autre summary::-webkit-details-marker { display: none; }
+.ap-autre summary .ico { flex: none; color: var(--texte-2); }
+.ap-autre summary > .ico:last-child { transition: transform .15s; }
+.ap-autre[open] summary > .ico:last-child { transform: rotate(45deg); }
+.ap-autre summary:hover b { color: var(--accent); }
+.ap-autre-nom { flex: 1; display: grid; line-height: 1.35; }
+.ap-autre-nom small { font-size: .85rem; color: var(--texte-2); }
+.ap-autre ol { margin: .85rem 0 .1rem; padding-left: 1.25rem; display: grid; gap: .55rem; font-size: .93rem; }
+.ap-autre li::marker { color: var(--accent); font-weight: 700; }
+@media (max-width: 700px) { .ap-install-duo, .ap-autres { grid-template-columns: minmax(0, 1fr); } }
 /* l'adresse de l'appli du téléphone en QR code, pour qui lit la page sur un ordinateur */
 .ap-qr-cadre { display: block; width: fit-content; margin-top: .6rem; padding: 6px; background: #fff; border-radius: 8px; border: 1px solid var(--bord); }
 .ap-qr { display: block; width: 136px; height: 136px; }
@@ -1108,6 +1183,8 @@ button.badge:hover { box-shadow: inset 0 0 0 1px currentColor; }
   border: 1px solid var(--bord); border-radius: var(--rayon); background: var(--surface); }
 .bandeau-sauvegarde > .ico { width: 1.3rem; height: 1.3rem; color: var(--accent); flex: none; }
 .bandeau-sauvegarde p { flex: 1 1 18rem; margin: 0; }
+.bandeau-sauvegarde.ferme { border-color: var(--accent); }
+.bandeau-sauvegarde.ferme p { font-weight: 600; }
 .gh-attente { display: flex; align-items: center; gap: .5rem; margin: .8rem 0 0; color: var(--texte-2); }
 .gh-attente::before { content: ""; width: .9rem; height: .9rem; border-radius: 50%; border: 2px solid currentColor;
   border-right-color: transparent; animation: maj-roue .9s linear infinite; }
@@ -1256,9 +1333,25 @@ label.btn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; 
 .qr-telephone { width: min(18rem, 70vw); margin: .4rem auto 1rem; padding: .6rem; background: #fff; border-radius: var(--rayon); }
 .qr-telephone svg { display: block; width: 100%; height: auto; }
 /* dans l'appli du téléphone : ce qui ne tourne que sur le PC (pour l'instant) */
-.telephone :is(#btn-rafraichir, #etat-maj) { display: none !important; }
-.tel-accueil { display: grid; gap: 1rem; justify-items: center; max-width: 26rem; margin: 12vh auto 0; padding: 0 1rem; text-align: center; }
-.tel-accueil h1 { margin: 0; }
+:is(.telephone, .ordinateur) :is(#btn-rafraichir, #etat-maj) { display: none !important; }
+.ordinateur .tel-bandeau { left: auto; width: min(32rem, calc(100vw - 1.2rem)); box-sizing: border-box; }
+.tel-accueil { display: grid; gap: .9rem; max-width: 26rem; margin: 9vh auto 2rem; padding: 0 1rem; }
+body:has(.tel-accueil) .barre { display: none; }        /* l'accueil a déjà son logo */
+.tel-accueil h1 { display: flex; align-items: center; justify-content: center; gap: .6rem; margin: 0; font-size: 1.9rem; }
+.tel-accueil h1::before { width: 44px; height: 44px; }
+.tel-marque { text-align: center; margin-bottom: .4rem; }
+.tel-accroche { margin: .5rem 0 .2rem; font-size: 1.1rem; }
+.tel-rassure { margin: 0; color: var(--texte-2); font-size: .9rem; }
+/* les deux chemins : nouveau, ou déjà sur PC */
+.tel-choix { display: grid; gap: .55rem; padding: 1rem; background: var(--surface); border: 1px solid var(--bord); border-radius: 14px; }
+.tel-choix h2 { margin: 0; font-size: 1.08rem; }
+.tel-choix p { margin: 0; color: var(--texte-2); }
+.tel-choix .btn { width: 100%; justify-content: center; }
+.tel-relier { display: grid; gap: .7rem; }
+.tel-etapes { margin: 0; padding-left: 1.3rem; display: grid; gap: .3rem; }
+.tel-accueil .erreur { text-align: center; }
+.tel-accueil .lien-discret, .tel-decouvrir { justify-self: center; }
+.tel-decouvrir { color: var(--texte-2); font-size: .9rem; margin-top: .3rem; }
 .tel-accueil video { width: 100%; border-radius: var(--rayon); background: #000; }
 .tel-coller { width: 100%; text-align: left; }
 .tel-coller summary { cursor: pointer; color: var(--texte-2); }
