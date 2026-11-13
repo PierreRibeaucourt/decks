@@ -1,7 +1,7 @@
 {
  "Deck Malfegor": {
   "slug": "malfegor",
-  "date": 1794595644.5604382,
+  "date": 1794610878.786844,
   "version": "2.1.0",
   "resume": {
    "alertes": {},
@@ -24,7 +24,7 @@
    "maybe": 1,
    "modifie": 1793820260.4356208,
    "note": "",
-   "prix_total": 508.8,
+   "prix_total": 507.89,
    "titre": "Malfegor",
    "total": 100,
    "trop_cher": [
@@ -392,7 +392,7 @@
  },
  "Deck Kels": {
   "slug": "kels",
-  "date": 1794595642.193723,
+  "date": 1794610876.318768,
   "version": "2.1.0",
   "resume": {
    "alertes": {},
@@ -418,7 +418,7 @@
    "maybe": 0,
    "modifie": 1794381054.396183,
    "note": "",
-   "prix_total": 203.65,
+   "prix_total": 203.62,
    "titre": "Kels",
    "total": 100,
    "trop_cher": [
@@ -755,7 +755,7 @@
  },
  "Deck Sefris": {
   "slug": "sefris",
-  "date": 1794596980.1817982,
+  "date": 1794610881.074004,
   "version": "2.1.0",
   "resume": {
    "alertes": {},
@@ -779,7 +779,7 @@
    "maybe": 1,
    "modifie": 1794596829.8399198,
    "note": "",
-   "prix_total": 78.6,
+   "prix_total": 78.56,
    "titre": "Sefris",
    "total": 100,
    "trop_cher": [
@@ -1145,7 +1145,7 @@
  },
  "Deck Forgeur de soleil": {
   "slug": "forgeur-de-soleil",
-  "date": 1794595637.3196497,
+  "date": 1794610871.3046246,
   "version": "2.1.0",
   "resume": {
    "alertes": {},
@@ -1175,7 +1175,7 @@
    "maybe": 2,
    "modifie": 1794389593.208363,
    "note": "",
-   "prix_total": 416.64,
+   "prix_total": 417.42,
    "titre": "Forgeur de soleil",
    "total": 100,
    "trop_cher": [
@@ -1588,7 +1588,7 @@
  },
  "Deck Tromo": {
   "slug": "tromo",
-  "date": 1794595649.0535932,
+  "date": 1794610883.5821292,
   "version": "2.1.0",
   "resume": {
    "alertes": {},
@@ -1612,7 +1612,7 @@
    "maybe": 7,
    "modifie": 1794540524.2881715,
    "note": "",
-   "prix_total": 125.65,
+   "prix_total": 124.82,
    "titre": "Tromo",
    "total": 98,
    "trop_cher": [
@@ -1925,7 +1925,7 @@
  },
  "Deck Greven Elemental": {
   "slug": "greven-elemental",
-  "date": 1794595639.798798,
+  "date": 1794610874.0553582,
   "version": "2.1.0",
   "resume": {
    "alertes": {},
@@ -1951,7 +1951,7 @@
    "maybe": 4,
    "modifie": 1794160399.297893,
    "note": "",
-   "prix_total": 149.74,
+   "prix_total": 148.98,
    "titre": "Greven Elemental",
    "total": 100,
    "trop_cher": [
