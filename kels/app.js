@@ -17,7 +17,23 @@ if (PARTAGE) document.documentElement.classList.add("partage");
 // PC ; la discussion, la simulation et la recherche restent sur le PC
 const TELEPHONE = window.TELEPHONE || null;
 const PC = !PARTAGE && !TELEPHONE;              // l'Atelier du PC : serveur Python, tâches en fond, mises à jour
-const CET_APPAREIL = TELEPHONE ? "ce téléphone" : "ce PC", AUTRE_APPAREIL = TELEPHONE ? "un autre appareil" : "un autre PC";
+const CET_APPAREIL = TELEPHONE ? "ce téléphone" : "ce PC", AUTRE_APPAREIL = "un autre appareil";      // PC ou téléphone
+// partager un deck (page sur GitHub Pages) : depuis le PC ou le téléphone (partage.js), relié au PC ou non
+const PARTAGEABLE = PC || !!TELEPHONE;
+// le PC et le téléphone ont les mêmes droits sur les decks ; ce qui demande la puissance du PC reste visible sur le
+// téléphone (data-pc="…") et dit où le faire
+const SUR_PC = {
+  simulation: "Les simulations tournent sur le PC : lance-les depuis l'Atelier de ton PC. Leurs résultats arrivent ensuite ici.",
+  claude: "La discussion avec Claude se fait sur le PC : elle passe par Claude Code, installé sur ton PC.",
+  synergies: "La recherche des synergies par Claude se lance sur le PC.",
+  mtgpics: "La lecture des combos MTGPics se lance sur le PC.",
+  jouer: "La table de jeu s'ouvre sur le PC : elle se joue à la souris.",
+  proxies: "L'impression des proxies se fait sur le PC.",
+};
+function surPC(quoi) {
+  ouvrirModale(`<h2>Sur le PC</h2>
+    <p>${esc(SUR_PC[quoi] || "Ça se fait sur le PC.")}</p>`);
+}
 // page partagée : à qui sont ces decks (reglages.json « nom », sinon le compte GitHub qui publie)
 // titre_accueil : la page d'accueil de l'Atelier (site_atelier.py), qui n'est le site de decks de personne
 const MES_DECKS = PARTAGE && PARTAGE.titre_accueil || (PARTAGE && PARTAGE.auteur ? `Decks de ${PARTAGE.auteur}` : "Mes decks");
@@ -211,6 +227,59 @@ function erreur(e) {
     try { localStorage.setItem("theme", nouveau); } catch (_) {}
   });
 })();
+
+// ------------------------------------------------------------------ l'appli du téléphone : comme une appli
+// En haut : le retour (ou le chaudron), le titre de l'écran, la recherche et « … » pour les actions de l'écran. En bas :
+// les trois écrans principaux. Le « + » de l'écran flotte au-dessus. Le thème passe dans les Options.
+ICONES.engrenage = '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>';
+ICONES.reglages = '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>';
+const ECRANS_APPLI = [["", "Decks", "cartes"], ["classeur", "Classeur", "livre"], ["recherche", "Recherche", "chercher"], ["options", "Options", "engrenage"]];
+if (TELEPHONE) {
+  const barre = $(".barre"), champ = $("#aller");
+  barre.insertAdjacentHTML("afterbegin", `<a id="app-retour" class="btn btn-discret btn-icone" aria-label="Retour" hidden>${ico("precedent")}</a>`);
+  $(".logo", barre).insertAdjacentHTML("afterend", `<div id="app-titre" class="app-titre"></div>`);
+  $(".barre-droite", barre).insertAdjacentHTML("beforeend",
+    `<button type="button" id="app-chercher" class="btn btn-discret btn-icone" aria-label="Chercher une carte ou un deck">${ico("chercher")}</button>
+     <button type="button" id="app-menu" class="btn btn-discret btn-icone ouvre-menu" aria-label="Autres actions" hidden>${ico("plus_de")}</button>`);
+  $(".aller", barre).insertAdjacentHTML("afterbegin",
+    `<button type="button" id="app-fin-recherche" class="btn btn-discret btn-icone" aria-label="Fermer la recherche">${ico("precedent")}</button>`);
+  document.body.insertAdjacentHTML("beforeend", `<nav class="app-onglets" aria-label="Écrans">${ECRANS_APPLI.map(([k, l, i]) =>
+    `<a href="#/${k}" data-ecran="${k}">${ico(i)}<span>${l}</span></a>`).join("")}</nav>`);
+  // la recherche du haut prend toute la barre, ses résultats tout l'écran
+  const finRecherche = () => { document.documentElement.classList.remove("app-recherche"); champ.blur(); };
+  $("#app-chercher").onclick = () => { document.documentElement.classList.add("app-recherche"); champ.focus(); };
+  $("#app-fin-recherche").onclick = () => { champ.value = ""; $("#aller-liste").hidden = true; finRecherche(); };
+  champ.addEventListener("blur", () => { if (!champ.value) document.documentElement.classList.remove("app-recherche"); });
+  addEventListener("hashchange", finRecherche);
+  $("#app-menu").onclick = (ev) => { if (etat.menuEcran) ouvrirMenu(ev.currentTarget, etat.menuEcran()); };
+  hauteurBarre();
+}
+// après chaque écran : son titre, le retour, ses actions, et l'onglet du bas allumé
+function barreAppli(parts, qs) {
+  if (!TELEPHONE) return;
+  const deck = parts[0] === "deck" && parts[1], rd = parts[0] === "recherche" && new URLSearchParams(qs || "").get("deck");
+  let titre = MES_DECKS, retour = null;
+  etat.menuEcran = null;
+  if (deck) {
+    titre = etat.deck ? etat.deck.titre : decodeURIComponent(parts[1]).replace(/^Deck /, "");
+    retour = "#/";
+    if (etat.deck) etat.menuEcran = () => menuDeck(etat.deck);
+  } else if (parts[0] === "recherche") {
+    titre = "Recherche";
+    if (rd) retour = `#/deck/${enc(rd)}`;
+  } else if (parts[0] === "options") titre = "Options";
+  else if (parts[0] === "classeur") titre = "Classeur";
+  else if (parts[0]) retour = "#/";
+  else etat.menuEcran = () => [["Importer des decks…", modaleImportDecks, "", "dossier"], ["Demander à Claude", () => surPC("claude"), "", "discussion"]];
+  $("#app-titre").textContent = titre;
+  const r = $("#app-retour");
+  r.hidden = !retour;
+  if (retour) r.href = retour;
+  $(".barre .logo").hidden = !!retour;
+  $("#app-menu").hidden = !etat.menuEcran;
+  const ecran = ["recherche", "options", "classeur"].includes(parts[0]) && !rd ? parts[0] : "";
+  $$(".app-onglets a").forEach((a) => a.classList.toggle("actif", a.dataset.ecran === ecran));
+}
 
 // ------------------------------------------------------------------ aperçu d'une carte (image + prix) et infobulles au survol
 let survol = null;
@@ -413,7 +482,7 @@ const CITE = { cles: null, index: null, communs: null, deck: undefined, ctx: nul
 const APERCUS = new Map();                         // nom anglais -> promesse de { nom, fr, image, prix, foil }
 const minuscules = (s) => s.toLowerCase().replace(/[’‘]/g, "'");
 const LETTRE = /[\p{L}\p{N}]/u;
-const SANS_CITE = "script, style, textarea, input, select, option, code, pre, svg, h1, h2, .fil, .nc, [data-apercu], [data-image], "
+const SANS_CITE = "script, style, textarea, input, select, option, code, pre, svg, h1, h2, summary, .fil, .nc, [data-apercu], [data-image], "
   + "[data-survol], [data-survol-r], .fs-texte, .texte, .fc-tete, .fiche, .moteur, #apercu, #bulle, #fiche-survol, #toast, #menu, [contenteditable], "
   + ".px-carte";                                     // les proxies s'impriment : pas de liens soulignés
 
@@ -606,13 +675,23 @@ addEventListener("scroll", fermerMenu);
 // au doigt, le bouton « retour » du téléphone ferme la fenêtre ouverte au lieu de quitter la page : chaque fenêtre ajoute
 // une étape à l'historique, retirée quand on la ferme autrement (sauf si une autre page s'est ouverte entre-temps)
 const RETOUR_FERME = matchMedia("(pointer: coarse)").matches;
-function ouvrirModale(html, monte, { focus = true, large = false } = {}) {
+// toutes les fenêtres se ferment par la croix en haut à droite (fermer : ce qu'elle fait, quand c'est plus que fermer)
+function ouvrirModale(html, monte, { focus = true, large = false, fermer = null } = {}) {
   cacherApercu();
   fermerMenu();
   const m = $("#modale");
-  m.innerHTML = `<div class="modale-boite ${large ? "large" : ""}" role="dialog" aria-modal="true" tabindex="-1">${html}</div>`;
+  m.innerHTML = `<div class="modale-boite ${large ? "large" : ""}" role="dialog" aria-modal="true" tabindex="-1">
+    <button type="button" class="btn btn-discret btn-icone modale-fermer" aria-label="Fermer" title="Fermer">${ico("fermer")}</button>
+    <div class="modale-corps">${html}</div></div>`;
+  // ce qu'on fait (.modale-pied, ou la dernière rangée de boutons) : en bas de la fenêtre, toujours visible, séparé de ce
+  // qu'on lit
+  const corps = $(".modale-corps", m), dernier = corps.lastElementChild;
+  const pied = $(":scope > .modale-pied", corps) || (dernier && dernier.matches(".boutons") ? dernier : null);
+  if (pied) { pied.classList.add("modale-pied"); $(".modale-boite", m).appendChild(pied); }
   m.hidden = false;
-  m.onclick = (ev) => { if (ev.target === m) fermerModale(); };
+  const ferme = () => (fermer ? fermer() : fermerModale());
+  $(".modale-fermer", m).onclick = ferme;
+  m.onclick = (ev) => { if (ev.target === m) ferme(); };
   if (monte) monte($(".modale-boite", m));
   const champ = focus && $("input, textarea", m);
   if (champ) champ.focus();
@@ -629,6 +708,54 @@ function fermerModale(parRetour) {
     setTimeout(() => { if ($("#modale").hidden && history.state && history.state.modale && location.href === url) history.back(); });
   }
 }
+// au doigt, sur un écran étroit, la fenêtre monte du bas : on la ferme aussi en la tirant vers le bas (par sa poignée,
+// ou n'importe où quand son contenu est tout en haut)
+(function tirerPourFermer() {
+  const m = $("#modale");
+  let depart = null, boite = null, dy = 0;
+  m.addEventListener("touchstart", (ev) => {
+    depart = null;
+    boite = ev.target.closest(".modale-boite");
+    if (!boite || ev.touches.length > 1 || !matchMedia("(max-width: 600px)").matches) return;
+    const t = ev.touches[0], corps = $(".modale-corps", boite);
+    if (t.clientY - boite.getBoundingClientRect().top > 48 && corps && corps.scrollTop > 0) return;
+    if (ev.target.closest("input, textarea, select, [type=range]")) return;
+    depart = { x: t.clientX, y: t.clientY };
+    dy = 0;
+  }, { passive: true });
+  m.addEventListener("touchmove", (ev) => {
+    if (!depart) return;
+    const t = ev.touches[0], d = t.clientY - depart.y;
+    if (!dy && (d < 8 || Math.abs(t.clientX - depart.x) > d)) { if (d < -4 || Math.abs(t.clientX - depart.x) > 8) depart = null; return; }
+    dy = Math.max(0, d);
+    boite.style.transition = "none";
+    boite.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+  m.addEventListener("touchend", () => {
+    if (!depart || !boite) return;
+    depart = null;
+    if (dy > 110) { $(".modale-fermer", boite).click(); return; }
+    boite.style.transition = "transform .15s ease-out";
+    boite.style.transform = "";
+  });
+})();
+// fiche d'une carte, au doigt : glisser vers la gauche ou la droite passe à la carte suivante ou précédente
+(function glisserFiche() {
+  const m = $("#modale");
+  let x0 = null, y0 = 0;
+  m.addEventListener("touchstart", (ev) => {
+    x0 = ev.touches.length === 1 && $(".fiche-carte", m) && !ev.target.closest("input, textarea, select, .modale-pied") ? ev.touches[0].clientX : null;
+    y0 = ev.touches[0].clientY;
+  }, { passive: true });
+  m.addEventListener("touchend", (ev) => {
+    if (x0 == null) return;
+    const t = ev.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) / 2) return;
+    const b = $(`.fc-fleche[data-act="${dx < 0 ? "suiv" : "prec"}"]`, m);
+    if (b && !b.hidden) b.click();
+  });
+})();
 addEventListener("popstate", () => {
   if (!$("#modale").hidden) fermerModale(true);
   else if (history.state && history.state.modale) history.back();      // l'étape d'une fenêtre déjà fermée : on la passe
@@ -651,8 +778,8 @@ function majTitre() {
   } else if (parts[0] === "recherche") {
     const p = new URLSearchParams(qs || "");
     t = ["Recherche", p.get("nom") && `« ${p.get("nom")} »`, (p.get("deck") || "").replace(/^Deck /, "")].filter(Boolean).join(" · ");
-  } else if (parts[0] === "options") {
-    t = "Options";
+  } else if (parts[0] === "options" || parts[0] === "classeur") {
+    t = parts[0] === "options" ? "Options" : "Classeur";
   } else if (parts[0] === "proxies") {
     t = "Proxies · " + (new URLSearchParams(qs || "").get("deck") || "").replace(/^Deck /, "");
   }
@@ -663,13 +790,17 @@ async function route() {
   fermerMenu();
   if (!$("#modale").hidden) fermerModale();
   cacherApercu();
+  if (TELEPHONE) document.documentElement.classList.toggle("appli-prete", !!TELEPHONE.pret);
   if (TELEPHONE && !TELEPHONE.pret) return TELEPHONE.attente(vue);     // téléphone pas encore relié, ou decks en route
   majTitre();
   const [chemin, qs] = location.hash.replace(/^#\/?/, "").split(/\?(.*)/s);
   const parts = chemin.split("/");
+  const ecran = parts[0] === "deck" ? "deck/" + parts[1] : parts[0];      // un autre écran s'ouvre en haut de page
+  if (ecran !== etat.ecran) { etat.ecran = ecran; scrollTo(0, 0); }
   $("#lien-recherche").classList.toggle("actif", parts[0] === "recherche" && !new URLSearchParams(qs || "").get("deck"));   // pour un deck : son bandeau
   $("#lien-options").classList.toggle("actif", parts[0] === "options");
-  vue.classList.toggle("vue-large", parts[0] === "recherche" || parts[0] === "options" || parts[0] === "proxies");
+  $("#lien-classeur").classList.toggle("actif", parts[0] === "classeur");
+  vue.classList.toggle("vue-large", ["recherche", "options", "classeur", "proxies"].includes(parts[0]));
   vue.classList.remove("vue-pleine");                       // la page « C'est quoi » la remet : son en-tête prend toute la largeur
   document.body.classList.toggle("impression", parts[0] === "proxies");   // à l'impression, rien d'autre que les feuilles
   try {
@@ -683,6 +814,7 @@ async function route() {
     else if (PARTAGE && parts[0] === "deck" && parts[1]) location.replace(lienDeck(decodeURIComponent(parts[1])));
     else if (parts[0] === "recherche") await vueRecherche(new URLSearchParams(qs || ""));
     else if (!PARTAGE && parts[0] === "options") await vueOptions();
+    else if (!PARTAGE && parts[0] === "classeur") await vueClasseur();
     else if (!PARTAGE && parts[0] === "proxies") await vueProxies(new URLSearchParams(qs || ""));
     else if (parts[0] === "deck" && parts[1]) await vueDeck(decodeURIComponent(parts[1]), parts[2] || "liste", parts[3] ? decodeURIComponent(parts[3]) : null);
     else await vueAccueil();
@@ -690,6 +822,7 @@ async function route() {
     vue.innerHTML = `<p class="erreur">${esc(e.message || e)}</p>`;
   }
   majTitre();                                      // la vue a pu compléter l'adresse
+  barreAppli(parts, qs);
 }
 window.addEventListener("hashchange", route);
 
@@ -849,15 +982,16 @@ async function vueAccueil() {
       <button class="btn btn-accent ecrit" id="btn-nouveau">${ico("plus")}Nouveau deck</button>
     </div>
     <div id="bandeau-sauvegarde"></div>
-    <div class="barre-outils">
+    <div class="barre-outils repliable ${(etat.couleurs || []).length ? "ouvert" : ""}">
       <input class="champ filtre" id="d-filtre" type="search" placeholder="Chercher un deck, un commandant ou une carte…" value="${esc(etat.filtreDecks || "")}" aria-label="Chercher un deck">
-      <span class="outil"><span class="petit muet">Couleurs</span>
+      <span class="outil pli"><span class="petit muet">Couleurs</span>
         <span class="choix-couleurs">${["W", "U", "B", "R", "G", "C"].map((x) => `<button type="button" class="couleur ${etat.couleurs.includes(x) ? "actif" : ""}"
           data-couleur="${x}" aria-pressed="${etat.couleurs.includes(x)}" title="${x === "C" ? "Decks incolores" : `Decks qui jouent le ${NOMS_COULEURS[x]}`}">${symbole(x)}</button>`).join("")}</span></span>
-      <label class="outil petit muet">Trier par
+      <label class="outil pli petit muet">Trier par
         <select class="champ champ-petit" id="d-tri">${[["recent", "récents"], ["nom", "nom"], ["prix", "prix"], ["gc", "Game Changers"]].map(([v, l]) =>
           `<option value="${v}" ${PREF.get("tri-decks", "recent") === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
       ${segments("vue-decks", [["grille", "Grille", "grille"], ["liste", "Liste", "liste"]], "grille")}
+      ${boutonPlis("Couleurs et tri", (etat.couleurs || []).length > 0)}
     </div>
     <div id="d-resultats"></div>
     ${decksSupprimes}`;
@@ -907,8 +1041,8 @@ function brancherCorbeille(corbeille) {
   $$("[data-recup]").forEach((b) => b.addEventListener("click", async () => {
     try {
       const r = await api("/api/corbeille/recuperer", { method: "POST", body: { fichier: corbeille[+b.dataset.recup].fichier } });
-      toast("Deck récupéré.");
-      location.hash = `#/deck/${enc(r.id)}`;
+      if (r.id) { toast("Deck récupéré."); location.hash = `#/deck/${enc(r.id)}`; }
+      else { toast(r.message || "Deck récupéré.", 6000); b.disabled = true; }   // relié : il revient par le PC
     } catch (e) { erreur(e); }
   }));
 }
@@ -918,10 +1052,10 @@ function chiffresDeck(d) {
   const complet = d.total === 100;
   const al = Object.entries(d.alertes || {});
   return `
-    <span class="badge ${complet ? "badge-ok" : "badge-alerte"}">${d.total} / 100 cartes</span>
+    <span class="badge ${complet ? "badge-ok" : "badge-alerte"}" title="${d.total} cartes sur 100"><span class="chf-l">${d.total} / 100 cartes</span><span class="chf-c">${d.total}/100</span></span>
     <span class="badge">${euros(d.prix_total)}</span>
     ${d.bracket ? `<span class="badge badge-bracket" title="${esc((d.bracket_raisons || []).join("\n"))}">${ico("bracket")}Bracket ${d.bracket}</span>` : ""}
-    <span class="badge ${d.gc.length ? "badge-gc" : ""}" title="${esc(d.gc.join(", "))}">${d.gc.length} Game Changer${d.gc.length > 1 ? "s" : ""}</span>
+    <span class="badge ${d.gc.length ? "badge-gc" : ""}" title="${d.gc.length} Game Changer${d.gc.length > 1 ? "s" : ""}${d.gc.length ? " : " + esc(d.gc.join(", ")) : ""}"><span class="chf-l">${d.gc.length} Game Changer${d.gc.length > 1 ? "s" : ""}</span><span class="chf-c">${d.gc.length} GC</span></span>
     ${!d.commandant ? `<span class="badge badge-alerte">pas de commandant</span>` : ""}
     ${al.length ? `<span class="badge badge-alerte" title="${esc(al.map(([n, a]) => `${n} : ${a.join(", ")}`).join("\n"))}">${al.length} carte${al.length > 1 ? "s" : ""} hors règles</span>` : ""}`;
 }
@@ -987,7 +1121,7 @@ function modaleNouveauDeck() {
       <textarea class="champ" id="nd-liste" rows="8" placeholder="1x Sol Ring [Ramp]&#10;1 Arcane Signet&#10;10 Mountain&#10;…"></textarea>
     </details>
     <div class="boutons"><button class="btn btn-discret a-gauche" id="nd-importer">${ico("dossier")}Importer des fichiers…</button>
-      <button class="btn" id="annuler">Annuler</button><button class="btn btn-accent" id="ok">Créer le deck</button></div>`, (b) => {
+      <button class="btn btn-accent" id="ok">Créer le deck</button></div>`, (b) => {
     $("#nd-importer", b).onclick = modaleImportDecks;
     const montreCmd = () => {
       $("#nd-cmd", b).innerHTML = cmd ? `
@@ -1002,7 +1136,6 @@ function modaleNouveauDeck() {
     };
     rech = rechercheCarte($("#nd-rech", b), { deck: () => null,
       surChoix: (x) => { cmd = x; montreCmd(); } });
-    $("#annuler", b).onclick = fermerModale;
     $("#ok", b).onclick = async () => {
       const ok = $("#ok", b);
       try {
@@ -1031,7 +1164,7 @@ function modaleImportDecks() {
       ${ico("dossier")}<span id="im-choix">Choisir les fichiers (.txt ou .csv, un par deck)</span></label>
     <label class="petit"><input type="checkbox" id="im-montes" checked> Decks déjà montés</label>
     <div id="im-res"></div>
-    <div class="boutons"><button class="btn" id="annuler">Annuler</button><button class="btn btn-accent" id="ok" disabled>Importer</button></div>`, (b) => {
+    <div class="boutons"><button class="btn btn-accent" id="ok" disabled>Importer</button></div>`, (b) => {
     let fichiers = [];
     const ok = $("#ok", b);
     $("#im-fichiers", b).onchange = async (ev) => {
@@ -1041,7 +1174,6 @@ function modaleImportDecks() {
         : "Choisir les fichiers (.txt ou .csv, un par deck)";
       ok.disabled = !fichiers.length;
     };
-    $("#annuler", b).onclick = fermerModale;
     ok.onclick = async () => {
       ok.disabled = true;
       ok.textContent = "Import…";
@@ -1060,9 +1192,8 @@ function modaleImportDecks() {
         }
         $("#im-res", b).innerHTML = `<p class="petit">${r.decks.length} deck${r.decks.length > 1 ? "s" : ""} importé${r.decks.length > 1 ? "s" : ""}. Pas importés :</p>
           <ul class="petit">${r.echecs.map((x) => `<li>${esc(x.nom)} : ${esc(x.erreur)}</li>`).join("")}</ul>`;
-        $("#annuler", b).hidden = true;
         ok.disabled = false;
-        ok.textContent = "Fermer";
+        ok.textContent = "OK";
         ok.onclick = fini;
       } catch (e) {
         erreur(e);
@@ -1101,7 +1232,7 @@ async function vueDeck(id, onglet, extra = null, donnees = null) {
           <div class="chiffres" style="margin-top:.5rem">${chiffresDeck(d)}</div>
         </div>
         <div class="actions">
-          <a class="btn pc-seulement" href="${PARTAGE ? "jouer/" : `/jouer?deck=${enc(id)}`}" target="_blank" rel="noopener">${ico("lancer")}Jouer</a>
+          <a class="btn" data-pc="jouer" href="${PARTAGE ? "jouer/" : `/jouer?deck=${enc(id)}`}" target="_blank" rel="noopener">${ico("lancer")}Jouer</a>
           <a class="btn ecrit" href="#/recherche?deck=${enc(id)}">${ico("chercher")}Chercher pour ce deck</a>
           <button class="btn btn-icone ouvre-menu" id="btn-deck-menu" aria-label="Autres actions sur le deck" title="Autres actions">${ico("plus_de")}</button>
         </div>
@@ -1117,14 +1248,7 @@ async function vueDeck(id, onglet, extra = null, donnees = null) {
   const actif = $(".onglets a.actif");                // l'onglet ouvert, en vue dans la barre qui défile (téléphone)
   if (actif) { const n = actif.parentElement; n.scrollLeft += actif.getBoundingClientRect().left - n.getBoundingClientRect().left - (n.clientWidth - actif.offsetWidth) / 2; }
   $$(".cmd-entete").forEach((x) => { x.onclick = () => ouvrirCarte(d.cartes[+x.dataset.carte]); });
-  $("#btn-deck-menu").onclick = (ev) => ouvrirMenu(ev.currentTarget, [
-    ...(!PC ? [] : [["Partager le deck…", () => modalePartage(d), "", "partager"],
-      ["Imprimer les proxies…", () => { location.hash = `#/proxies?deck=${enc(d.id)}`; }, "", "imprimer"], null]),
-    "Copier la liste pour",
-    ...EXPORTS.map(([fmt, lib]) => [lib, () => copierListe(fmt, lib), "", "copier"]),
-    ...(PARTAGE ? [] : [["Cardmarket (à acheter)", () => copierCardmarket(d), "", "panier"]]),
-    ...(PARTAGE ? [] : [null, ["Renommer…", () => modaleRenommer(d), "", "crayon"], ["Supprimer ce deck…", () => supprimerDeck(d), "btn-danger", "corbeille"]]),
-  ]);
+  $("#btn-deck-menu").onclick = (ev) => ouvrirMenu(ev.currentTarget, menuDeck(d));
   const contenu = $("#contenu");
   if (onglet === "stats") return ongletStats(contenu, d);
   if (onglet === "bracket") return ongletBracket(contenu, d);
@@ -1134,6 +1258,22 @@ async function vueDeck(id, onglet, extra = null, donnees = null) {
   if (onglet === "achats" && !PARTAGE) return ongletAchats(contenu, d);
   if (onglet === "suggestions") return ongletSuggestions(contenu, d, extra);
   ongletListe(contenu, d);
+}
+
+// les actions sur le deck ; dans l'appli du téléphone, aussi celles des boutons de l'en-tête (la barre du haut les remplace)
+function menuDeck(d) {
+  const copier = ["Copier la liste pour", ...EXPORTS.map(([fmt, lib]) => [lib, () => copierListe(fmt, lib), "", "copier"]),
+    ...(PARTAGE ? [] : [["Cardmarket (à acheter)", () => copierCardmarket(d), "", "panier"]])];
+  return [
+    ...(TELEPHONE ? [["Chercher pour ce deck", () => { location.hash = `#/recherche?deck=${enc(d.id)}`; }, "", "chercher"],
+      ["Jouer", () => surPC("jouer"), "", "lancer"], ["Demander à Claude", () => surPC("claude"), "", "discussion"], null] : []),
+    ...(PARTAGEABLE ? [["Partager le deck…", () => modalePartage(d), "", "partager"]] : []),
+    ...(PARTAGE ? [] : [["Imprimer les proxies…", () => { if (TELEPHONE) surPC("proxies"); else location.hash = `#/proxies?deck=${enc(d.id)}`; }, "", "imprimer"]]),
+    ...(PARTAGEABLE ? [null] : []),
+    // sur le téléphone, les formats dans un second menu : le premier tient à l'écran
+    ...(TELEPHONE ? [["Copier la liste…", () => setTimeout(() => ouvrirMenu($("#app-menu"), copier)), "", "copier"]] : copier),
+    ...(PARTAGE ? [] : [null, ["Renommer…", () => modaleRenommer(d), "", "crayon"], ["Supprimer ce deck…", () => supprimerDeck(d), "btn-danger", "corbeille"]]),
+  ];
 }
 
 const EXPORTS = [["archidekt", "Archidekt"], ["moxfield", "Moxfield"], ["arena", "MTG Arena"], ["mtgo", "MTGO"],
@@ -1282,12 +1422,13 @@ async function ongletSuggestions(el, d, demande = null) {
   // les filtres ne se redessinent pas (le champ texte garde la main pendant qu'on tape)
   el.innerHTML = `
     <div class="sg-tete"></div>
-    <div class="sg-filtres">
+    <div class="sg-filtres repliable">
       <input class="champ champ-petit" type="search" data-f="q" placeholder="Filtrer…" aria-label="Filtrer : nom, type, texte">
-      <select class="champ champ-petit" data-f="type" aria-label="Type">${optionsSugg("Type", TYPES_SUGG)}</select>
-      <select class="champ champ-petit" data-f="fn" aria-label="Fonction">${optionsSugg("Fonction", fonctions)}</select>
-      <select class="champ champ-petit" data-f="mv" aria-label="Valeur de mana">${optionsSugg("Coût", COUTS_SUGG)}</select>
-      <label class="sg-prix"><input class="champ champ-petit" type="text" inputmode="decimal" data-f="prix" placeholder="Prix max" aria-label="Prix maximum, en euros"> €</label>
+      ${boutonPlis("Type, fonction, coût et prix")}
+      <select class="champ champ-petit pli" data-f="type" aria-label="Type">${optionsSugg("Type", TYPES_SUGG)}</select>
+      <select class="champ champ-petit pli" data-f="fn" aria-label="Fonction">${optionsSugg("Fonction", fonctions)}</select>
+      <select class="champ champ-petit pli" data-f="mv" aria-label="Valeur de mana">${optionsSugg("Coût", COUTS_SUGG)}</select>
+      <label class="sg-prix pli"><input class="champ champ-petit" type="text" inputmode="decimal" data-f="prix" placeholder="Prix max" aria-label="Prix maximum, en euros"> €</label>
       <button type="button" class="lien-discret" data-effacer hidden>Effacer</button>
     </div>
     <div class="sg-res"></div>`;
@@ -1584,19 +1725,28 @@ async function ongletAchats(el, d, poss = null) {
     </div>`;
   };
   el.innerHTML = `<div class="achats">
-    <section class="groupe">
-      <div class="groupe-titre"><span class="nb-groupe">${nbAchats(acheter)}</span> À acheter <span class="achats-cout">${euros(coutAchats(acheter))}</span>
+    <div class="segments segments-pages" role="tablist">
+      <button type="button" role="tab">À acheter <span class="sg-n">${nbAchats(acheter)}</span></button>
+      <button type="button" role="tab">J'ai déjà <span class="sg-n">${nbAchats(ai)}</span></button></div>
+    <div class="glisse cote-a-cote">
+    <section class="groupe glisse-page">
+      <h3 class="page-titre">À acheter <span class="muet">(${nbAchats(acheter)})</span></h3>
+      <div class="groupe-titre"><span class="achats-cout">${euros(coutAchats(acheter))}</span>
         ${acheter.length ? `<span class="achats-outils">
           <button type="button" class="btn btn-petit" id="ach-copier">${ico("copier")}Copier pour Cardmarket</button>
           <a class="lien-discret" href="${WANTS_CARDMARKET}" target="_blank" rel="noopener">Wants ↗</a>
           <button type="button" class="btn-menu" id="ach-tout" aria-label="Je les ai toutes" title="Je les ai toutes">${ico("coche")}</button></span>` : ""}</div>
       ${acheter.length ? acheter.map((x) => ligne(x, true)).join("") : `<p class="muet petit">Rien à acheter.</p>`}
     </section>
-    <section class="groupe">
-      <div class="groupe-titre"><span class="nb-groupe">${nbAchats(ai)}</span> J'ai déjà <span class="muet petit">${euros(coutAchats(ai))}</span></div>
+    <section class="groupe glisse-page">
+      <h3 class="page-titre">J'ai déjà <span class="muet">(${nbAchats(ai)})</span></h3>
+      <div class="groupe-titre"><span class="muet">${euros(coutAchats(ai))}</span></div>
       ${ai.length ? ai.map((x) => ligne(x, false)).join("") : `<p class="muet petit">Aucune.</p>`}
-    </section>
+    </section></div>
   </div>`;
+  const pages = ongletAchats.pages || (ongletAchats.pages = {});          // la liste ouverte, gardée pour ce deck
+  pagesGlissees($(".glisse", el), $$(".segments-pages button", el), pages[d.id] ?? (acheter.length ? 0 : 1));
+  $(".glisse", el).addEventListener("page", (ev) => { pages[d.id] = ev.detail; });
   // à acheter, mais déjà là ailleurs : au classeur, ou dans un autre deck (où je l'ai)
   if (acheter.length) api("/api/ou-sont").then((idx) => {
     for (const s of $$("[data-ou]", el)) {
@@ -1623,18 +1773,19 @@ async function ongletAchats(el, d, poss = null) {
   };
 }
 
-// page du deck publiée sur GitHub Pages (partage.py) : lien, mise à jour, retrait
+// page du deck publiée sur GitHub Pages (partage.py) : lien, mise à jour, retrait ; au doigt, « Partager » ouvre le
+// partage du téléphone (messagerie, e-mail…)
+const PARTAGE_NATIF = !!navigator.share && matchMedia("(pointer: coarse)").matches;
 function modalePartage(d) {
-  ouvrirModale(`<div class="fc-tete"><h2>Partager ${esc(d.titre)}</h2>
-      <button class="btn btn-discret btn-icone" id="pt-fermer" aria-label="Fermer">${ico("fermer")}</button></div>
+  ouvrirModale(`<h2>Partager ${esc(d.titre)}</h2>
     <div id="pt-zone"><p class="chargement">Chargement…</p></div>`, async (b) => {
-    $("#pt-fermer", b).onclick = fermerModale;
     const zone = $("#pt-zone", b);
     const rendre = (s) => {
       zone.innerHTML = `
         <div class="form-ligne">
           <input class="champ" id="pt-url" readonly value="${esc(s.url)}" style="flex:1;min-width:240px" aria-label="Lien de la page">
-          <button class="btn btn-accent" id="pt-copier">${ico("copier")}Copier le lien</button>
+          ${PARTAGE_NATIF ? `<button class="btn btn-accent" id="pt-envoyer">${ico("partager")}Partager</button>` : ""}
+          <button class="btn ${PARTAGE_NATIF ? "" : "btn-accent"}" id="pt-copier">${ico("copier")}Copier le lien</button>
           <a class="btn" href="${esc(s.url)}" target="_blank" rel="noopener">${ico("ouvrir")}Ouvrir</a>
         </div>
         <p class="muet petit">Mise à jour le ${esc(new Date(s.date * 1000).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" }))}</p>
@@ -1644,6 +1795,7 @@ function modalePartage(d) {
           <button class="btn" id="pt-maj">${ico("rafraichir")}Mettre à jour</button>
         </div>`;
       $("#pt-url", zone).onclick = (ev) => ev.target.select();
+      if (PARTAGE_NATIF) $("#pt-envoyer", zone).onclick = () => navigator.share({ title: d.titre, url: s.url }).catch(() => {});
       $("#pt-copier", zone).onclick = async () => {
         try { await navigator.clipboard.writeText(s.url); toast("Lien copié."); } catch (e) { erreur(e); }
       };
@@ -1687,10 +1839,10 @@ function introGithub(zone, suite, contexte = "") {
   const connecter = () => connexionGithub(zone, suite);
   zone.innerHTML = `${pourquoi ? `<p class="gh-contexte">${pourquoi}</p>` : ""}
     <div class="gh-presente">
-      <p><strong>GitHub</strong> est un service gratuit de Microsoft qui garde des fichiers en ligne.${TELEPHONE ? "" : " L'Atelier s'en sert pour deux choses :"}</p>
+      <p><strong>GitHub</strong> est un service gratuit de Microsoft qui garde des fichiers en ligne.${PARTAGEABLE ? " L'Atelier s'en sert pour deux choses :" : ""}</p>
       <ul class="gh-usages">
         <li>${ico("nuage")}<span><strong>Sauvegarder tes decks</strong> dans un espace privé, que toi seul vois : tu les retrouves si ton ${TELEPHONE ? "téléphone" : "PC"} tombe en panne, ou sur ${AUTRE_APPAREIL}.</span></li>
-        ${TELEPHONE ? "" : `<li>${ico("partager")}<span><strong>Publier les decks que tu partages</strong>, sur une page à envoyer à ton groupe de jeu.</span></li>`}
+        ${PARTAGEABLE ? `<li>${ico("partager")}<span><strong>Publier les decks que tu partages</strong>, sur une page à envoyer à ton groupe de jeu.</span></li>` : ""}
       </ul>
     </div>
     <p class="gh-compte">Il faut un compte GitHub : gratuit, avec une adresse e-mail.</p>
@@ -1733,7 +1885,7 @@ async function connexionGithub(zone, suite) {
         <a class="btn btn-accent" id="gh-ouvrir" href="${esc(c.url)}" target="_blank" rel="noopener">${ico("copier")}Copier le code et ouvrir GitHub</a></li>
       <li>Sur GitHub, connecte-toi si besoin, colle le code${TELEPHONE ? "" : " (Ctrl+V)"}, puis clique sur «&nbsp;Continue&nbsp;».</li>
       <li>GitHub te montre ce que l'Atelier pourra faire : écrire dans tes dépôts, les dossiers de ton compte. C'est là
-        qu'il range ta sauvegarde${TELEPHONE ? "" : " et tes pages"}. Clique sur «&nbsp;Authorize Atelier MTG&nbsp;», puis reviens ici.</li>
+        qu'il range ta sauvegarde${PARTAGEABLE ? " et tes pages" : ""}. Clique sur «&nbsp;Authorize Atelier MTG&nbsp;», puis reviens ici.</li>
     </ol>
     <p class="gh-attente" role="status">En attente de GitHub…</p>`;
   $("#gh-ouvrir", zone).onclick = () => { navigator.clipboard.writeText(c.code).catch(() => {}); };
@@ -1750,15 +1902,48 @@ async function connexionGithub(zone, suite) {
   }
 }
 
+// retirer l'accès de tous les appareils : « Revoke access » sur la page GitHub de l'appli « Atelier MTG » retire toutes
+// ses clés (PC, téléphones, appareil perdu ou volé). La fenêtre suit GitHub : une fois la clé d'ici refusée, elle propose
+// de reconnecter cet appareil ; un téléphone relié au PC, lui, est délié (sa clé était celle du PC)
+const TOUS_APPAREILS = "Déconnecter tous mes appareils";
+function modaleRetirerAcces(appli, intro = "", fin = () => {}) {
+  ouvrirModale(`<h2>${TOUS_APPAREILS}</h2>
+    <div id="ra-zone">${intro ? `<p>${esc(intro)}</p>` : ""}
+      <p><strong>${TELEPHONE ? "Ce téléphone, ton PC" : "Ce PC, ton téléphone"}</strong> et tout appareil perdu ou volé
+        perdront l'accès à ta sauvegarde.</p>
+      <p>Sur GitHub, clique sur «&nbsp;Revoke access&nbsp;», puis reconnecte les appareils que tu gardes.</p>
+      <div class="gh-action"><a class="btn btn-accent" id="ra-ouvrir" href="${esc(appli)}" target="_blank" rel="noopener">Ouvrir GitHub</a></div>
+      <p class="gh-attente" role="status" hidden>En attente de GitHub…</p></div>`, (b) => {
+    const zone = $("#ra-zone", b), fini = () => { fermerModale(); fin(); };
+    let suivi = false;
+    $("#ra-ouvrir", b).onclick = async () => {
+      $(".gh-attente", zone).hidden = false;
+      if (suivi) return;
+      suivi = true;
+      for (const debut = Date.now(); zone.isConnected && Date.now() - debut < 15 * 60000;) {
+        await attendre(3000);
+        let v;
+        try { v = await api("/api/github/valide"); } catch (_) { continue; }
+        if (!zone.isConnected || v.valide) continue;
+        const relie = TELEPHONE && !TELEPHONE.local;
+        zone.innerHTML = `<p>C'est fait : plus aucun appareil n'a accès à ta sauvegarde, ${CET_APPAREIL} compris.${relie ? " Il est délié." : ""}</p>
+          <div class="gh-action"><button class="btn btn-accent" id="ra-suite">${relie ? "OK" : `Reconnecter ${CET_APPAREIL}`}</button></div>`;
+        const delie = () => { fermerModale(); location.hash = "#/"; TELEPHONE.delier(); };
+        $("#ra-suite", zone).onclick = relie ? delie : () => connexionGithub(zone, fini);
+        if (relie) $(".modale-fermer", b).onclick = delie;
+        return;
+      }
+    };
+  }, { focus: false, fermer: () => { fermerModale(); fin(); } });
+}
+
 // ------------------------------------------------------------------ sauvegarde en ligne (synchro.py)
 // une fenêtre, trois portes : sauvegarder (bandeau de l'accueil, Options), récupérer (accueil vide d'un nouveau PC).
 // Chacune mène, si besoin, à la présentation de GitHub puis à la connexion ; fin() est appelé une fois tout fini
 function modaleSauvegarde(contexte, fin = () => {}) {
   const titre = contexte === "recuperer" ? "Récupérer mes decks" : "Sauvegarder mes decks en ligne";
-  ouvrirModale(`<div class="fc-tete"><h2>${titre}</h2>
-      <button class="btn btn-discret btn-icone" id="sv-fermer" aria-label="Fermer">${ico("fermer")}</button></div>
+  ouvrirModale(`<h2>${titre}</h2>
     <div id="sv-zone"><p class="chargement">Chargement…</p></div>`, async (b) => {
-    $("#sv-fermer", b).onclick = () => { fermerModale(); fin(); };
     const zone = $("#sv-zone", b);
     const fini = () => { fermerModale(); fin(); };
     const apres = () => (contexte === "recuperer" ? recupererDecks(zone, fini) : activerSauvegarde(zone, fini));
@@ -1766,7 +1951,7 @@ function modaleSauvegarde(contexte, fin = () => {}) {
     if (g.compte && g.prive) apres();
     else if (g.compte) autoriserGithub(zone, apres);
     else introGithub(zone, apres, contexte === "recuperer" ? "recuperer" : "sauvegarde");
-  }, { focus: false });
+  }, { focus: false, fermer: () => { fermerModale(); fin(); } });
 }
 
 // un échec : se reconnecter s'il le faut (401 : plus connecté ; 409 : connexion d'avant la sauvegarde), sinon réessayer
@@ -1846,7 +2031,7 @@ function modaleRenommer(d) {
   ouvrirModale(`
     <h2>Renommer le deck</h2>
     <label class="bloc">Nom du deck<input class="champ" id="rn-nom" maxlength="60" value="${esc(d.titre)}"></label>
-    <div class="boutons"><button class="btn" id="annuler">Annuler</button><button class="btn btn-accent" id="ok">Renommer</button></div>`, (b) => {
+    <div class="boutons"><button class="btn btn-accent" id="ok">Renommer</button></div>`, (b) => {
     const champ = $("#rn-nom", b), ok = $("#ok", b);
     const valider = async () => {
       if (ok.disabled) return;
@@ -1864,7 +2049,6 @@ function modaleRenommer(d) {
         toast("Deck renommé.");
       } catch (e) { erreur(e); ok.disabled = false; }
     };
-    $("#annuler", b).onclick = fermerModale;
     ok.onclick = valider;
     champ.onkeydown = (ev) => { if (ev.key === "Enter") valider(); };
   });
@@ -1885,14 +2069,19 @@ function renommerPrefs(ancien, nouveau) {
 try { for (const k of Object.keys(localStorage)) if (k.startsWith("pref-rch-derniere")) localStorage.removeItem(k); } catch (_) {}
 
 // ------------------------------------------------------------------ options : réglages de ce PC (reglages.json), démarrage, classeur
-// Options : trois blocs (les cartes, le partage, le programme), puis le classeur
+// Options : trois blocs (les cartes, le partage, le programme)
 async function vueOptions() {
   if (TELEPHONE) return optionsTelephone();
   vue.innerHTML = `<nav class="fil" aria-label="Fil d'Ariane"><a href="#/">Mes decks</a><span aria-hidden="true">›</span><span aria-current="page">Options</span></nav>
-    <div class="opt-grille" id="opt-general"><p class="chargement">Chargement…</p></div>
-    <section class="panneau options" id="opt-classeur"></section>`;
+    <div class="opt-grille" id="opt-general"><p class="chargement">Chargement…</p></div>`;
   optionsGenerales($("#opt-general"), await api("/api/options"));
-  classeurOptions($("#opt-classeur"));
+}
+
+// le classeur : un écran à lui (bouton du haut ; sur le téléphone, onglet du bas)
+function vueClasseur() {
+  vue.innerHTML = `<nav class="fil" aria-label="Fil d'Ariane"><a href="#/">Mes decks</a><span aria-hidden="true">›</span><span aria-current="page">Classeur</span></nav>
+    <section class="panneau options" id="opt-classeur"></section>`;
+  return classeurOptions($("#opt-classeur"));
 }
 
 // Options › Téléphone (sur le PC) : préparer les decks pour l'appli du téléphone, et la relier par un QR code
@@ -1916,7 +2105,13 @@ async function ligneTelephone(el) {
         ${t.lien ? `<button type="button" class="btn btn-petit" id="tel-qr">${ico("telephone")}Relier un téléphone</button>` : ""}
         <button type="button" class="btn btn-petit btn-discret" id="tel-couper">Arrêter</button></div>`;
     if ($("#tel-qr", el)) $("#tel-qr", el).onclick = () => modaleQrTelephone(t.lien);
-    $("#tel-couper", el).onclick = () => { if (confirm("Arrêter l'appli du téléphone ? Elle ne recevra plus tes decks.")) action("couper"); };
+    // le téléphone garde la clé GitHub de ce PC : retirer l'accès est proposé aussitôt
+    $("#tel-couper", el).onclick = async () => {
+      if (!confirm("Arrêter l'appli du téléphone ? Elle ne recevra plus tes decks.")) return;
+      await action("couper");
+      const g = await api("/api/github").catch(() => ({}));
+      if (g.compte && g.appli) modaleRetirerAcces(g.appli, "Le téléphone garde sa clé de ta sauvegarde.", () => route());
+    };
     if (t.en_cours || (!t.derniere && !t.erreur)) setTimeout(async () => {
       if (!el.isConnected) return;
       try { t = await api("/api/telephone"); rendre(); } catch (_) {}
@@ -1935,8 +2130,7 @@ async function modaleQrTelephone(lien) {
   const q = qrcode(0, "M");
   q.addData(lien);
   q.make();
-  ouvrirModale(`<div class="fc-tete"><h2>Atelier sur ton téléphone</h2>
-      <button class="btn btn-discret btn-icone" id="qr-fermer" aria-label="Fermer">${ico("fermer")}</button></div>
+  ouvrirModale(`<h2>Atelier sur ton téléphone</h2>
     <div class="qr-telephone">${q.createSvgTag({ cellSize: 6, margin: 3, scalable: true })}</div>
     <ol class="gh-etapes">
       <li>Scanne ce QR code avec l'appareil photo du téléphone.</li>
@@ -1944,7 +2138,6 @@ async function modaleQrTelephone(lien) {
     </ol>
     <p class="muet petit">Ce code ouvre tes decks : ne le montre qu'à tes téléphones.</p>
     <div class="boutons"><button class="btn btn-petit" id="qr-copier">${ico("copier")}Copier le lien</button></div>`, (b) => {
-    $("#qr-fermer", b).onclick = fermerModale;
     $("#qr-copier", b).onclick = async () => { try { await navigator.clipboard.writeText(lien); toast("Lien copié."); } catch (e) { erreur(e); } };
   });
 }
@@ -1956,19 +2149,41 @@ function optionsTelephone() {
     <section class="panneau options"><div class="opt-titre"><h2>${ico("telephone")}Téléphone</h2></div>
       <div class="opt-lignes">${a ? `
         <p>Relié à la sauvegarde <strong>${esc(a.depot)}</strong></p>
-        <p class="muet petit" id="tel-attente"></p>
+        <p class="muet petit" id="tel-attente" hidden></p>
         <div class="form-ligne"><button class="btn" id="tel-maj">${ico("rafraichir")}Synchroniser</button>
-          <button class="btn btn-danger" id="tel-delier">Délier ce téléphone</button></div>` : `
-        <p>Tes decks sont gardés sur ce téléphone.</p>
+          <button class="btn btn-danger" id="tel-delier">Délier ce téléphone</button>
+          <button class="btn btn-discret" id="tel-retirer">${TOUS_APPAREILS}</button></div>` : `
+        <p id="tel-ou">Tes decks sont gardés sur ce téléphone.</p>
         <div id="opt-github"></div>`}
-      </div></section>${a ? "" : `
-    <section class="panneau options opt-bloc" id="opt-cartes"></section>`}
-    <section class="panneau options" id="opt-classeur"></section>`;
-  classeurOptions($("#opt-classeur"));
-  if (!a) { ligneGithub($("#opt-github"), {}); return optionsCartes($("#opt-cartes")); }
+      </div></section>
+    <section class="panneau options opt-bloc" id="opt-cartes"></section>
+    <section class="panneau options"><div class="opt-titre"><h2>${ico("theme")}Thème</h2></div>
+      <div class="segments" role="group" aria-label="Thème" id="opt-theme">${[["", "Auto"], ["light", "Clair"], ["dark", "Sombre"]].map(([k, l]) => {
+        const actif = (document.documentElement.dataset.theme || "") === k;
+        return `<button type="button" data-theme="${k}" class="${actif ? "actif" : ""}" aria-pressed="${actif}">${l}</button>`;
+      }).join("")}</div></section>`;
+  $$("#opt-theme button").forEach((b) => b.addEventListener("click", () => {        // le bouton du thème du PC, ici
+    const t = b.dataset.theme;
+    if (t) document.documentElement.dataset.theme = t;
+    else delete document.documentElement.dataset.theme;
+    try { if (t) localStorage.setItem("theme", t); else localStorage.removeItem("theme"); } catch (_) {}
+    $$("#opt-theme button").forEach((x) => { x.classList.toggle("actif", x === b); x.setAttribute("aria-pressed", x === b); });
+  }));
+  // sans PC : où sont les decks, et à quoi sert GitHub tant qu'on n'est pas connecté
+  const ouSont = (g, s) => {
+    const p = $("#tel-ou");
+    if (p) p.textContent = s.active ? "Tes decks sont sur ce téléphone et sauvegardés en ligne, sur ton compte GitHub."
+      : g.compte ? "Tes decks sont gardés seulement sur ce téléphone."
+      : "Tes decks sont gardés seulement sur ce téléphone. Avec un compte GitHub (gratuit), sauvegarde-les en ligne : "
+        + "tu les retrouves si tu perds ton téléphone, ou sur ton PC, et tu peux les partager.";
+  };
+  optionsCartes($("#opt-cartes"));                 // les mêmes réglages sur tous les appareils
+  if (!a) return ligneGithub($("#opt-github"), {}, ouSont);
   const attente = async () => {
     const n = await TELEPHONE.enAttente();
-    $("#tel-attente").textContent = n ? `${n} modification${n > 1 ? "s" : ""} pas encore envoyée${n > 1 ? "s" : ""}` : "";
+    const el = $("#tel-attente");
+    el.textContent = n ? `${n} modification${n > 1 ? "s" : ""} pas encore envoyée${n > 1 ? "s" : ""}` : "";
+    el.hidden = !n;
   };
   attente();
   $("#tel-maj").onclick = async (ev) => {
@@ -1981,6 +2196,7 @@ function optionsTelephone() {
     b.disabled = false;
   };
   $("#tel-delier").onclick = () => { if (confirm("Délier ce téléphone ? Ses decks en seront effacés (ils restent sur ton PC).")) TELEPHONE.delier(); };
+  $("#tel-retirer").onclick = () => modaleRetirerAcces(TELEPHONE.appliGithub);
 }
 
 // sans PC : les réglages des cartes, gardés sur ce téléphone (le bloc « Cartes » des Options du PC, sans la langue)
@@ -1989,14 +2205,15 @@ async function optionsCartes(el) {
   const budget = (b) => (b == null ? "" : String(b).replace(".", ","));
   el.innerHTML = `<h2>${ico("cartes")}Cartes</h2><div class="opt-lignes">
       <label class="opt-champ"><span>Budget par carte</span><span class="opt-euros"><input class="champ" name="budget" inputmode="decimal" value="${budget(o.budget)}" placeholder="5">€</span></label>
-      ${basculesUB(o)}</div>`;
+      ${champVisuel(o)}${basculesUB(o)}</div>`;
   el.onchange = async (ev) => {
     const c = ev.target;
     if (!c.name) return;
     try {
       Object.assign(o, await api("/api/options", { method: "POST", body: { [c.name]: c.type === "checkbox" ? c.checked : c.value } }));
       majBudget(o.budget);
-      toast("Enregistré.");
+      toast(TELEPHONE && !TELEPHONE.local ? "Enregistré : ton PC l'appliquera à tes decks dans quelques minutes."
+        : c.name === "langue_cartes" ? "Enregistré : les images changent dans quelques instants." : "Enregistré.");
     } catch (e) { erreur(e); }
     if (c.type === "checkbox") c.checked = !!o[c.name];
     else c.value = budget(o.budget);
@@ -2080,15 +2297,16 @@ function optionsGenerales(el, o) {
 }
 
 // le compte GitHub (connecté par code, github.py ; ou celui du partage avec git, reglages.json) et la sauvegarde en ligne
-async function ligneGithub(el, o) {
+async function ligneGithub(el, o, apres = null) {
   const [g, s] = await Promise.all([api("/api/github").catch(() => ({})), api("/api/sauvegarde").catch(() => ({}))]);
   const nom = $('[name="nom"]');
   if (nom) nom.placeholder = g.compte || o.github || "";
-  const encore = () => ligneGithub(el, o);
+  const encore = () => ligneGithub(el, o, apres);
   const compte = g.git && !g.compte
     ? `<label class="opt-champ"><span>Compte GitHub des pages</span><input class="champ" name="github" maxlength="39" value="${esc(o.github)}" autocomplete="off" spellcheck="false"></label>`
     : `<div class="opt-champ"><span>Compte GitHub</span><span class="opt-github">${g.compte
-      ? `<strong>${esc(g.compte)}</strong><button type="button" class="btn btn-petit btn-discret" id="gh-deconnecter">Se déconnecter</button>`
+      ? `<strong>${esc(g.compte)}</strong><button type="button" class="btn btn-petit btn-discret" id="gh-deconnecter">Se déconnecter</button>
+        <button type="button" class="btn btn-petit btn-discret" id="gh-retirer">${TOUS_APPAREILS}</button>`
       : `<button type="button" class="btn btn-accent btn-petit" id="gh-options">Se connecter à GitHub</button>`}</span></div>`;
   // la sauvegarde : son interrupteur et où elle en est ; sans connexion (ou d'avant la sauvegarde), le bouton qui la met en place
   const etatTexte = s.erreur ? `<span class="erreur">${esc(s.erreur)}</span>`
@@ -2103,11 +2321,14 @@ async function ligneGithub(el, o) {
     : s.connecte ? `<div class="opt-champ"><span>Sauvegarde en ligne</span><span><button type="button" class="btn btn-petit" id="sv-activer">${ico("nuage")}Sauvegarder mes decks</button></span></div>`
     : "";
   el.innerHTML = compte + sauvegarde;
+  if (apres) apres(g, s);
   const deco = $("#gh-deconnecter", el), co = $("#gh-options", el);
   if (deco) deco.onclick = async () => {
     try { await api("/api/github/deconnexion", { method: "POST", body: {} }); encore(); } catch (e) { erreur(e); }
   };
   if (co) co.onclick = () => modaleSauvegarde("sauvegarde", encore);
+  const retirer = $("#gh-retirer", el);
+  if (retirer) retirer.onclick = () => modaleRetirerAcces(TELEPHONE ? TELEPHONE.appliGithub : g.appli, "", encore);
   const activer = $("#sv-activer", el);
   if (activer) activer.onclick = () => modaleSauvegarde("sauvegarde", encore);
   const b = $("#sv-bascule", el);
@@ -2343,10 +2564,9 @@ async function importerCollection(fichier, dejaLa, fin) {
     ${a.en_decks ? `<label class="petit"><input type="checkbox" id="ic-sans" checked> Sans les ${sepMilliers(a.en_decks)} déjà dans mes decks</label>` : ""}
     ${a.inconnues.length ? `<details class="petit"><summary>${a.inconnues.length} introuvable${a.inconnues.length > 1 ? "s" : ""}</summary>
       <p class="muet">${a.inconnues.map(esc).join(", ")}</p></details>` : ""}
-    <div class="boutons"><button class="btn" id="annuler">Annuler</button>
+    <div class="boutons">
       ${dejaLa ? `<button class="btn" id="ic-remplacer">Remplacer le classeur</button>` : ""}
       <button class="btn btn-accent" id="ok">Ajouter au classeur</button></div>`, (b) => {
-    $("#annuler", b).onclick = fermerModale;
     const importer = async (remplacer, bouton) => {
       $$(".boutons .btn", b).forEach((x) => { x.disabled = true; });
       bouton.textContent = "Import…";
@@ -2403,7 +2623,7 @@ const TITRE_ALERTE = {
   "interdite": "Carte bannie en Commander",
   "non légale": "Carte non légale en Commander (carte Un-, Alchimie…)",
 };
-const AFFICHAGE = PARTAGE ? "visuel" : "liste";          // affichage par défaut d'un deck : les images sur une page partagée
+const AFFICHAGE = "visuel";                              // affichage par défaut d'un deck : les images d'abord, partout
 const ORDRE_TYPES = ["Créatures", "Planeswalkers", "Batailles", "Éphémères", "Rituels", "Artefacts", "Enchantements", "Terrains", "Autres"];
 // fonctions (Scryfall Tagger, familles calculées par recherche.fonctions_cartes) : une carte est rangée sous la première des siennes
 const ORDRE_FONCTIONS = ["Ramp", "Pioche", "Tuteurs", "Removal", "Balayages", "Contresorts", "Recursion", "Protection", "Autres", "Terrains"];
@@ -2462,26 +2682,36 @@ function legendeCarte(c) {
   return `${f.fr && f.fr !== c.nom ? f.fr + " — " : ""}${f.prix == null ? "prix inconnu" : euros(f.prix)}${f.prix_edition ? ` (${f.prix_edition})` : ""}${f.gc ? " · Game Changer" : ""}`;
 }
 
+// sur le téléphone, les réglages moins courants d'une barre d'outils (.pli) se replient derrière ce bouton
+function boutonPlis(libelle, ouvert = false) {
+  return `<button type="button" class="btn btn-icone outils-plus" aria-label="${esc(libelle)}" title="${esc(libelle)}" aria-expanded="${ouvert}">${ico("reglages")}</button>`;
+}
+document.addEventListener("click", (ev) => {
+  const b = ev.target.closest(".outils-plus");
+  if (b) b.setAttribute("aria-expanded", b.closest(".repliable").classList.toggle("ouvert"));
+});
+
 function segments(pref, valeurs, def) {
   const v = PREF.get(pref, def);
   return `<div class="segments" role="group">${valeurs.map(([k, l, i]) =>
-    `<button type="button" data-pref="${pref}" data-val="${k}" class="${k === v ? "actif" : ""}" aria-pressed="${k === v}">${i ? ico(i) : ""}${l}</button>`).join("")}</div>`;
+    `<button type="button" data-pref="${pref}" data-val="${k}" class="${k === v ? "actif" : ""}" aria-pressed="${k === v}" ${i ? `aria-label="${l}"` : ""}>${i ? ico(i) : ""}<span class="seg-txt">${l}</span></button>`).join("")}</div>`;
 }
 
 function ongletListe(el, d) {
   el.innerHTML = `
     ${!d.cartes.length ? `<div class="panneau vide"><p>Ce deck est vide.</p><button class="btn btn-accent ecrit" id="vide-ajouter">${ico("plus")}Ajouter des cartes</button></div>` : `
-    <div class="barre-outils">
-      ${segments("affichage", [["liste", "Liste", "liste"], ["visuel", "Visuel", "cartes"]], AFFICHAGE)}
-      <label class="outil petit muet" id="outil-taille" ${PREF.get("affichage", AFFICHAGE) === "visuel" ? "" : "hidden"}>Taille
+    <div class="barre-outils repliable">
+      ${segments("affichage", [["visuel", "Visuel", "cartes"], ["liste", "Liste", "liste"]], AFFICHAGE)}
+      <label class="outil pli petit muet" id="outil-taille" ${PREF.get("affichage", AFFICHAGE) === "visuel" ? "" : "hidden"}>Taille
         <input type="range" id="taille" min="80" max="220" step="5" value="${tailleCartes()}" aria-label="Taille des cartes"></label>
-      <label class="outil petit muet">Ranger par
+      <label class="outil pli petit muet">Ranger par
         <select class="champ champ-petit" id="rangement">${[["type", "type"], ["tags", "tags"], ["fonction", "fonction"]].map(([v, l]) =>
           `<option value="${v}" ${PREF.get("rangement", "type") === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
-      <label class="outil petit muet">Trier par
+      <label class="outil pli petit muet">Trier par
         <select class="champ champ-petit" id="tri">${[["cout", "coût"], ["nom", "nom"], ["prix", "prix"]].map(([v, l]) =>
           `<option value="${v}" ${PREF.get("tri", "cout") === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
       <input class="champ filtre" id="filtre" type="search" placeholder="Filtrer…" value="${esc(etat.filtre)}" aria-label="Filtrer les cartes">
+      ${boutonPlis("Rangement et tri")}
     </div>
     <div id="groupes"></div>
     <h2>Statistiques</h2>
@@ -2693,11 +2923,10 @@ function ouvrirCarte(c) {
   ouvrirModale(`
     <div class="fiche-carte">
       <div class="fc-image">${f.image ? `<img src="${esc(f.image)}" alt="${esc(c.nom)}" data-recto="${esc(f.image)}" data-verso="${esc((f.dos && f.dos.image) || "")}">` : `<div class="sans-image">${esc(c.nom)}</div>`}
-        ${boutonVerso(f.dos)}${lienVersion(c.version || c.image_ed, c.versions)}</div>
+        ${boutonVerso(f.dos)}${lienVersion(c.version || c.image_ed, c.versions)}${flechesFiche(pos, ordre.length)}</div>
       <div class="fc-infos">
         <div class="fc-tete">
           <div><h2>${esc(f.fr || c.nom)} ${mana(f.cout)}</h2>${f.fr && f.fr !== c.nom ? `<div class="muet">${esc(c.nom)}</div>` : ""}</div>
-          <button class="btn btn-discret btn-icone" id="fc-fermer" aria-label="Fermer">${ico("fermer")}</button>
         </div>
         <div class="petit muet">${esc(f.fr_type || f.type || "")}${f.pt ? " · " + esc(f.pt) : ""}${cmd ? " · commandant" : maybe ? " · Maybeboard" : ""}</div>
         <div class="chiffres">
@@ -2719,30 +2948,20 @@ function ouvrirCarte(c) {
           ${c.n > 1 || plusieursExemplaires({ type: f.type, texte: f.texte }) ? `
           <div class="fc-ligne ecrit"><label class="petit muet" for="fc-n">Exemplaires</label>
             <input class="champ champ-petit" type="number" id="fc-n" min="1" max="99" value="${c.n}" style="width:4.5rem"></div>` : ""}`}
-        <div class="fc-bloc-actions ecrit" role="group" aria-label="Actions sur la carte">
-          <div class="fc-actions">
-            ${cmd ? "" : `<button class="btn btn-petit" data-act="maybe">${maybe ? ico("annuler") + "Remettre dans le deck" : ico("maybe") + "Passer en Maybeboard"}</button>`}
-            ${cmd ? `<button class="btn btn-petit" data-act="cmd">${ico("couronne")}Ne plus en faire le commandant</button>`
-              : !maybe && legendaire && (d.commandants || []).length < 2 && (!second || f.partenaire !== false) ? `<button class="btn btn-petit" data-act="cmd">${ico("couronne")}${second ? "Ajouter comme second commandant" : "Définir comme commandant"}</button>` : ""}
-            <button class="btn btn-petit btn-danger fc-retirer" data-act="retirer">${ico("corbeille")}Retirer du deck</button>
-          </div>
-        </div>
         <div class="fc-liens">
           ${PARTAGE ? `<a href="https://commanderspellbook.com/search/?q=${enc(`card:"${ic_cle(c.nom)}"`)}" target="_blank" rel="noopener">${ico("combos")}Combos avec cette carte ↗</a>`
             : `<a href="#/deck/${enc(d.id)}/combos/${enc(c.nom)}">${ico("combos")}Combos avec cette carte</a>`}
           <a href="${esc(f.prix_lien || lienCardmarket(c.nom))}" target="_blank" rel="noopener">${ico("panier")}Cardmarket ↗</a>
           <a href="${esc(f.gatherer || lienGatherer(c.nom))}" target="_blank" rel="noopener">${ico("livre")}Gatherer ↗</a>
         </div>
-        ${pos >= 0 && ordre.length > 1 ? `
-          <div class="fc-nav">
-            <button class="btn btn-petit" data-act="prec" ${pos === 0 ? "disabled" : ""}>${ico("precedent")}Précédente</button>
-            <span class="muet petit">${pos + 1} / ${ordre.length}</span>
-            <button class="btn btn-petit" data-act="suiv" ${pos === ordre.length - 1 ? "disabled" : ""}>Suivante${ico("suivant")}</button>
-          </div>` : ""}
       </div>
-    </div>`, (b) => {
+    </div>
+    ${piedFiche(`
+      ${cmd ? "" : `<button class="btn btn-petit" data-act="maybe">${maybe ? ico("annuler") + "Remettre dans le deck" : ico("maybe") + "Maybeboard"}</button>`}
+      ${cmd ? `<button class="btn btn-petit" data-act="cmd">${ico("couronne")}Plus commandant</button>`
+        : !maybe && legendaire && (d.commandants || []).length < 2 && (!second || f.partenaire !== false) ? `<button class="btn btn-petit" data-act="cmd">${ico("couronne")}${second ? "Second commandant" : "Commandant"}</button>` : ""}
+      <button class="btn btn-petit btn-danger" data-act="retirer">${ico("corbeille")}Retirer du deck</button>`)}`, (b) => {
     const retrouver = (nd) => nd && nd.cartes.find((x) => x.nom === c.nom);
-    $("#fc-fermer", b).onclick = fermerModale;
     const achat = $('[data-act="achat"]', b);
     if (achat) possedeesDeck(d).then((poss) => boutonAchat(achat, d, c, poss)).catch(() => {});
     ouEst($(".ou-est", b), c.nom, d.id);
@@ -2805,7 +3024,7 @@ function modaleTags(c, retourFiche = false) {
     </div>
     <div class="petit muet" style="margin-top:.9rem">Déjà utilisés</div>
     <div id="tags-dispo" class="puces"></div>
-    <div class="boutons"><button class="btn" id="annuler">Annuler</button><button class="btn btn-accent" id="ok">Enregistrer</button></div>`, (b) => {
+    <div class="boutons"><button class="btn btn-accent" id="ok">Enregistrer</button></div>`, (b) => {
     const rendre = () => {
       $("#tags-carte", b).innerHTML = tags.length ? tags.map((t, i) => `<span class="puce ${i === 0 ? "puce-1" : ""}">
           <button type="button" class="puce-nom" data-premier="${i}" title="${i === 0 ? "Range la carte" : "Mettre en premier"}">${i === 0 ? "★ " : ""}${esc(t)}</button>
@@ -2833,14 +3052,13 @@ function modaleTags(c, retourFiche = false) {
       if (ev.key === "Enter") { ev.preventDefault(); champ.value.split(",").forEach(ajoute); champ.value = ""; }
     });
     $("#tag-ajout", b).onclick = () => { champ.value.split(",").forEach(ajoute); champ.value = ""; champ.focus(); };
-    $("#annuler", b).onclick = () => (retourFiche ? ouvrirCarte(c) : fermerModale());
     $("#ok", b).onclick = async () => {
       champ.value.split(",").forEach(ajoute);
       fermerModale();
       const nd = await modifier("categorie", c, { tags });
       if (retourFiche && nd) ouvrirCarte(nd.cartes.find((x) => x.nom === c.nom));
     };
-  });
+  }, { fermer: retourFiche ? () => ouvrirCarte(c) : null });
 }
 
 // ------------------------------------------------------------------ choisir la version (le visuel) d'une carte
@@ -3095,7 +3313,7 @@ function modaleAjout() {
       </div>
     </div>
     <div id="journal" class="journal petit"></div>
-    <div class="boutons"><button class="btn" id="fermer">Fermer</button>
+    <div class="boutons">
       <button class="btn" id="ok-maybe" disabled>${ico("maybe")}Maybeboard</button>
       <button class="btn btn-accent" id="ok" disabled>${ico("plus")}<span>Ajouter au deck</span></button></div>`, (b) => {
     let choix = null;
@@ -3137,7 +3355,6 @@ function modaleAjout() {
         } catch (e) { $("#fiche", b).innerHTML = `<p class="erreur">${esc(e.message)}</p>`; }
       },
     });
-    $("#fermer", b).onclick = fermerModale;
     const valider = async (maybe) => {
       if (!choix) return;
       boutonsFiche(false);
@@ -3462,25 +3679,33 @@ function optionsVersions(vs, choisi, avecActuelle = true, avecAucune = false) {
   return opts.join("");
 }
 
-function diffCourt(v) {
-  if (!v.plus.length && !v.moins.length) return `<span class="muet">identique</span>`;
-  return (v.plus.length ? `<div><span class="ok">+</span> ${v.plus.map((n) => nc(n)).join(", ")}</div>` : "") +
-    (v.moins.length ? `<div><span class="alerte-texte">−</span> ${v.moins.map((n) => nc(n)).join(", ")}</div>` : "");
+// « 6 Mountain, Sol Ring » : les noms d'une liste, les doubles comptés
+function nomsComptes(noms) {
+  const n = new Map();
+  noms.forEach((x) => n.set(x, (n.get(x) || 0) + 1));
+  return [...n].map(([x, k]) => `<li>${k > 1 ? `<span class="muet">${k}</span> ` : ""}${nc(x)}</li>`).join("");
 }
 
-function ligneVersion(v, i) {
+// une version : son nom, sa date, sa note ; ce qui la sépare de la liste actuelle, déplié à la demande ; Comparer, et le
+// reste dans « … »
+function carteVersion(v, i) {
   const [lib, cls] = TYPE_VERSION[v.type];
-  return `<tr>
-    <td><strong>${esc(v.nom)}</strong>${v.type === "ancienne" ? ` <span class="badge ${cls}">${lib}</span>` : ""}<br>
-      <span class="muet petit">${v.type === "auto" ? "" : esc(new Date(v.date * 1000).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })) + " · "}${v.total} cartes</span>
-      ${v.note ? `<div class="petit">${esc(v.note)}</div>` : ""}</td>
-    <td class="petit">${diffCourt(v)}</td>
-    <td class="num">
+  const date = v.type === "auto" ? "" : new Date(v.date * 1000).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }) + " · ";
+  return `<article class="version">
+    <div class="version-tete">
+      <div class="version-nom"><strong>${esc(v.nom)}</strong>${v.type === "ancienne" ? ` <span class="badge ${cls}">${lib}</span>` : ""}
+        <div class="muet petit">${esc(date)}${v.total} cartes</div></div>
       <button class="btn btn-petit" data-act="comparer" data-i="${i}">${ico("comparer")}Comparer</button>
-      <button class="btn btn-petit ecrit" data-act="simuler" data-i="${i}">${ico("simulation")}Simuler</button>
-      <button class="btn btn-petit ecrit" data-act="restaurer" data-i="${i}">${ico("annuler")}Restaurer</button>
-      ${v.type === "nommee" ? `<button class="btn btn-petit btn-danger ecrit" data-act="supprimer" data-i="${i}">${ico("corbeille")}Supprimer</button>` : ""}
-    </td></tr>`;
+      <button type="button" class="btn-menu ecrit" data-act="menu" data-i="${i}" aria-label="Autres actions sur « ${esc(v.nom)} »">${ico("plus_de")}</button>
+    </div>
+    ${v.note ? `<p class="version-note petit">${esc(v.note)}</p>` : ""}
+    ${v.plus.length || v.moins.length ? `<details class="version-diff petit">
+      <summary><span class="ok">+${v.plus.length}</span> <span class="alerte-texte">−${v.moins.length}</span> <span class="muet">par rapport à la liste actuelle</span></summary>
+      <div class="version-listes">
+        ${v.plus.length ? `<div><div class="ok">En plus</div><ul>${nomsComptes(v.plus)}</ul></div>` : ""}
+        ${v.moins.length ? `<div><div class="alerte-texte">En moins</div><ul>${nomsComptes(v.moins)}</ul></div>` : ""}
+      </div></details>` : `<p class="muet petit version-diff">Identique à la liste actuelle</p>`}
+  </article>`;
 }
 
 async function ongletVersions(el, d) {
@@ -3494,33 +3719,29 @@ async function ongletVersions(el, d) {
       <button class="btn btn-accent" id="btn-version">${ico("enregistrer")}Enregistrer une version…</button>
     </div>
 
-    <div class="panneau">
+    <div class="panneau cmp">
       <h3 style="margin-top:0">Comparer deux versions</h3>
-      <div class="form-ligne">
-        <select class="champ" style="flex:1;min-width:200px" id="cmp-a">${optionsVersions(vs, "")}</select>
-        <span class="muet">et</span>
-        <select class="champ" style="flex:1;min-width:200px" id="cmp-b">${optionsVersions(vs, defautB)}</select>
+      <div class="cmp-choix">
+        <select class="champ" id="cmp-a" aria-label="Première version">${optionsVersions(vs, "")}</select>
+        <select class="champ" id="cmp-b" aria-label="Seconde version">${optionsVersions(vs, defautB)}</select>
         <button class="btn" id="btn-cmp">${ico("comparer")}Comparer</button>
       </div>
       <div id="cmp-res"></div>
     </div>
 
     <h2>Versions</h2>
-    ${nommees.length ? `<table class="tableau"><thead><tr><th>Version</th><th>Différences</th><th></th></tr></thead>
-      <tbody>${nommees.map((v) => ligneVersion(v, vs.indexOf(v))).join("")}</tbody></table>`
+    ${nommees.length ? `<div class="versions">${nommees.map((v) => carteVersion(v, vs.indexOf(v))).join("")}</div>`
       : `<p class="muet">Aucune version.</p>`}
 
-    ${auto.length ? `<details ${nommees.length ? "" : "open"}><summary>Historique (${auto.length})</summary>
-      <table class="tableau" style="margin-top:.5rem"><thead><tr><th>Liste</th><th>Différences</th><th></th></tr></thead>
-        <tbody>${auto.map((v) => ligneVersion(v, vs.indexOf(v))).join("")}</tbody></table>
+    ${auto.length ? `<details class="versions-auto" ${nommees.length ? "" : "open"}><summary>Historique (${auto.length})</summary>
+      <div class="versions">${auto.map((v) => carteVersion(v, vs.indexOf(v))).join("")}</div>
     </details>` : ""}`;
 
   $("#btn-version").onclick = () => ouvrirModale(`
     <h2>Enregistrer une version</h2>
     <label>Nom<input class="champ" id="v-nom"></label>
     <label style="display:block;margin-top:.6rem">Note<textarea class="champ" id="v-note" rows="3"></textarea></label>
-    <div class="boutons"><button class="btn" id="annuler">Annuler</button><button class="btn btn-accent" id="ok">Enregistrer</button></div>`, (b) => {
-    $("#annuler", b).onclick = fermerModale;
+    <div class="boutons"><button class="btn btn-accent" id="ok">Enregistrer</button></div>`, (b) => {
     $("#ok", b).onclick = async () => {
       try {
         await api(`/api/decks/${enc(d.id)}/versions`, { method: "POST", body: { nom: $("#v-nom", b).value, note: $("#v-note", b).value } });
@@ -3533,64 +3754,106 @@ async function ongletVersions(el, d) {
 
   $("#btn-cmp").onclick = () => afficheComparaison($("#cmp-res", el), d, $("#cmp-a", el).value, $("#cmp-b", el).value);
 
-  $$("[data-act]", el).forEach((b) => b.addEventListener("click", async () => {
-    const v = vs[+b.dataset.i];
-    if (b.dataset.act === "comparer") {
+  const agir = async (act, v) => {
+    if (act === "comparer") {
       $("#cmp-a", el).value = "";
       $("#cmp-b", el).value = v.fichier;
-      afficheComparaison($("#cmp-res", el), d, "", v.fichier);
-      $("#cmp-res", el).scrollIntoView({ behavior: "smooth", block: "center" });
-    } else if (b.dataset.act === "simuler") {
+      await afficheComparaison($("#cmp-res", el), d, "", v.fichier);
+      $(".cmp", el).scrollIntoView({ behavior: "smooth", block: "start" });
+    } else if (act === "simuler") {
       etat.simA = "";
       etat.simB = v.fichier;
       location.hash = `#/deck/${enc(d.id)}/simulation`;
-    } else if (b.dataset.act === "restaurer") {
+    } else if (act === "restaurer") {
       if (!confirm(`Restaurer « ${v.nom} » ?`)) return;
       try {
         await api(`/api/decks/${enc(d.id)}/restaurer`, { method: "POST", body: { fichier: v.fichier } });
         toast("Version restaurée.");
         location.hash = `#/deck/${enc(d.id)}/liste`;
       } catch (e) { erreur(e); }
-    } else if (b.dataset.act === "supprimer") {
+    } else if (act === "supprimer") {
       if (!confirm(`Supprimer la version « ${v.nom} » ?`)) return;
       try {
         await api(`/api/decks/${enc(d.id)}/versions/supprimer`, { method: "POST", body: { fichier: v.fichier } });
         ongletVersions(el, d);
       } catch (e) { erreur(e); }
     }
+  };
+  $$(".version [data-act]", el).forEach((b) => b.addEventListener("click", () => {
+    const v = vs[+b.dataset.i];
+    if (b.dataset.act !== "menu") return agir(b.dataset.act, v);
+    ouvrirMenu(b, [v.nom,
+      [TELEPHONE ? "Simuler…" : "Simuler", () => agir("simuler", v), "", "simulation"],
+      ["Restaurer cette version", () => agir("restaurer", v), "", "annuler"],
+      ...(v.type === "nommee" ? [null, ["Supprimer la version", () => agir("supprimer", v), "btn-danger", "corbeille"]] : [])]);
   }));
 }
 
+// deux versions côte à côte : leurs chiffres, puis ce que chacune a de plus (sur le téléphone, une liste à la fois, en
+// glissant de l'une à l'autre)
 async function afficheComparaison(zone, d, fa, fb) {
   zone.innerHTML = `<p class="chargement">Comparaison…</p>`;
   try {
     const c = await api(`/api/decks/${enc(d.id)}/comparer?a=${enc(fa)}&b=${enc(fb)}`);
-    const carte = (n) => {
+    const comptes = (l) => { const m = new Map(); l.forEach((n) => m.set(n, (m.get(n) || 0) + 1)); return [...m]; };
+    const carte = ([n, k]) => {
       const f = c.infos[n] || {};
-      return `<div class="ligne" style="grid-template-columns:minmax(0,1fr) auto 4.6rem">
-        <span class="nom" data-image="${esc(f.image)}"><span class="en">${esc(n)}</span>${f.fr && f.fr !== n ? `<span class="fr">${esc(f.fr)}</span>` : ""}
-          ${f.gc ? `<span class="badge badge-gc">Game Changer</span>` : ""}</span>
+      return `<div class="ligne cmp-carte">
+        <span class="nom" data-image="${esc(f.image)}"><span class="en">${k > 1 ? `<span class="muet">${k}</span> ` : ""}${esc(f.fr || n)}</span>${f.gc ? ` <span class="badge badge-gc">GC</span>` : ""}</span>
         ${mana(f.cout)}<span class="prix ${(f.prix || 0) > BUDGET ? "cher" : ""}">${euros(f.prix)}</span></div>`;
     };
-    const colonne = (v, cartes) => `<div>
-      <h3>Seulement dans « ${esc(v.nom)} » <span class="muet">(${cartes.length})</span></h3>
-      ${cartes.length ? cartes.map(carte).join("") : `<p class="muet">rien</p>`}</div>`;
+    const tuile = (v) => `<div class="cmp-tuile">
+      <div class="cmp-tuile-nom">${esc(v.nom)}</div>
+      <div class="chiffres"><span class="badge ${v.total === 100 ? "badge-ok" : "badge-alerte"}">${v.total} cartes</span><span class="badge">${euros(v.prix)}</span>
+        <span class="badge ${v.gc.length ? "badge-gc" : ""}" title="${esc(v.gc.join(", "))}">${v.gc.length} GC</span></div></div>`;
+    const memes = !c.seulement_a.length && !c.seulement_b.length;
     zone.innerHTML = `
-      <table class="tableau petit" style="margin-top:.8rem">
-        <thead><tr><th></th><th>${esc(c.a.nom)}</th><th>${esc(c.b.nom)}</th></tr></thead>
-        <tbody>
-          <tr><td>Cartes</td><td>${c.a.total}</td><td>${c.b.total}</td></tr>
-          <tr><td>Prix</td><td>${euros(c.a.prix)}</td><td>${euros(c.b.prix)}</td></tr>
-          <tr><td>Game Changers</td><td>${c.a.gc.map((n) => nc(n)).join(", ") || "aucun"}</td><td>${c.b.gc.map((n) => nc(n)).join(", ") || "aucun"}</td></tr>
-          <tr><td>Cartes en commun</td><td colspan="2">${c.communes}</td></tr>
-        </tbody>
-      </table>
-      ${!c.seulement_a.length && !c.seulement_b.length ? `<p class="muet">Mêmes cartes.</p>` :
-        `<div class="grille-2">${colonne(c.a, c.seulement_a)}${colonne(c.b, c.seulement_b)}</div>
-         <div class="boutons ecrit"><button class="btn btn-accent" id="cmp-sim">${ico("simulation")}Simuler « ${esc(c.a.nom)} » contre « ${esc(c.b.nom)} »</button></div>`}`;
+      <div class="cmp-tuiles">${tuile(c.a)}${tuile(c.b)}</div>
+      <p class="muet petit cmp-communes">${memes ? "Mêmes cartes." : `${c.communes} cartes en commun.`}</p>
+      ${memes ? "" : `
+        <p class="petit muet cmp-seulement">Ce que chacune a en plus :</p>
+        <div class="segments segments-pages" role="tablist">${[[c.a, c.seulement_a], [c.b, c.seulement_b]].map(([v, l]) =>
+          `<button type="button" role="tab"><span class="seg-lib">${esc(v.nom)}</span> <span class="sg-n">${l.length}</span></button>`).join("")}</div>
+        <div class="glisse cote-a-cote">
+          ${[[c.a, c.seulement_a], [c.b, c.seulement_b]].map(([v, l]) => `<div class="glisse-page">
+            <h3 class="page-titre">Seulement dans « ${esc(v.nom)} » <span class="muet">(${l.length})</span></h3>
+            ${l.length ? comptes(l).map(carte).join("") : `<p class="muet">Rien.</p>`}</div>`).join("")}
+        </div>
+        <div class="boutons ecrit"><button class="btn" id="cmp-sim">${ico("simulation")}Simuler les deux</button></div>`}`;
+    if (!memes) pagesGlissees($(".glisse", zone), $$(".segments-pages button", zone));
     const b = $("#cmp-sim", zone);
     if (b) b.onclick = () => { etat.simA = fa; etat.simB = fb; location.hash = `#/deck/${enc(d.id)}/simulation`; };
   } catch (e) { zone.innerHTML = `<p class="erreur">${esc(e.message)}</p>`; }
+}
+
+// des pages côte à côte, une à la fois : on passe de l'une à l'autre en glissant (au doigt) ou par leurs onglets.
+// .cote-a-cote : sur un grand écran (hors téléphone), toutes visibles côte à côte, sans onglets.
+function pagesGlissees(cadre, onglets, depart = 0) {
+  const pages = [...cadre.children];
+  let n = Math.min(Math.max(0, depart), pages.length - 1);
+  const glisse = () => getComputedStyle(cadre).display === "flex";
+  const ajuster = () => { cadre.style.height = glisse() ? pages[n].offsetHeight + "px" : ""; };
+  const marquer = () => onglets.forEach((o, i) => { o.classList.toggle("actif", i === n); o.setAttribute("aria-selected", i === n); });
+  const aller = (i, doux = true) => {
+    n = i;
+    marquer();
+    ajuster();
+    if (glisse()) cadre.scrollTo({ left: i * cadre.clientWidth, behavior: doux ? "smooth" : "auto" });
+    cadre.dispatchEvent(new CustomEvent("page", { detail: n }));
+  };
+  onglets.forEach((o, i) => o.addEventListener("click", () => aller(i)));
+  let minuteur;
+  cadre.addEventListener("scroll", () => {
+    clearTimeout(minuteur);
+    minuteur = setTimeout(() => {
+      const i = Math.round(cadre.scrollLeft / cadre.clientWidth);
+      if (i !== n && pages[i]) aller(i, false);
+    }, 90);
+  }, { passive: true });
+  const ro = new ResizeObserver(() => { if (cadre.isConnected) ajuster(); else ro.disconnect(); });
+  pages.forEach((p) => ro.observe(p));
+  requestAnimationFrame(() => aller(n, false));
+  return { aller };
 }
 
 // ------------------------------------------------------------------ onglet Bracket
@@ -3695,20 +3958,22 @@ function ligneCombo(c, carte = null) {
       etatCarte = `Pas dans le deck : ${manque.map((f) => `${nc(f.nom, f.fr || f.nom)} <span class="${(f.prix || 0) > BUDGET ? "cher" : "muet"}">${euros(f.prix)}</span>`).join(" · ")}${maybe}`;
     }
   }
-  return `<div class="combo">
-    <div class="combo-ligne">
-      <div class="combo-cartes">${fiches.map(nomCombo).join(`<span class="plus">+</span>`)}${(c.autres || []).map((t) =>
-        `<span class="plus">+</span><span class="cc-autre" title="N'importe quelle carte de ce genre">${esc(t)}</span>`).join("")}</div>
-      <div class="combo-source">${SOURCES[c.source]}${info ? ` · ${info}` : ""}</div>
-      <div><span class="classe classe-${esc(c.classe)}">${esc(c.classe_lib)}</span></div>
-    </div>
+  const images = c.fiches.filter((f) => f.image).slice(0, 4);
+  return `<article class="combo">
+    <div class="combo-images" aria-hidden="true">${images.map((f) => `<img src="${esc(f.image)}" alt="" loading="lazy">`).join("")}</div>
+    <div class="combo-corps">
+    <div class="combo-haut"><span class="classe classe-${esc(c.classe)}">${esc(c.classe_lib)}</span>
+      <span class="combo-source">${SOURCES[c.source]}${info ? ` · ${info}` : ""}</span></div>
+    <div class="combo-cartes">${fiches.map(nomCombo).join(`<span class="plus">+</span>`)}${(c.autres || []).map((t) =>
+      `<span class="plus">+</span><span class="cc-autre" title="N'importe quelle carte de ce genre">${esc(t)}</span>`).join("")}</div>
     ${etatCarte ? `<div class="combo-manque petit">${etatCarte}</div>` : ""}
     ${details ? `<details class="combo-details"><summary>${esc(c.titre || (c.resultats || []).join(" · ") || "Comment ça marche")}</summary>
         ${c.explication ? `<p class="petit">${esc(c.explication)}</p>` : ""}
         ${c.prerequis ? `<p class="petit"><strong>Il faut :</strong> ${esc(c.prerequis)}</p>` : ""}
         ${etapes.length ? `<ol class="etapes petit">${etapes.map((l) => `<li>${esc(l)}</li>`).join("")}</ol>` : ""}
         ${lien}</details>` : lien ? `<div class="combo-lien">${lien}</div>` : ""}
-  </div>`;
+    </div>
+  </article>`;
 }
 
 // ---- vue « le deck » : les combos présentes
@@ -3722,17 +3987,26 @@ async function vueCombosDeck(zone, d) {
     <p><strong>${r.combos.length ? `${r.combos.length} combo${r.combos.length > 1 ? "s" : ""} dans le deck` : "Aucune combo connue dans le deck"}</strong></p>
     ${r.erreur ? `<p class="erreur petit">Commander Spellbook ne répond pas : ${esc(r.erreur)}</p>` : ""}
     ${r.combos.length ? `<div class="combos">${r.combos.map((c) => ligneCombo(c)).join("")}</div>` : ""}
-    <div id="cb-mtgpics" class="petit ligne-outil"></div>
-    <div id="cb-claude" class="petit ligne-outil"></div>`;
+    <div class="cb-sources">
+      <div id="cb-mtgpics" class="petit ligne-outil"></div>
+      <div id="cb-claude" class="petit ligne-outil"></div>
+    </div>`;
   rendreMtgpics($("#cb-mtgpics", zone), d, r.mtgpics, () => vueCombosDeck(zone, d));
   rendreClaude($("#cb-claude", zone), d, r.synergies, () => vueCombosDeck(zone, d));
 }
 
+// une source de combos, en bas de l'onglet : son nom et son état, puis son bouton
+const ligneSource = (nom, etat, bouton = "") => `<div class="source-texte"><strong>${nom}</strong><span class="muet">${etat}</span></div>${bouton}`;
+
 // Combos MTGPics : lues carte par carte (une requête toutes les 1,5 s), gardées 30 jours
 function rendreMtgpics(zone, d, st, apres) {
-  if (!st) return;
+  if (!st) {                                         // téléphone sans PC : rien de lu ici
+    if (TELEPHONE) zone.innerHTML = ligneSource("MTGPics", "Pas encore lues", `<button class="btn btn-petit" data-pc="mtgpics">Lire</button>`);
+    return;
+  }
+  if (st.actif && TELEPHONE) { zone.innerHTML = ligneSource("MTGPics", `<span class="pulse">●</span> lecture en cours sur le PC…`); return; }
   if (st.actif) {
-    zone.innerHTML = `<span class="pulse">●</span> MTGPics : ${st.fait} / ${st.total}…`;
+    zone.innerHTML = ligneSource("MTGPics", `<span class="pulse">●</span> ${st.fait} / ${st.total}…`);
     setTimeout(async () => {
       if (!zone.isConnected) return;
       const s = await api(`/api/decks/${enc(d.id)}/mtgpics`).catch(() => null);
@@ -3744,11 +4018,11 @@ function rendreMtgpics(zone, d, st, apres) {
   }
   const reste = st.cartes - st.connues;
   const minutes = Math.max(1, Math.round((reste * 4 * 1.5) / 60));
+  const err = st.erreur ? ` · <span class="erreur">${esc(st.erreur)}</span>` : "";
   zone.innerHTML = reste
-    ? `MTGPics : ${st.connues} / ${st.cartes} cartes lues
-       <button class="btn btn-petit" id="btn-mtgpics">Lire ${reste === st.cartes ? "tout" : `les ${reste} autres`} (≈ ${minutes} min)</button>`
-    : "";
-  if (st.erreur) zone.insertAdjacentHTML("beforeend", ` <span class="erreur">${esc(st.erreur)}</span>`);
+    ? ligneSource("MTGPics", `${st.connues} / ${st.cartes} cartes lues · ≈ ${minutes} min pour ${reste === st.cartes ? "tout lire" : "le reste"}${err}`,
+      `<button class="btn btn-petit" id="btn-mtgpics" ${TELEPHONE ? 'data-pc="mtgpics"' : ""}>Lire ${reste === st.cartes ? "tout" : `les ${reste} autres`}</button>`)
+    : ligneSource("MTGPics", `${st.cartes} cartes lues${err}`);
   const b = $("#btn-mtgpics", zone);
   if (b) b.onclick = async () => {
     try { rendreMtgpics(zone, d, await api(`/api/decks/${enc(d.id)}/mtgpics`, { method: "POST", body: {} }), apres); }
@@ -3757,9 +4031,11 @@ function rendreMtgpics(zone, d, st, apres) {
 }
 
 function rendreClaude(zone, d, st, apres) {
+  st = st || {};                                     // téléphone sans PC : jamais lancé ici
+  if (st.actif && TELEPHONE) { zone.innerHTML = ligneSource("Claude", `<span class="pulse">●</span> cherche les synergies sur le PC…`); return; }
   if (st.actif) {
     const duree = (debut) => { const m = debut ? Math.floor((Date.now() / 1000 - debut) / 60) : 0; return m >= 1 ? ` · ${m} min` : ""; };
-    zone.innerHTML = `<span class="pulse">●</span> Claude cherche les synergies…<span class="muet" data-duree>${duree(st.debut)}</span>`;
+    zone.innerHTML = ligneSource("Claude", `<span class="pulse">●</span> cherche les synergies…<span data-duree>${duree(st.debut)}</span>`);
     (async () => {
       while (zone.isConnected) {
         await attendre(3000);
@@ -3775,9 +4051,9 @@ function rendreClaude(zone, d, st, apres) {
     return;
   }
   const r = st.resultat;
-  zone.innerHTML = `${st.erreur ? `<span class="erreur">${esc(st.erreur)}</span> ` : ""}
-    ${r ? `Synergies Claude du ${new Date(r.date * 1000).toLocaleDateString("fr-FR")}${st.a_jour ? "" : " · la liste a changé"}` : ""}
-    <button class="btn btn-petit" id="btn-claude">${ico("discussion")}${r ? "Relancer" : "Chercher les synergies avec Claude"}</button>`;
+  zone.innerHTML = ligneSource("Claude", `${r ? `Synergies du ${new Date(r.date * 1000).toLocaleDateString("fr-FR")}${st.a_jour ? "" : " · la liste a changé"}`
+      : "Synergies entre les cartes du deck"}${st.erreur ? ` · <span class="erreur">${esc(st.erreur)}</span>` : ""}`,
+    `<button class="btn btn-petit" id="btn-claude" ${TELEPHONE ? 'data-pc="synergies"' : ""}>${ico("discussion")}${r ? "Relancer" : "Chercher"}</button>`);
   $("#btn-claude", zone).onclick = async () => {
     try { rendreClaude(zone, d, await api(`/api/decks/${enc(d.id)}/synergies`, { method: "POST", body: {} }), apres); }
     catch (e) { erreur(e); }
@@ -3995,8 +4271,8 @@ async function ongletSimulation(conteneur, d, rapportInitial = null) {
   el.innerHTML = `
     <div class="panneau sim-lancer ecrit">
       <div class="sim-boutons">
-        <button class="btn btn-accent" id="s-lancer">${ico("lancer")}Tester le deck</button>
-        <button class="btn" id="s-claude">${ico("discussion")}Affiner avec Claude</button>
+        <button class="btn btn-accent" id="s-lancer" data-pc="simulation">${ico("lancer")}Tester le deck</button>
+        <button class="btn" id="s-claude" data-pc="claude">${ico("discussion")}Affiner avec Claude</button>
       </div>
       ${nivCov ? `<div class="sim-couverture"><span>Cartes comprises</span>
         <span class="jauge"><span class="jauge-piste"><span class="jauge-barre jauge-${nivCov}" style="width:${Math.max(3, Math.round(partCov * 100))}%"></span></span>
@@ -4254,13 +4530,11 @@ function penseBeteTexte(form) {
       <p class="muet petit">Anglais : <code class="brut">{T}: Add {C}{C}.</code> Français : <code class="brut">{T} : Ajoutez {C}{C}.</code></p>
       <h3>Exemples</h3>
       <table>${PB_EXEMPLES.map(([c, t]) => ligne(c, t, true)).join("")}</table>
-    </div>
-    <div class="form-ligne" style="justify-content:flex-end;margin:1rem 0 0"><button type="button" class="btn" data-act="fermer">Fermer</button></div>`,
+    </div>`,
   (b) => {
     $$("[data-exemple]", b).forEach((x) => {
       x.onclick = () => { form.elements.texte.value = x.dataset.exemple; fermerModale(); form.elements.texte.focus(); };
     });
-    $('[data-act="fermer"]', b).onclick = fermerModale;
   }, { focus: false, large: true });
 }
 
@@ -5250,6 +5524,18 @@ const plusieursExemplaires = (x) => /\bBasic\b/.test(x.type || "") || PLUSIEURS_
 const lienGatherer = (nom) => `https://gatherer.wizards.com/search?searchTerm=${enc(ic_cle(nom))}`;
 
 // le bloc « Ajouter à … » de la fiche : où (deck ou Maybeboard), tags, et un seul bouton
+// le bas de la fiche d'une carte : ce qu'on peut en faire
+function piedFiche(actions) {
+  return actions.trim() && !PARTAGE ? `<div class="modale-pied fc-pied"><div class="fc-actions ecrit" role="group" aria-label="Actions sur la carte">${actions}</div></div>` : "";
+}
+// sur les côtés de l'image : les flèches vers la carte précédente et la suivante (au doigt, on peut aussi glisser)
+function flechesFiche(pos, n) {
+  if (pos < 0 || n < 2) return "";
+  const fleche = (sens, cache) => `<button type="button" class="fc-fleche fc-${sens}" data-act="${sens}" ${cache ? "hidden" : ""}
+      aria-label="${sens === "prec" ? "Carte précédente" : "Carte suivante"}" title="${pos + 1} / ${n}">${ico(sens === "prec" ? "precedent" : "suivant")}</button>`;
+  return fleche("prec", pos === 0) + fleche("suiv", pos === n - 1);
+}
+
 function blocAjoutRch(x, d) {
   const dans = x.dans === "deck" || x.dans === "commandant";
   const multi = plusieursExemplaires(x);
@@ -5261,18 +5547,13 @@ function blocAjoutRch(x, d) {
   const promotion = x.dans === "maybe";
   const dest = promotion ? "deck" : PREF.get("rf-dest", "deck");
   return `<div class="rf-ajout">
-    <div class="rf-ajout-tete">
-      <span>${promotion ? `Au Maybeboard de <strong>${esc(d.titre)}</strong>` : `Ajouter à <strong>${esc(d.titre)}</strong>`}</span>
-      ${promotion ? "" : `<div class="segments" role="group" aria-label="Où ajouter la carte">${[["deck", "Deck"], ["maybe", "Maybeboard"]].map(([k, l]) =>
-        `<button type="button" data-dest="${k}" class="${k === dest ? "actif" : ""}" aria-pressed="${k === dest}">${l}</button>`).join("")}</div>`}
-    </div>
-    <div class="rf-ajout-ligne">
-      ${promotion ? "" : `
-        <input class="champ champ-petit" id="rf-tags" list="rf-cats" placeholder="Tags" aria-label="Tags, séparés par des virgules">
-        <datalist id="rf-cats">${(d.categories || []).map((t) => `<option value="${esc(t)}">`).join("")}</datalist>`}
-      ${multi && !promotion ? `<label class="petit muet rf-n">Exemplaires <input class="champ champ-petit" type="number" id="rf-n" min="1" max="99" value="1"></label>` : ""}
-      <button class="btn btn-accent" data-act="ajouter">${libelleAjout(x, dest)}</button>
-    </div>
+    ${promotion ? `<span class="rf-promo">Au Maybeboard de <strong>${esc(d.titre)}</strong></span>` : `
+      <input class="champ" id="rf-tags" list="rf-cats" placeholder="Tags" aria-label="Tags, séparés par des virgules">
+      <datalist id="rf-cats">${(d.categories || []).map((t) => `<option value="${esc(t)}">`).join("")}</datalist>`}
+    ${multi && !promotion ? `<label class="petit muet rf-n">Exemplaires <input class="champ" type="number" id="rf-n" min="1" max="99" value="1"></label>` : ""}
+    ${promotion ? "" : `<div class="segments rf-dest" role="group" aria-label="Où ajouter la carte">${[["deck", d.titre], ["maybe", "Maybeboard"]].map(([k, l]) =>
+      `<button type="button" data-dest="${k}" class="${k === dest ? "actif" : ""}" aria-pressed="${k === dest}"><span class="seg-lib">${esc(l)}</span></button>`).join("")}</div>`}
+    <button class="btn btn-accent" data-act="ajouter">${libelleAjout(x, dest)}</button>
   </div>`;
 }
 
@@ -5298,11 +5579,10 @@ function ficheRecherche(i, ctx = null) {
         <div class="fc-version">
           ${v ? `<span class="petit muet">${esc(v.edition)}${v.annee ? " · " + esc(v.annee) : ""}${v.lang === "fr" ? " · en français" : ""}</span>` : x.edition ? `<span class="petit muet">${esc(x.edition.nom)} · ${esc(x.edition.annee)}</span>` : ""}
           <button type="button" class="lien-discret ecrit" data-act="version">${x.versions > 1 ? `${x.versions} versions` : "Changer la version"}</button>
-        </div></div>
+        </div>${flechesFiche(i, liste.length)}</div>
       <div class="fc-infos">
         <div class="fc-tete">
           <div><h2>${esc(x.fr || x.nom)} ${mana(x.cout)}</h2>${x.fr && x.fr !== x.nom ? `<div class="muet">${esc(x.nom)}</div>` : ""}</div>
-          <button class="btn btn-discret btn-icone" data-act="fermer" aria-label="Fermer">${ico("fermer")}</button>
         </div>
         <div class="petit muet">${esc(x.type_fr || x.type)}${x.pt ? " · " + esc(x.pt) : ""}</div>
         <div class="chiffres" id="rf-prix">
@@ -5313,20 +5593,14 @@ function ficheRecherche(i, ctx = null) {
         <div id="rf-assemble"></div>
         ${x.texte_fr || x.texte ? `<div class="texte fs-texte">${texte(x.texte_fr || x.texte)}</div>` : ""}
         ${x.texte_fr && x.texte ? `<details class="petit"><summary>Texte anglais</summary><div class="fs-texte" style="margin-top:.4rem">${texte(x.texte)}</div></details>` : ""}
-        ${d && !PARTAGE ? blocAjoutRch(x, d) : ""}
         <div class="fc-liens">
           ${d && !PARTAGE ? `<a href="#/deck/${enc(d.id)}/combos/${enc(x.nom)}">${ico("combos")}Combos avec cette carte</a>` : ""}
           <a href="${esc(lienCardmarket(x.nom))}" id="rf-cardmarket" target="_blank" rel="noopener">${ico("panier")}Cardmarket ↗</a>
           <a href="${esc(lienGatherer(x.nom))}" id="rf-gatherer" target="_blank" rel="noopener">${ico("livre")}Gatherer ↗</a>
         </div>
-        ${liste.length > 1 ? `
-          <div class="fc-nav">
-            <button class="btn btn-petit" data-act="prec" ${i === 0 ? "disabled" : ""}>${ico("precedent")}Précédente</button>
-            <span class="muet petit">${i + 1} / ${liste.length}</span>
-            <button class="btn btn-petit" data-act="suiv" ${i === liste.length - 1 ? "disabled" : ""}>Suivante${ico("suivant")}</button>
-          </div>` : ""}
       </div>
-    </div>`, (b) => {
+    </div>
+    ${piedFiche(d && !PARTAGE ? blocAjoutRch(x, d) : "")}`, (b) => {
     let dest = x.dans === "maybe" ? "deck" : PREF.get("rf-dest", "deck");
     ouEst($(".ou-est", b), x.nom, d && d.id);
     b.addEventListener("click", async (ev) => {
@@ -5743,6 +6017,7 @@ async function basculeChat(ouvrir) {
 }
 
 async function ouvrirChat(texte) {
+  if (TELEPHONE) return surPC("claude");
   const ctx = deckDeLaPage();
   if (ctx !== null) await choisirDiscussion(ctx);      // « Expliquer avec Claude » : la discussion du deck affiché
   await basculeChat(true);
@@ -5789,6 +6064,14 @@ async function arreterChat() {
 }
 
 $("#btn-chat").addEventListener("click", () => basculeChat());
+// téléphone : un élément « à faire sur le PC » dit où le faire, au lieu d'agir
+if (TELEPHONE) document.addEventListener("click", (ev) => {
+  const el = ev.target.closest("[data-pc]");
+  if (!el) return;
+  ev.preventDefault();
+  ev.stopImmediatePropagation();
+  surPC(el.dataset.pc);
+}, true);
 if (PC) {
   chat.contexte = deckDeLaPage();
   chat.cle = chat.contexte ?? PREF.get("chat-discussion", "");

@@ -277,8 +277,26 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .menu-titre { padding: .35rem .7rem .15rem; font-size: .78rem; color: var(--texte-2); }
 .menu-sep { border: 0; border-top: 1px solid var(--bord); margin: .3rem .2rem; }
 .modale { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.35); display: flex; align-items: flex-start; justify-content: center; padding: 6vh 1rem; }
-.modale-boite { width: min(680px, 100%); max-height: 88vh; overflow: auto; background: var(--surface); border-radius: 12px; box-shadow: var(--ombre); padding: 1.1rem 1.2rem 1.2rem; }
+.modale-boite { position: relative; display: flex; flex-direction: column; width: min(680px, 100%); max-height: 88vh; overflow: hidden;
+  background: var(--surface); border-radius: 12px; box-shadow: var(--ombre); }
+.modale-corps { overflow: auto; overscroll-behavior: contain; padding: 1.1rem 1.2rem 1.2rem; }
+.modale-fermer { position: absolute; z-index: 2; top: .55rem; right: .55rem; }
+.modale-corps h2, .modale-corps .versions-tete { padding-right: 2.6rem; }
 .modale-boite h2 { margin-top: 0; }
+@media (max-width: 600px) {
+  .modale { align-items: flex-end; padding: 0; }
+  .modale-boite, .modale-boite.large { width: 100%; max-height: calc(100vh - 2.5rem); max-height: calc(100dvh - 2.5rem); border-radius: 16px 16px 0 0;
+    animation: monte .18s ease-out; }
+  .modale-corps { padding: 1.4rem 1rem calc(1.25rem + env(safe-area-inset-bottom)); }
+  .modale-boite::before { content: ""; position: absolute; z-index: 2; top: 7px; left: 50%; width: 36px; height: 4px; margin-left: -18px;
+    border-radius: 2px; background: var(--bord); }                 /* la poignée : on tire la fenêtre vers le bas pour la fermer */
+  .menu { left: 0 !important; right: 0; top: auto !important; bottom: 0; min-width: 0; max-height: 75dvh !important; border-radius: 16px 16px 0 0;
+    padding: .5rem .5rem calc(.5rem + env(safe-area-inset-bottom)); animation: monte .18s ease-out; }
+  .menu button { min-height: 48px; font-size: 1rem; }
+  body:has(#menu:not([hidden]))::after { content: ""; position: fixed; inset: 0; z-index: 65; background: rgba(0, 0, 0, .35); }
+}
+@keyframes monte { from { transform: translateY(24px); opacity: .6; } }
+@media (prefers-reduced-motion: reduce) { .modale-boite, .menu { animation: none; } }
 .modale-boite:focus { outline: none; }
 .modale-boite.large { width: min(860px, 100%); }
 /* fiche d'une carte */
@@ -290,8 +308,38 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .fc-infos .texte { white-space: normal; font-size: .9rem; background: var(--surface-2); border-radius: 8px; padding: .6rem .75rem; }
 .fc-ligne { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
 .fc-ligne > .petit:first-child { min-width: 5.5rem; }
-.fc-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .3rem; }
-.fc-nav { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-top: auto; padding-top: .6rem; border-top: 1px solid var(--bord); }
+/* en bas de la fenêtre : ce qu'on fait (fiche : entre les flèches vers la carte précédente et la suivante) */
+.modale-pied { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .5rem; margin: 0;
+  padding: .65rem 1.2rem; border-top: 1px solid var(--bord); background: var(--surface); }
+.fc-pied .fc-actions { flex: 1; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: .5rem; min-width: 0; }
+.fc-pied .rf-ajout { flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; min-width: 0; background: none; padding: 0; }
+.fc-pied #rf-tags { flex: 1 1 10rem; min-width: 0; }
+.fc-pied .rf-n { display: inline-flex; align-items: center; gap: .35rem; }
+.fc-pied .rf-n .champ { width: 4.2rem; }
+.rf-dest { flex: none; max-width: 100%; }
+.rf-dest button { min-width: 0; max-width: 11rem; }
+.rf-dest .seg-lib { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rf-promo { flex: 1; min-width: 0; }
+/* les flèches de la fiche : rondes, sur les côtés de l'image */
+.fc-image { position: relative; }
+.fc-fleche { position: absolute; z-index: 1; top: 34%; display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; color: #fff;
+  background: rgba(0, 0, 0, .55); box-shadow: 0 2px 10px rgba(0, 0, 0, .4); }
+.fc-fleche:hover { background: rgba(0, 0, 0, .75); }
+.fc-fleche .ico { width: 22px; height: 22px; }
+.fc-prec { left: -.5rem; }
+.fc-suiv { right: -.5rem; }
+@media (max-width: 640px) { .fc-prec { left: .35rem; } .fc-suiv { right: .35rem; } }
+@media (max-width: 600px) {                        /* téléphone : les tags sur toute la largeur, puis où et Ajouter */
+  .fc-pied #rf-tags { flex-basis: 100%; }
+  .fc-pied .rf-dest { flex: 1; display: flex; }
+  .fc-pied .rf-dest button { flex: 1; max-width: none; }
+}
+.fc-liens { margin-top: auto; padding-top: .7rem; border-top: 1px solid var(--bord); }
+@media (max-width: 600px) {
+  .modale-pied { padding: .6rem .75rem calc(.6rem + env(safe-area-inset-bottom)); }
+  .modale-boite:has(> .modale-pied) .modale-corps { padding-bottom: 1rem; }
+}
 @media (max-width: 640px) { .fiche-carte { grid-template-columns: 1fr; } .fc-image { max-width: 240px; margin: 0 auto; } }
 
 /* changer la version (le visuel) d'une carte */
@@ -497,16 +545,31 @@ button.puce-dispo:hover { border-color: var(--accent); color: var(--accent); }
 /* ---- onglet Combos : le deck, ou une carte */
 a.btn { display: inline-flex; align-items: center; text-decoration: none; color: inherit; font: inherit; }
 a.btn-accent { color: var(--accent-texte); }      /* un lien en bouton orange : même texte que les autres boutons orange */
-.combos { border-top: 1px solid var(--bord); margin-top: .4rem; }
-.combo { border-bottom: 1px solid var(--bord); padding: .6rem .25rem; }
-.combo-ligne { display: grid; grid-template-columns: minmax(0, 1fr) auto 7.5rem; gap: .8rem; align-items: center; }
+/* une combo : les images de ses cartes en éventail, sa nature, ses cartes, puis comment elle marche */
+.combos { display: grid; gap: .6rem; margin-top: .5rem; }
+.combo { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .85rem; align-items: start; padding: .75rem .85rem;
+  background: var(--surface); border: 1px solid var(--bord); border-radius: var(--rayon); }
+.combo-images { display: flex; padding-top: .15rem; }
+.combo-images:empty { display: none; }
+.combo:has(.combo-images:empty) { grid-template-columns: minmax(0, 1fr); }
+.combo-images img { display: block; width: 50px; aspect-ratio: 488 / 680; border-radius: 3px; box-shadow: 0 2px 8px rgba(0, 0, 0, .4); background: var(--surface-2); }
+.combo-images img + img { margin-left: -28px; }
+.combo-corps { min-width: 0; display: grid; gap: .3rem; }
+.combo-haut { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .3rem .6rem; }
+/* les sources de combos : un encadré, une ligne par source (son nom et son état, puis son bouton) */
+.cb-sources { display: grid; margin-top: 1.2rem; padding: 0 .9rem; background: var(--surface); border: 1px solid var(--bord); border-radius: var(--rayon); }
+.cb-sources .ligne-outil { display: flex; flex-wrap: nowrap; align-items: center; gap: .8rem; margin: 0; padding: .6rem 0; }
+.cb-sources .ligne-outil:empty { display: none; }
+.cb-sources .ligne-outil:not(:empty) ~ .ligne-outil:not(:empty) { border-top: 1px solid var(--bord); }
+.cb-sources:not(:has(.ligne-outil:not(:empty))) { display: none; }
+.source-texte { flex: 1; min-width: 0; display: grid; gap: .1rem; }
 .combo-cartes { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .35rem; min-width: 0; }
 .cc { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--accent); cursor: pointer; text-align: left; }
 .cc:hover { text-decoration: underline; text-underline-offset: 3px; }
 .cc-dans { color: var(--texte); }
 .cc-autre { font-style: italic; color: var(--texte-2); font-size: .88rem; }
 .combo-cartes .plus { color: var(--texte-2); }
-.combo-source { font-size: .8rem; color: var(--texte-2); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.combo-source { font-size: .8rem; color: var(--texte-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .classe { display: inline-block; font-size: .78rem; font-weight: 600; padding: .1rem .55rem; border-radius: 999px; border: 1px solid var(--bord); background: var(--surface-2); color: var(--texte-2); }
 .classe-victoire { background: var(--alerte-doux); border-color: transparent; color: var(--alerte); }
 .classe-verrou { background: var(--info-doux); border-color: transparent; color: var(--info); }
@@ -785,9 +848,7 @@ a.btn-accent { color: var(--accent-texte); }      /* un lien en bouton orange : 
 .fn-rapides .rch-bascule { font-size: .8rem; padding: .15rem .55rem; }
 #fn-choisies:empty { display: none; }
 /* fiche d'une carte du deck : les actions sur la carte, puis les liens */
-.fc-bloc-actions { display: grid; gap: .4rem; background: var(--surface-2); border-radius: 10px; padding: .6rem .7rem; }
-.fc-bloc-actions .fc-actions { margin-top: 0; }
-.fc-retirer { margin-left: auto; }
+
 /* champ du haut : cartes puis decks */
 .aller-section { padding: .45rem .55rem .2rem; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--texte-2); }
 .aller-section .muet { text-transform: none; letter-spacing: 0; font-weight: 400; }
@@ -801,7 +862,7 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
 .aller-liste { max-height: min(70vh, 560px); overflow: auto; }
 
 /* page partagée (lecture seule) : ni ce qui modifie, ni la recherche, ni la discussion */
-.partage :is(.ecrit, .aller, #btn-rafraichir, #etat-maj, .ligne-outil, #lien-options) { display: none !important; }
+.partage :is(.ecrit, .aller, #btn-rafraichir, #etat-maj, .ligne-outil, #lien-options, #lien-classeur) { display: none !important; }
 /* nouvelle version de l'Atelier à installer */
 /* une ligne fine, de la couleur de l'en-tête, avec une pastille orange ; les nouveautés sur une ligne (en entier au survol) */
 .bandeau-maj { position: relative; display: flex; align-items: center; justify-content: center; gap: .4rem 1rem; padding: .35rem 1rem;
@@ -968,7 +1029,7 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
 .chat .vitrine-invite { top: 40%; transform: translate(-50%, -50%); }
 
 /* ---- onglet Achats : à acheter | j'ai déjà, côte à côte sur un écran large */
-.achats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 0 2.2rem; align-items: start; }
+.achats { margin-top: .6rem; }
 .achats .groupe-titre { flex-wrap: wrap; align-items: center; min-height: 2.1rem; }
 .achats-cout { font-variant-numeric: tabular-nums; }
 .achats-outils { margin-left: auto; display: inline-flex; flex-wrap: wrap; align-items: center; gap: .3rem; font-weight: 400; }
@@ -1195,7 +1256,7 @@ label.btn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; 
 .qr-telephone { width: min(18rem, 70vw); margin: .4rem auto 1rem; padding: .6rem; background: #fff; border-radius: var(--rayon); }
 .qr-telephone svg { display: block; width: 100%; height: auto; }
 /* dans l'appli du téléphone : ce qui ne tourne que sur le PC (pour l'instant) */
-.telephone :is(#btn-rafraichir, #etat-maj, #btn-chat, .pc-seulement, #cb-claude, #cb-mtgpics) { display: none !important; }
+.telephone :is(#btn-rafraichir, #etat-maj) { display: none !important; }
 .tel-accueil { display: grid; gap: 1rem; justify-items: center; max-width: 26rem; margin: 12vh auto 0; padding: 0 1rem; text-align: center; }
 .tel-accueil h1 { margin: 0; }
 .tel-accueil video { width: 100%; border-radius: var(--rayon); background: #000; }
@@ -1226,3 +1287,122 @@ label.btn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; 
   .tag, a.prix, .aide-q, .fil a, .rch-nom { position: relative; }
   .tag::after, a.prix::after, .aide-q::after, .fil a::after, .rch-nom::after { content: ""; position: absolute; inset: -8px -4px; }
 }
+/* ---------------------------------------------------------------- l'appli du téléphone, comme une appli (app.js › barreAppli)
+   En haut : le retour (ou le chaudron), le titre de l'écran, la recherche, « … ». En bas : Decks, Recherche, Options.
+   Le « + » de l'écran flotte au-dessus. */
+#app-retour, #app-titre, #app-chercher, #app-menu, #app-fin-recherche, .app-onglets, .outils-plus { display: none; }
+.telephone .barre { gap: 0; min-height: 56px; box-sizing: border-box; padding: .3rem .35rem; }
+.telephone .barre :where(.aller, #lien-recherche, #lien-classeur, #lien-options, #btn-theme, #btn-chat, .espace) { display: none; }
+.telephone #opt-classeur .opt-titre h2 { display: none; }        /* le titre est dans la barre */
+.telephone .barre-droite { gap: 0; margin-left: auto; }
+.telephone .barre .logo { padding: 0 .6rem 0 .75rem; font-size: 0; }
+.telephone .barre .logo::before { width: 26px; height: 26px; }
+.telephone .barre .btn-icone { width: 44px; height: 44px; padding: 0; }
+.telephone .barre .btn-icone .ico { width: 22px; height: 22px; }
+.telephone #app-titre { display: block; flex: 1; min-width: 0; font-size: 1.15rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.telephone.appli-prete #app-chercher, .telephone #app-menu, .telephone #app-retour { display: inline-flex; }
+/* la recherche du haut : toute la barre, ses résultats tout l'écran */
+.telephone.app-recherche .barre .aller { display: flex; align-items: center; gap: .2rem; position: absolute; inset: 0; z-index: 3; padding: .3rem .6rem .3rem .35rem; background: var(--surface); }
+.telephone.app-recherche #app-fin-recherche { display: inline-flex; }
+.telephone .aller .champ { flex: 1; min-width: 0; height: 42px; }
+.telephone .aller-liste { position: fixed; top: var(--haut-barre, 56px); left: 0 !important; right: 0; bottom: 0; width: auto; max-width: none; max-height: none;
+  border: 0; border-top: 1px solid var(--bord); border-radius: 0; box-shadow: none; padding: .3rem .4rem calc(1rem + env(safe-area-inset-bottom)); }
+.telephone .aller-item { padding: .6rem .55rem; }
+/* les écrans principaux, en bas */
+.telephone.appli-prete .app-onglets { display: flex; position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; padding-bottom: env(safe-area-inset-bottom);
+  background: var(--surface); border-top: 1px solid var(--bord); }
+.app-onglets a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px;
+  text-decoration: none; color: var(--texte-2); font-size: .75rem; -webkit-tap-highlight-color: transparent; }
+.app-onglets a .ico { width: 24px; height: 24px; }
+.app-onglets a.actif { color: var(--accent); font-weight: 600; }
+.telephone.appli-prete body { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+.telephone.appli-prete .toast { bottom: calc(56px + 1rem + env(safe-area-inset-bottom)); max-width: calc(100vw - 2rem); box-sizing: border-box; }
+.telephone.appli-prete .tel-bandeau { bottom: calc(56px + .6rem + env(safe-area-inset-bottom)); }
+/* le « + » de l'écran (Nouveau deck, Ajouter des cartes), flottant */
+.telephone :is(#btn-nouveau, #btn-ajouter) { position: fixed; z-index: 19; right: 16px; bottom: calc(56px + 16px + env(safe-area-inset-bottom));
+  width: 56px; height: 56px; padding: 0; border-radius: 16px; font-size: 0; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
+.telephone :is(#btn-nouveau, #btn-ajouter) .ico { width: 26px; height: 26px; stroke-width: 2.2; }
+/* au clavier : ni les onglets du bas ni le « + » (ils monteraient avec lui) */
+.telephone body:has(:is(input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea):focus) :is(.app-onglets, #btn-nouveau, #btn-ajouter) { display: none; }
+.telephone body:has(:is(input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea):focus) { padding-bottom: 0; }
+/* le titre est dans la barre : ni fil d'Ariane ni grand titre ; l'en-tête du deck, compact */
+.telephone :is(.fil, .vue .titre-page > h1, .entete-deck h1, .entete-deck .actions) { display: none; }
+.telephone .vue { padding: .75rem .75rem 6rem; }
+.telephone .entete-deck .bandeau { height: 72px; }
+.telephone .entete-deck .cmds-entete { position: absolute; top: 20px; left: .75rem; margin: 0; --l: 56px; }
+.telephone .entete-deck.duo .cmds-entete { left: 1rem; }
+.telephone .entete-deck.duo .cmd-entete + .cmd-entete { margin-left: -32px; }
+.telephone .entete-deck .infos { display: block; padding: .5rem .75rem .65rem; min-height: 0; }
+.telephone .entete-deck .infos > div { min-width: 0; }
+.telephone .entete-deck.avec-cmd .infos { padding-left: calc(56px + 1.5rem); min-height: 0; }
+.telephone .entete-deck.duo .infos { padding-left: calc(2 * 56px - 32px + 2rem); }
+.telephone .entete-deck .infos .muet { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.telephone .entete-deck .chiffres { margin-top: .55rem !important; }
+.telephone .entete-deck.avec-cmd .chiffres { margin-left: calc(-56px - .75rem); }
+.telephone .entete-deck.duo .chiffres { margin-left: calc(-2 * 56px + 32px - 1.25rem); }
+.telephone .chiffres .badge { padding: .3rem .4rem; }
+/* les badges d'un deck en court (« 100/100 », « 1 GC ») : sur les cartes de l'accueil et l'en-tête du téléphone */
+.chf-c { display: none; }
+.carte-deck .chf-l, .telephone .entete-deck .chf-l { display: none; }
+.carte-deck .chf-c, .telephone .entete-deck .chf-c { display: inline; }
+/* la liste des decks en tableau : le deck, ses couleurs, ses cartes et son prix */
+.telephone .tableau-decks :is(th, td):nth-child(n+5) { display: none; }
+.telephone .onglets-deck { margin: .5rem -.75rem .25rem; padding: 0 .25rem; }
+.telephone .onglets a { padding: .55rem .75rem; }
+.telephone .onglets a .ico { display: none; }
+/* barres d'outils : le filtre et l'affichage ; le reste derrière le bouton des réglages */
+.telephone .repliable { gap: .5rem; }
+.telephone .barre-outils.repliable { flex-wrap: wrap; margin-top: .75rem; }
+.telephone .repliable .filtre, .telephone .sg-filtres.repliable input[type=search] { order: -2; flex: 1 1 0; min-width: 0; }
+.telephone .repliable > .segments { order: -1; }
+.telephone .repliable .seg-txt { display: none; }
+.telephone .repliable .outils-plus { display: inline-flex; order: -1; width: 44px; }
+.telephone .repliable .outils-plus[aria-expanded=true] { color: var(--accent); border-color: var(--accent); }
+.telephone .repliable:not(.ouvert) > .pli { display: none; }
+.telephone .repliable.ouvert > .pli { order: 1; }
+.telephone .repliable.ouvert::after { content: ""; order: 0; flex-basis: 100%; }      /* les réglages dépliés : à la ligne */
+.telephone .sg-tete { flex-wrap: nowrap; }
+.telephone .sg-tete .segments { flex-wrap: nowrap; }
+.telephone .sg-tete .segments:first-child { overflow-x: auto; min-width: 0; }
+.telephone .sg-tete .segments:last-child { flex: none; }
+.telephone .sg-tete .segments button { white-space: nowrap; }
+@media (pointer: coarse) { .modale-fermer { width: 44px; height: 44px; padding: 0; } .modale-fermer .ico { width: 22px; height: 22px; } }
+/* ---------------------------------------------------------------- des pages à glisser (app.js › pagesGlissees) :
+   une à la fois, choisies par leurs onglets ou en glissant ; .cote-a-cote : côte à côte sur un grand écran du PC */
+.segments-pages { display: flex; width: 100%; margin: .2rem 0 .7rem; }
+.segments-pages button { flex: 1; min-width: 0; white-space: nowrap; }
+.segments-pages .seg-lib { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.cmp-seulement { margin: .2rem 0 .35rem; }
+.glisse { display: flex; align-items: flex-start; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain; scrollbar-width: none; transition: height .2s ease; }
+.glisse::-webkit-scrollbar { display: none; }
+.glisse-page { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; }
+.glisse > .groupe { margin-top: 0; }
+.page-titre { display: none; }
+@media (min-width: 900px) {
+  html:not(.telephone) .cmp-seulement { display: none; }
+  html:not(.telephone) .glisse.cote-a-cote { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; overflow: visible; height: auto !important; }
+  html:not(.telephone) .segments-pages:has(+ .cote-a-cote) { display: none; }
+  html:not(.telephone) .cote-a-cote .page-titre { display: block; margin-top: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .glisse { transition: none; } }
+/* ---- Versions : une carte par version ; comparer deux versions */
+.versions { display: grid; gap: .6rem; }
+.version { background: var(--surface); border: 1px solid var(--bord); border-radius: var(--rayon); padding: .7rem .8rem; }
+.version-tete { display: flex; align-items: flex-start; gap: .5rem; }
+.version-nom { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.version-note { margin: .45rem 0 0; }
+.version-diff { margin: .45rem 0 0; }
+.version-diff summary { cursor: pointer; }
+.version-listes { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .4rem 1.5rem; margin-top: .45rem; }
+.version-listes ul { margin: .2rem 0 0; padding-left: 1.1rem; }
+.versions-auto { margin-top: 1rem; }
+.versions-auto > summary { cursor: pointer; }
+.versions-auto > .versions { margin-top: .6rem; }
+.cmp-choix { display: flex; flex-wrap: wrap; gap: .5rem; }
+.cmp-choix select { flex: 1 1 220px; min-width: 0; }
+.cmp-tuiles { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin-top: .9rem; }
+.cmp-tuile { min-width: 0; background: var(--surface-2); border-radius: 10px; padding: .6rem .7rem; }
+.cmp-tuile-nom { font-weight: 650; margin-bottom: .45rem; overflow-wrap: anywhere; }
+.cmp-communes { margin: .7rem 0; }
+.ligne.cmp-carte { grid-template-columns: minmax(0, 1fr) auto auto; }
