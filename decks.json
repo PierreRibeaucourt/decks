@@ -1588,7 +1588,7 @@
  },
  "Deck Tromo": {
   "slug": "tromo",
-  "date": 1794540330.1644359,
+  "date": 1794540672.8433514,
   "version": "1.7.6",
   "resume": {
    "alertes": {},
@@ -1609,12 +1609,12 @@
     "U"
    ],
    "image_cmd": "https://cards.scryfall.io/normal/front/f/1/f1a4dff1-8c2a-4a5e-94db-d4711c53f05d.jpg?1782817896",
-   "maybe": 6,
-   "modifie": 1794508197.1953983,
+   "maybe": 7,
+   "modifie": 1794540524.2881715,
    "note": "",
-   "prix_total": 125.76,
+   "prix_total": 125.65,
    "titre": "Tromo",
-   "total": 99,
+   "total": 98,
    "trop_cher": [
     "Sapphire Medallion",
     "Misleading Signpost",
@@ -1680,10 +1680,6 @@
    [
     "Misleading Signpost",
     "Poteau indicateur fallacieux"
-   ],
-   [
-    "Apprentice Wizard",
-    "Apprenti sorcier"
    ],
    [
     "Palladium Myr",
@@ -1896,6 +1892,10 @@
    [
     "Maze of Ith",
     "Labyrinthe d'Ith"
+   ],
+   [
+    "Apprentice Wizard",
+    "Apprenti sorcier"
    ],
    [
     "Floodpits Drowner",
