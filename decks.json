@@ -755,11 +755,11 @@
  },
  "Deck Sefris": {
   "slug": "sefris",
-  "date": 1794595646.7402306,
+  "date": 1794596980.1817982,
   "version": "2.1.0",
   "resume": {
    "alertes": {},
-   "art": "https://cards.scryfall.io/art_crop/front/d/c/dc26f632-89f9-4eed-9403-306b696d5da1.jpg?1782873174",
+   "art": "https://cards.scryfall.io/art_crop/front/e/7/e7432e83-ae0b-463d-9d5f-b8c319749fa2.jpg?1783926117",
    "bracket": 2,
    "bracket_raisons": [
     "aucun Game Changer, aucune combo infinie à 2 cartes : bracket 2 (ou 1 si le deck est très décontracté)"
@@ -775,9 +775,9 @@
     "U",
     "W"
    ],
-   "image_cmd": "https://cards.scryfall.io/normal/front/d/c/dc26f632-89f9-4eed-9403-306b696d5da1.jpg?1782873174",
+   "image_cmd": "https://cards.scryfall.io/normal/front/e/7/e7432e83-ae0b-463d-9d5f-b8c319749fa2.jpg?1783926117",
    "maybe": 1,
-   "modifie": 1793822475.3802023,
+   "modifie": 1794596829.8399198,
    "note": "",
    "prix_total": 78.6,
    "titre": "Sefris",
