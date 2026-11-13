@@ -235,6 +235,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .duo .cmd-entete + .cmd-entete { margin-left: -50px; }
   .entete-deck.avec-cmd .infos, .entete-deck.duo .infos { padding-left: 1.1rem; min-height: 0; }
 }
+@media (max-width: 560px) {                        /* téléphone : un en-tête compact, le commandant à gauche du titre */
+  .entete-deck .bandeau { height: 92px; }
+  .cmds-entete, .duo .cmds-entete { position: absolute; left: 1rem; top: 36px; margin: 0; --l: 84px; }
+  .duo .cmds-entete { left: 1.3rem; }
+  .duo .cmd-entete + .cmd-entete { margin-left: -46px; }
+  .entete-deck.avec-cmd .infos { padding: .7rem .9rem .9rem calc(84px + 1.9rem); min-height: 72px; gap: .6rem 1rem; }
+  .entete-deck.duo .infos { padding-left: calc(2 * 84px - 46px + 2.4rem); }
+  .entete-deck h1 { font-size: 1.5rem; }
+  /* les boutons sur toute la largeur, sous la carte du commandant (le titre et les badges, au-dessus, sont plus hauts qu'elle) */
+  .entete-deck.avec-cmd .actions { flex-basis: calc(100% + 84px + 1rem); margin-left: calc(-84px - 1rem); }
+  .entete-deck.duo .actions { flex-basis: calc(100% + 2 * 84px - 46px + 1.5rem); margin-left: calc(-2 * 84px + 46px - 1.5rem); }
+}
 }
 @media (max-width: 560px) { .etale { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); } }
 .ligne { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) auto auto 4.6rem 2rem; align-items: center; gap: .6rem;
@@ -329,13 +341,13 @@ select.champ.champ-petit, .moteur select.champ.champ-petit { padding-right: 1.8r
 .bloc { display: block; margin-top: .8rem; }
 .bloc .champ { margin-top: .3rem; }
 .cmd-choisi { display: flex; align-items: center; gap: .8rem; margin-top: .4rem; padding: .5rem; border: 1px solid var(--bord); border-radius: 8px; }
-.cmd-choisi img { width: 64px; border-radius: 4px; }
+.cmd-choisi > img { width: 64px; border-radius: 4px; }                 /* l'image seule : pas les symboles de mana */
 .cmd-choisi > div { flex: 1; min-width: 0; }
 @media (max-width: 560px) { .res-carte { grid-template-columns: minmax(0, 1fr) 4.2rem; } .res-carte .cout, .res-badges { display: none; } }
 .fiche { display: grid; grid-template-columns: 180px 1fr; gap: 1rem; margin-top: .75rem; }
 .fiche-image > img { display: block; width: 180px; border-radius: 9px; }
 .form-ligne { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: .75rem; }
-.boutons { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1rem; }
+.boutons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; margin-top: 1rem; }
 @media (max-width: 560px) { .fiche { grid-template-columns: 1fr; } .fiche-image, .fiche-image > img { width: 160px; } }
 /* sur un écran bas, l'image rapetisse pour tenir entière avec sa légende */
 .apercu { position: fixed; z-index: 60; width: min(244px, calc((100vh - 70px) * 488 / 680)); pointer-events: none; }
@@ -899,7 +911,7 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
 .ap-zoom { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 2vh 2vw;
   background: rgba(0,0,0,.86); cursor: zoom-out; }
 .ap-zoom img { max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
-/* installation : trois façons, une par onglet ; la carte de l'onglet choisi dessous */
+/* installation : quatre façons, une par onglet ; la carte de l'onglet choisi dessous */
 .ap-onglets { display: inline-flex; gap: 4px; padding: 4px; margin-top: .4rem; background: var(--surface); border: 1px solid var(--bord);
   border-radius: 10px; }
 .ap-onglets [role=tab] { display: inline-flex; align-items: center; gap: .5rem; padding: .5rem 1rem; border: 0; border-radius: 7px;
@@ -922,10 +934,13 @@ button.aller-item { width: 100%; border: 0; background: none; font: inherit; col
   cursor: pointer; }
 .ap-commande button:hover { filter: brightness(1.08); }
 .a-propos .ap-install-sous { margin-top: 1rem; font-size: .9rem; color: var(--texte-2); }
-@media (max-width: 600px) {                        /* téléphone : les trois onglets sur toute la largeur */
-  .ap-onglets { display: flex; }
-  .ap-onglets [role=tab] { flex: 1; justify-content: center; padding: .5rem .4rem; gap: .35rem; font-size: .88rem; }
+@media (max-width: 600px) {                        /* téléphone : les quatre onglets sur deux lignes, toute la largeur */
+  .ap-onglets { display: grid; grid-template-columns: 1fr 1fr; }
+  .ap-onglets [role=tab] { justify-content: center; padding: .55rem .4rem; gap: .35rem; font-size: .88rem; }
 }
+/* l'adresse de l'appli du téléphone en QR code, pour qui lit la page sur un ordinateur */
+.ap-qr-cadre { display: block; width: fit-content; margin-top: .6rem; padding: 6px; background: #fff; border-radius: 8px; border: 1px solid var(--bord); }
+.ap-qr { display: block; width: 136px; height: 136px; }
 #installation { scroll-margin-top: var(--haut-barre, 56px); }        /* bouton « Installer » : le titre sous la barre du haut */
 .ap-depot { white-space: nowrap; }                                   /* l'adresse du dépôt d'un seul tenant */
 /* questions fréquentes : une question par ligne, la réponse se déplie au clic ; le + tourne en × */
@@ -1179,9 +1194,8 @@ label.btn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; 
 /* ---------------------------------------------------------------- l'Atelier sur téléphone (telephone.js) */
 .qr-telephone { width: min(18rem, 70vw); margin: .4rem auto 1rem; padding: .6rem; background: #fff; border-radius: var(--rayon); }
 .qr-telephone svg { display: block; width: 100%; height: auto; }
-/* dans l'appli du téléphone : ce qui ne tourne que sur le PC, et ce qui passe par la recherche de cartes (bientôt) */
-.telephone :is(.aller, #btn-rafraichir, #etat-maj, #btn-chat, #lien-recherche, .pc-seulement, [data-act="version"], #btn-ajouter,
-  #btn-nouveau, #cl-ajout, #cl-importer, a[href^="#/recherche"]) { display: none !important; }
+/* dans l'appli du téléphone : ce qui ne tourne que sur le PC (pour l'instant) */
+.telephone :is(#btn-rafraichir, #etat-maj, #btn-chat, .pc-seulement, #cb-claude, #cb-mtgpics) { display: none !important; }
 .tel-accueil { display: grid; gap: 1rem; justify-items: center; max-width: 26rem; margin: 12vh auto 0; padding: 0 1rem; text-align: center; }
 .tel-accueil h1 { margin: 0; }
 .tel-accueil video { width: 100%; border-radius: var(--rayon); background: #000; }
@@ -1197,3 +1211,18 @@ label.btn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; 
 .tel-bandeau-texte span { color: var(--texte-2); }
 .tel-bandeau-boutons { display: flex; gap: .4rem; margin-left: auto; }
 .tel-partager { display: inline-block; padding: 0 .25rem; border: 1px solid var(--bord); border-radius: 4px; font-size: .8em; }
+
+/* au doigt (téléphone, tablette, écran tactile) : des cibles d'au moins 36 à 40 px. Les petites étiquettes et les liens
+   dans le texte gardent leur taille : la zone qu'on touche déborde autour d'eux, invisible. */
+@media (pointer: coarse) {
+  .btn, .segments button, .onglets a { min-height: 40px; }
+  .btn-petit, .segments-petits button, .rch-bascule, .lien-discret { min-height: 36px; }
+  .btn-menu { width: 40px; height: 40px; }
+  .couleur { padding: 7px; }
+  input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+  summary { padding-block: .45rem; }
+  /* iPhone : un champ écrit en moins de 16 px fait zoomer la page à chaque fois qu'on le touche */
+  input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: 16px; }
+  .tag, a.prix, .aide-q, .fil a, .rch-nom { position: relative; }
+  .tag::after, a.prix::after, .aide-q::after, .fil a::after, .rch-nom::after { content: ""; position: absolute; inset: -8px -4px; }
+}

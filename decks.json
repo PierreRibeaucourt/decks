@@ -1,7 +1,7 @@
 {
  "Deck Malfegor": {
   "slug": "malfegor",
-  "date": 1794494012.0495923,
+  "date": 1794540323.922233,
   "version": "1.7.6",
   "resume": {
    "alertes": {},
@@ -24,12 +24,11 @@
    "maybe": 1,
    "modifie": 1793820260.4356208,
    "note": "",
-   "prix_total": 505.4,
+   "prix_total": 508.8,
    "titre": "Malfegor",
    "total": 100,
    "trop_cher": [
     "Wheel of Fortune",
-    "Glint-Horn Buccaneer",
     "Bone Miser",
     "Cool but Rude",
     "Brallin, Skyshark Rider",
@@ -393,7 +392,7 @@
  },
  "Deck Kels": {
   "slug": "kels",
-  "date": 1794494008.4263093,
+  "date": 1794540320.3841746,
   "version": "1.7.6",
   "resume": {
    "alertes": {},
@@ -419,7 +418,7 @@
    "maybe": 0,
    "modifie": 1794381054.396183,
    "note": "",
-   "prix_total": 204.81,
+   "prix_total": 203.65,
    "titre": "Kels",
    "total": 100,
    "trop_cher": [
@@ -756,7 +755,7 @@
  },
  "Deck Sefris": {
   "slug": "sefris",
-  "date": 1794494015.3956404,
+  "date": 1794540326.7113245,
   "version": "1.7.6",
   "resume": {
    "alertes": {},
@@ -780,7 +779,7 @@
    "maybe": 1,
    "modifie": 1793822475.3802023,
    "note": "",
-   "prix_total": 79.27,
+   "prix_total": 78.6,
    "titre": "Sefris",
    "total": 100,
    "trop_cher": [
@@ -1146,7 +1145,7 @@
  },
  "Deck Forgeur de soleil": {
   "slug": "forgeur-de-soleil",
-  "date": 1794493997.323926,
+  "date": 1794540314.110019,
   "version": "1.7.6",
   "resume": {
    "alertes": {},
@@ -1176,7 +1175,7 @@
    "maybe": 2,
    "modifie": 1794389593.208363,
    "note": "",
-   "prix_total": 418.28,
+   "prix_total": 416.64,
    "titre": "Forgeur de soleil",
    "total": 100,
    "trop_cher": [
@@ -1190,6 +1189,7 @@
     "Minamo, School at Water's Edge",
     "Stoneforge Mystic",
     "Maze of Ith",
+    "Kellan, the Fae-Blooded // Birthright Boon",
     "Inventors' Fair",
     "Fighter Class",
     "Raugrin Triome",
@@ -1588,7 +1588,7 @@
  },
  "Deck Tromo": {
   "slug": "tromo",
-  "date": 1794508331.889343,
+  "date": 1794540330.1644359,
   "version": "1.7.6",
   "resume": {
    "alertes": {},
@@ -1612,7 +1612,7 @@
    "maybe": 6,
    "modifie": 1794508197.1953983,
    "note": "",
-   "prix_total": 126.95,
+   "prix_total": 125.76,
    "titre": "Tromo",
    "total": 99,
    "trop_cher": [
@@ -1925,7 +1925,7 @@
  },
  "Deck Greven Elemental": {
   "slug": "greven-elemental",
-  "date": 1794494001.8224866,
+  "date": 1794540317.5178726,
   "version": "1.7.6",
   "resume": {
    "alertes": {},
@@ -1951,7 +1951,7 @@
    "maybe": 4,
    "modifie": 1794160399.297893,
    "note": "",
-   "prix_total": 151.01,
+   "prix_total": 149.74,
    "titre": "Greven Elemental",
    "total": 100,
    "trop_cher": [
@@ -1959,7 +1959,6 @@
     "Molten Echoes",
     "Terror of the Peaks",
     "Jeska's Will",
-    "Skullclamp",
     "Ruby Medallion",
     "Tibalt's Trickery"
    ]

@@ -17,6 +17,7 @@ if (PARTAGE) document.documentElement.classList.add("partage");
 // PC ; la discussion, la simulation et la recherche restent sur le PC
 const TELEPHONE = window.TELEPHONE || null;
 const PC = !PARTAGE && !TELEPHONE;              // l'Atelier du PC : serveur Python, tâches en fond, mises à jour
+const CET_APPAREIL = TELEPHONE ? "ce téléphone" : "ce PC", AUTRE_APPAREIL = TELEPHONE ? "un autre appareil" : "un autre PC";
 // page partagée : à qui sont ces decks (reglages.json « nom », sinon le compte GitHub qui publie)
 // titre_accueil : la page d'accueil de l'Atelier (site_atelier.py), qui n'est le site de decks de personne
 const MES_DECKS = PARTAGE && PARTAGE.titre_accueil || (PARTAGE && PARTAGE.auteur ? `Decks de ${PARTAGE.auteur}` : "Mes decks");
@@ -316,9 +317,16 @@ function ficheSurvol(c) {
     </div>`;
 }
 
+// au doigt, pas d'aperçu « au survol » : le navigateur simule un survol à chaque toucher, et l'aperçu resterait affiché
+// par-dessus la page. Un nom de carte cité dans un texte se touche pour voir la carte (plus bas)
+let toucheA = 0;
+addEventListener("touchstart", () => { toucheA = Date.now(); }, { passive: true, capture: true });
+const auDoigt = () => Date.now() - toucheA < 1500;
+
 document.addEventListener("mouseover", (ev) => {
   const el = ev.target.closest("[data-survol], [data-survol-r]");
   const fs = $("#fiche-survol");
+  if (auDoigt()) { fs.hidden = true; survolCarte = null; return; }
   const c = !el ? null : el.dataset.survolR != null ? (rch.res && rch.res.cartes[+el.dataset.survolR] ? survolRecherche(rch.res.cartes[+el.dataset.survolR]) : null)
     : etat.deck && etat.deck.cartes[+el.dataset.survol];
   if (!c) { fs.hidden = true; survolCarte = null; return; }
@@ -360,6 +368,7 @@ function montrerApercu(el) {
 document.addEventListener("mouseover", (ev) => {
   const el = ev.target.closest("[data-image], [data-apercu]");
   const ap = $("#apercu");
+  if (auDoigt()) { ap.hidden = true; survol = null; $("#bulle").hidden = true; return; }
   if (el && el.dataset.image == null) {          // carte citée : son image est cherchée au premier survol
     if (el !== survol) {
       survol = el;
@@ -372,6 +381,15 @@ document.addEventListener("mouseover", (ev) => {
   const bu = $("#bulle");
   if (!b || !b.dataset.bulle) bu.hidden = true;
   else { bu.textContent = b.dataset.bulle; bu.hidden = false; }
+});
+// au doigt : toucher un nom de carte cité montre la carte ; le toucher suivant, ailleurs, la cache (survol ci-dessus)
+document.addEventListener("click", (ev) => {
+  const el = auDoigt() && ev.target.closest(".nc[data-apercu]");
+  if (!el || el.closest("a, button")) return;
+  souris.x = ev.clientX;
+  souris.y = ev.clientY;
+  survol = el;
+  (el.dataset.image ? Promise.resolve() : apercuCite(el)).then(() => { if (survol === el && el.dataset.image) montrerApercu(el); });
 });
 document.addEventListener("mousemove", (ev) => {
   souris.x = ev.clientX;
@@ -585,6 +603,9 @@ document.addEventListener("click", (ev) => { if (!ev.target.closest("#menu, .btn
 addEventListener("resize", fermerMenu);
 addEventListener("scroll", fermerMenu);
 
+// au doigt, le bouton « retour » du téléphone ferme la fenêtre ouverte au lieu de quitter la page : chaque fenêtre ajoute
+// une étape à l'historique, retirée quand on la ferme autrement (sauf si une autre page s'est ouverte entre-temps)
+const RETOUR_FERME = matchMedia("(pointer: coarse)").matches;
 function ouvrirModale(html, monte, { focus = true, large = false } = {}) {
   cacherApercu();
   fermerMenu();
@@ -596,8 +617,22 @@ function ouvrirModale(html, monte, { focus = true, large = false } = {}) {
   const champ = focus && $("input, textarea", m);
   if (champ) champ.focus();
   else $(".modale-boite", m).focus({ preventScroll: true });
+  if (RETOUR_FERME && !(history.state && history.state.modale)) history.pushState({ modale: true }, "");
 }
-function fermerModale() { $("#modale").hidden = true; $("#modale").innerHTML = ""; cacherApercu(); }
+function fermerModale(parRetour) {
+  const ouverte = !$("#modale").hidden;
+  $("#modale").hidden = true;
+  $("#modale").innerHTML = "";
+  cacherApercu();
+  if (ouverte && parRetour !== true && history.state && history.state.modale) {
+    const url = location.href;                     // après : une autre fenêtre ou une autre page a pu s'ouvrir
+    setTimeout(() => { if ($("#modale").hidden && history.state && history.state.modale && location.href === url) history.back(); });
+  }
+}
+addEventListener("popstate", () => {
+  if (!$("#modale").hidden) fermerModale(true);
+  else if (history.state && history.state.modale) history.back();      // l'étape d'une fenêtre déjà fermée : on la passe
+});
 document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") { fermerModale(); fermerMenu(); } });
 
 // ------------------------------------------------------------------ navigation
@@ -718,7 +753,7 @@ function deckDeLaPage() {
       </a>`;
     const nc = cartes.length;
     liste.innerHTML = (q.length >= 2 ? `<div class="aller-section">Cartes</div>` + (nc ? items.slice(0, nc).map(ligneCarte).join("")
-        : enConstruction ? `<div class="aller-vide petit">La base de cartes se construit : la recherche marchera quand elle sera prête.
+        : enConstruction ? `<div class="aller-vide petit">La base de cartes ${TELEPHONE ? "arrive" : "se construit"} : la recherche marchera quand elle sera prête.
             <a href="${esc(tous(brut))}">Voir l'avancement →</a></div>`
         : `<div class="aller-vide muet petit">Aucune carte.</div>`) : "")
       + (decksTrouves.length ? (q.length >= 2 ? `<div class="aller-section">Decks</div>` : "") + items.slice(nc).map((it, j) => ligneDeck(it, nc + j)).join("") : "")
@@ -791,13 +826,13 @@ async function vueAccueil() {
             <td class="num"><button class="btn btn-petit" data-recup="${i}">${ico("annuler")}Récupérer</button></td></tr>`).join("")}
         </tbody></table>
       </details>` : "";
-  if (!ds.length && PC) {                    // premier lancement, ou nouveau PC : les deux façons de commencer
+  if (!ds.length && (PC || (TELEPHONE && TELEPHONE.local))) {      // premier lancement, ou nouveau PC : les façons de commencer
     vue.innerHTML = `<div class="titre-page"><h1>${esc(MES_DECKS)}</h1></div>
       <div class="accueil-vide">
         <button type="button" class="av-choix" id="av-creer">${ico("plus")}<strong>Créer mon premier deck</strong>
           <span>À partir de son commandant, ou d'une liste copiée depuis Moxfield, Archidekt ou MTG Arena.</span></button>
         <button type="button" class="av-choix" id="av-recuperer">${ico("nuage")}<strong>Récupérer mes decks</strong>
-          <span>Tu les as sauvegardés en ligne depuis un autre PC.</span></button>
+          <span>Tu les as sauvegardés en ligne depuis ${AUTRE_APPAREIL}.</span></button>
         <button type="button" class="av-choix" id="av-importer">${ico("dossier")}<strong>Importer mes decks</strong>
           <span>Exportés de ManaBox, Moxfield, Archidekt… : un fichier par deck.</span></button>
       </div>${decksSupprimes}`;
@@ -827,7 +862,7 @@ async function vueAccueil() {
     <div id="d-resultats"></div>
     ${decksSupprimes}`;
   $("#btn-nouveau").onclick = modaleNouveauDeck;
-  if (PC) etatSauvegarde($("#etat-sauvegarde"), $("#bandeau-sauvegarde"));
+  if (PC || (TELEPHONE && TELEPHONE.local)) etatSauvegarde($("#etat-sauvegarde"), $("#bandeau-sauvegarde"));
   const zone = $("#d-resultats");
   let cartes = {}, numero = 0, minuteur;
   const rendre = () => rendreDecks(zone, cartes);
@@ -1079,6 +1114,8 @@ async function vueDeck(id, onglet, extra = null, donnees = null) {
     </div>
     <section id="contenu"></section>`;
   $("#btn-ajouter").onclick = () => modaleAjout();
+  const actif = $(".onglets a.actif");                // l'onglet ouvert, en vue dans la barre qui défile (téléphone)
+  if (actif) { const n = actif.parentElement; n.scrollLeft += actif.getBoundingClientRect().left - n.getBoundingClientRect().left - (n.clientWidth - actif.offsetWidth) / 2; }
   $$(".cmd-entete").forEach((x) => { x.onclick = () => ouvrirCarte(d.cartes[+x.dataset.carte]); });
   $("#btn-deck-menu").onclick = (ev) => ouvrirMenu(ev.currentTarget, [
     ...(!PC ? [] : [["Partager le deck…", () => modalePartage(d), "", "partager"],
@@ -1086,7 +1123,7 @@ async function vueDeck(id, onglet, extra = null, donnees = null) {
     "Copier la liste pour",
     ...EXPORTS.map(([fmt, lib]) => [lib, () => copierListe(fmt, lib), "", "copier"]),
     ...(PARTAGE ? [] : [["Cardmarket (à acheter)", () => copierCardmarket(d), "", "panier"]]),
-    ...(!PC ? [] : [null, ["Renommer…", () => modaleRenommer(d), "", "crayon"], ["Supprimer ce deck…", () => supprimerDeck(d), "btn-danger", "corbeille"]]),
+    ...(PARTAGE ? [] : [null, ["Renommer…", () => modaleRenommer(d), "", "crayon"], ["Supprimer ce deck…", () => supprimerDeck(d), "btn-danger", "corbeille"]]),
   ]);
   const contenu = $("#contenu");
   if (onglet === "stats") return ongletStats(contenu, d);
@@ -1644,16 +1681,16 @@ function modalePartage(d) {
 function introGithub(zone, suite, contexte = "") {
   const pourquoi = {
     sauvegarde: "Pour sauvegarder tes decks, l'Atelier passe par GitHub.",
-    recuperer: "Ta sauvegarde est sur GitHub : connecte l'Atelier au compte GitHub de ton autre PC.",
+    recuperer: `Ta sauvegarde est sur GitHub : connecte l'Atelier au compte GitHub de ton autre ${TELEPHONE ? "appareil" : "PC"}.`,
     partage: "Pour publier la page de ton deck, l'Atelier passe par GitHub.",
   }[contexte];
   const connecter = () => connexionGithub(zone, suite);
   zone.innerHTML = `${pourquoi ? `<p class="gh-contexte">${pourquoi}</p>` : ""}
     <div class="gh-presente">
-      <p><strong>GitHub</strong> est un service gratuit de Microsoft qui garde des fichiers en ligne. L'Atelier s'en sert pour deux choses :</p>
+      <p><strong>GitHub</strong> est un service gratuit de Microsoft qui garde des fichiers en ligne.${TELEPHONE ? "" : " L'Atelier s'en sert pour deux choses :"}</p>
       <ul class="gh-usages">
-        <li>${ico("nuage")}<span><strong>Sauvegarder tes decks</strong> dans un espace privé, que toi seul vois : tu les retrouves si ton PC tombe en panne, ou sur un autre PC.</span></li>
-        <li>${ico("partager")}<span><strong>Publier les decks que tu partages</strong>, sur une page à envoyer à ton groupe de jeu.</span></li>
+        <li>${ico("nuage")}<span><strong>Sauvegarder tes decks</strong> dans un espace privé, que toi seul vois : tu les retrouves si ton ${TELEPHONE ? "téléphone" : "PC"} tombe en panne, ou sur ${AUTRE_APPAREIL}.</span></li>
+        ${TELEPHONE ? "" : `<li>${ico("partager")}<span><strong>Publier les decks que tu partages</strong>, sur une page à envoyer à ton groupe de jeu.</span></li>`}
       </ul>
     </div>
     <p class="gh-compte">Il faut un compte GitHub : gratuit, avec une adresse e-mail.</p>
@@ -1694,9 +1731,9 @@ async function connexionGithub(zone, suite) {
   zone.innerHTML = `<ol class="gh-etapes">
       <li><p class="gh-code" aria-label="Code de connexion">${esc(c.code)}</p>
         <a class="btn btn-accent" id="gh-ouvrir" href="${esc(c.url)}" target="_blank" rel="noopener">${ico("copier")}Copier le code et ouvrir GitHub</a></li>
-      <li>Sur GitHub, connecte-toi si besoin, colle le code (Ctrl+V), puis clique sur «&nbsp;Continue&nbsp;».</li>
+      <li>Sur GitHub, connecte-toi si besoin, colle le code${TELEPHONE ? "" : " (Ctrl+V)"}, puis clique sur «&nbsp;Continue&nbsp;».</li>
       <li>GitHub te montre ce que l'Atelier pourra faire : écrire dans tes dépôts, les dossiers de ton compte. C'est là
-        qu'il range ta sauvegarde et tes pages. Clique sur «&nbsp;Authorize Atelier MTG&nbsp;», puis reviens ici.</li>
+        qu'il range ta sauvegarde${TELEPHONE ? "" : " et tes pages"}. Clique sur «&nbsp;Authorize Atelier MTG&nbsp;», puis reviens ici.</li>
     </ol>
     <p class="gh-attente" role="status">En attente de GitHub…</p>`;
   $("#gh-ouvrir", zone).onclick = () => { navigator.clipboard.writeText(c.code).catch(() => {}); };
@@ -1749,7 +1786,7 @@ async function activerSauvegarde(zone, fin) {
   const n = r.resume.decks || 0;
   zone.innerHTML = `<p class="sv-ok">${ico("nuage")}<span><strong>${n > 1 ? `Tes ${n} decks sont sauvegardés.` : n ? "Ton deck est sauvegardé." : "La sauvegarde est prête."}</strong>
       Ensuite, chaque modification est sauvegardée toute seule.</span></p>
-    <p class="muet petit">Sur un autre PC : installe l'Atelier, puis «&nbsp;Récupérer mes decks&nbsp;» sur sa page d'accueil.</p>
+    <p class="muet petit">${TELEPHONE ? "Sur un autre appareil : «&nbsp;Récupérer mes decks&nbsp;» sur la page d'accueil de l'Atelier." : "Sur un autre PC : installe l'Atelier, puis «&nbsp;Récupérer mes decks&nbsp;» sur sa page d'accueil."}</p>
     <div class="boutons">${r.etat.url ? `<a class="btn" href="${esc(r.etat.url)}" target="_blank" rel="noopener">${ico("ouvrir")}Voir sur GitHub</a>` : ""}
       <button class="btn btn-accent" id="sv-fin">OK</button></div>`;
   $("#sv-fin", zone).onclick = fin;
@@ -1762,7 +1799,7 @@ async function recupererDecks(zone, fin) {
   catch (e) { return echecSauvegarde(zone, e, () => recupererDecks(zone, fin), "recuperer"); }
   if (!s.existe) {
     zone.innerHTML = `<p>Aucune sauvegarde de decks sur le compte GitHub <strong>${esc(g.compte)}</strong>.</p>
-      <p class="muet petit">Elle se crée depuis ton autre PC : bandeau «&nbsp;Les sauvegarder en ligne&nbsp;» de sa page d'accueil, ou Options.</p>
+      <p class="muet petit">Elle se crée depuis ton autre ${TELEPHONE ? "appareil" : "PC"} : bandeau «&nbsp;Les sauvegarder en ligne&nbsp;» de sa page d'accueil, ou Options.</p>
       <div class="boutons"><button class="btn btn-accent" id="sv-fin">OK</button></div>`;
     $("#sv-fin", zone).onclick = fin;
     return;
@@ -1771,7 +1808,7 @@ async function recupererDecks(zone, fin) {
   zone.innerHTML = `<p>La sauvegarde du compte <strong>${esc(g.compte)}</strong> contient ${s.decks.length > 1 ? `${s.decks.length} decks` : "1 deck"},
       modifiée le ${esc(quand)} :</p>
     <p class="sv-decks">${s.decks.map((n) => `<strong>${esc(n)}</strong>`).join(" · ")}</p>
-    <div class="boutons"><button class="btn btn-accent" id="sv-go">${ico("telecharger")}Récupérer sur ce PC</button></div>`;
+    <div class="boutons"><button class="btn btn-accent" id="sv-go">${ico("telecharger")}Récupérer sur ${CET_APPAREIL}</button></div>`;
   $("#sv-go", zone).onclick = async () => {
     zone.innerHTML = `<p class="chargement">Récupération de tes decks…</p>`;
     try {
@@ -1798,7 +1835,7 @@ async function etatSauvegarde(petit, bandeau) {
   let tard = 0;
   try { tard = +localStorage.getItem("pref-sauvegarde-plus-tard") || 0; } catch (_) {}
   if ((s.connecte && s.prive && !s.voulue) || Date.now() - tard < PLUS_TARD_SAUVEGARDE) return;   // coupée exprès, ou « Plus tard »
-  bandeau.innerHTML = `<div class="bandeau-sauvegarde">${ico("nuage")}<p>Tes decks ne sont que sur ce PC : si tu le changes ou s'il tombe en panne, ils sont perdus.</p>
+  bandeau.innerHTML = `<div class="bandeau-sauvegarde">${ico("nuage")}<p>Tes decks ne sont que sur ${CET_APPAREIL} : si tu le changes ou s'il tombe en panne, ils sont perdus.</p>
     <button class="btn btn-accent btn-petit" id="bs-oui">Les sauvegarder en ligne</button>
     <button class="btn btn-discret btn-petit" id="bs-tard">Plus tard</button></div>`;
   $("#bs-oui", bandeau).onclick = () => modaleSauvegarde("sauvegarde", () => etatSauvegarde(petit, bandeau));
@@ -1917,13 +1954,18 @@ function optionsTelephone() {
   const a = TELEPHONE.acces();
   vue.innerHTML = `<nav class="fil" aria-label="Fil d'Ariane"><a href="#/">Mes decks</a><span aria-hidden="true">›</span><span aria-current="page">Options</span></nav>
     <section class="panneau options"><div class="opt-titre"><h2>${ico("telephone")}Téléphone</h2></div>
-      <div class="opt-lignes">
-        <p>Relié à la sauvegarde <strong>${esc(a ? a.depot : "")}</strong></p>
+      <div class="opt-lignes">${a ? `
+        <p>Relié à la sauvegarde <strong>${esc(a.depot)}</strong></p>
         <p class="muet petit" id="tel-attente"></p>
         <div class="form-ligne"><button class="btn" id="tel-maj">${ico("rafraichir")}Synchroniser</button>
-          <button class="btn btn-danger" id="tel-delier">Délier ce téléphone</button></div>
-      </div></section>
+          <button class="btn btn-danger" id="tel-delier">Délier ce téléphone</button></div>` : `
+        <p>Tes decks sont gardés sur ce téléphone.</p>
+        <div id="opt-github"></div>`}
+      </div></section>${a ? "" : `
+    <section class="panneau options opt-bloc" id="opt-cartes"></section>`}
     <section class="panneau options" id="opt-classeur"></section>`;
+  classeurOptions($("#opt-classeur"));
+  if (!a) { ligneGithub($("#opt-github"), {}); return optionsCartes($("#opt-cartes")); }
   const attente = async () => {
     const n = await TELEPHONE.enAttente();
     $("#tel-attente").textContent = n ? `${n} modification${n > 1 ? "s" : ""} pas encore envoyée${n > 1 ? "s" : ""}` : "";
@@ -1939,7 +1981,27 @@ function optionsTelephone() {
     b.disabled = false;
   };
   $("#tel-delier").onclick = () => { if (confirm("Délier ce téléphone ? Ses decks en seront effacés (ils restent sur ton PC).")) TELEPHONE.delier(); };
-  classeurOptions($("#opt-classeur"));
+}
+
+// sans PC : les réglages des cartes, gardés sur ce téléphone (le bloc « Cartes » des Options du PC, sans la langue)
+async function optionsCartes(el) {
+  const o = await api("/api/options").catch(() => ({ budget: 5 }));
+  const budget = (b) => (b == null ? "" : String(b).replace(".", ","));
+  el.innerHTML = `<h2>${ico("cartes")}Cartes</h2><div class="opt-lignes">
+      <label class="opt-champ"><span>Budget par carte</span><span class="opt-euros"><input class="champ" name="budget" inputmode="decimal" value="${budget(o.budget)}" placeholder="5">€</span></label>
+      ${basculesUB(o)}</div>`;
+  el.onchange = async (ev) => {
+    const c = ev.target;
+    if (!c.name) return;
+    try {
+      Object.assign(o, await api("/api/options", { method: "POST", body: { [c.name]: c.type === "checkbox" ? c.checked : c.value } }));
+      majBudget(o.budget);
+      toast("Enregistré.");
+    } catch (e) { erreur(e); }
+    if (c.type === "checkbox") c.checked = !!o[c.name];
+    else c.value = budget(o.budget);
+  };
+  el.onkeydown = (ev) => { if (ev.key === "Enter" && ev.target.matches("input.champ")) ev.target.blur(); };
 }
 
 // les champs des options ; ceux des préférences sont aussi demandés une fois au premier lancement (modalePreferences)
@@ -4419,6 +4481,11 @@ const DEPOT_ATELIER = "https://github.com/PierreRibeaucourt/atelier-mtg";
 const CAPTURES_ATELIER = "https://pierreribeaucourt.github.io/decks/a-propos/";
 // les decks partagés de l'auteur : à quoi ressemble une page partagée, en vrai
 const EXEMPLES_ATELIER = "https://pierreribeaucourt.github.io/decks/";
+// l'Atelier sur téléphone (telephone.js), et son adresse en QR code pour qui visite la page depuis un ordinateur
+const APPLI_TELEPHONE = "https://atelier-mtg.github.io/";
+const QR_APPLI = `<svg class="ap-qr" viewBox="0 0 33 33" role="img" aria-label="QR code de atelier-mtg.github.io"><rect width="33" height="33" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h1v1h-1zM13 2h2v1h-2zM17 2h3v1h-3zM24 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM12 3h1v1h-1zM14 3h3v1h-3zM18 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM30 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h2v1h-2zM14 4h2v1h-2zM17 4h1v1h-1zM20 4h1v1h-1zM24 4h1v1h-1zM26 4h3v1h-3zM30 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM18 5h2v1h-2zM21 5h2v1h-2zM24 5h1v1h-1zM26 5h3v1h-3zM30 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM11 6h1v1h-1zM17 6h6v1h-6zM24 6h1v1h-1zM26 6h3v1h-3zM30 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM12 7h2v1h-2zM17 7h1v1h-1zM20 7h1v1h-1zM22 7h1v1h-1zM24 7h1v1h-1zM30 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h7v1h-7zM10 9h5v1h-5zM16 9h3v1h-3zM20 9h3v1h-3zM2 10h1v1h-1zM8 10h1v1h-1zM10 10h1v1h-1zM12 10h1v1h-1zM18 10h2v1h-2zM23 10h2v1h-2zM27 10h3v1h-3zM2 11h1v1h-1zM4 11h1v1h-1zM6 11h2v1h-2zM9 11h2v1h-2zM12 11h2v1h-2zM15 11h1v1h-1zM18 11h1v1h-1zM21 11h1v1h-1zM25 11h2v1h-2zM28 11h2v1h-2zM2 12h1v1h-1zM6 12h1v1h-1zM8 12h1v1h-1zM10 12h4v1h-4zM15 12h4v1h-4zM23 12h2v1h-2zM26 12h1v1h-1zM4 13h3v1h-3zM10 13h1v1h-1zM15 13h1v1h-1zM21 13h3v1h-3zM25 13h1v1h-1zM27 13h1v1h-1zM2 14h1v1h-1zM5 14h1v1h-1zM8 14h3v1h-3zM13 14h3v1h-3zM17 14h2v1h-2zM22 14h1v1h-1zM24 14h2v1h-2zM30 14h1v1h-1zM5 15h2v1h-2zM9 15h1v1h-1zM11 15h1v1h-1zM13 15h2v1h-2zM18 15h1v1h-1zM20 15h2v1h-2zM24 15h3v1h-3zM29 15h2v1h-2zM2 16h4v1h-4zM7 16h3v1h-3zM12 16h2v1h-2zM19 16h2v1h-2zM22 16h1v1h-1zM25 16h4v1h-4zM2 17h1v1h-1zM4 17h1v1h-1zM12 17h2v1h-2zM17 17h1v1h-1zM20 17h2v1h-2zM23 17h4v1h-4zM28 17h1v1h-1zM30 17h1v1h-1zM3 18h1v1h-1zM5 18h2v1h-2zM8 18h1v1h-1zM10 18h1v1h-1zM12 18h3v1h-3zM18 18h3v1h-3zM27 18h2v1h-2zM2 19h1v1h-1zM5 19h1v1h-1zM7 19h1v1h-1zM12 19h1v1h-1zM15 19h2v1h-2zM19 19h8v1h-8zM28 19h3v1h-3zM2 20h3v1h-3zM8 20h3v1h-3zM12 20h3v1h-3zM17 20h1v1h-1zM21 20h7v1h-7zM30 20h1v1h-1zM2 21h1v1h-1zM4 21h1v1h-1zM6 21h2v1h-2zM10 21h1v1h-1zM13 21h1v1h-1zM15 21h1v1h-1zM20 21h1v1h-1zM22 21h1v1h-1zM24 21h3v1h-3zM2 22h1v1h-1zM6 22h1v1h-1zM8 22h5v1h-5zM16 22h2v1h-2zM19 22h1v1h-1zM22 22h5v1h-5zM28 22h3v1h-3zM10 23h1v1h-1zM12 23h1v1h-1zM16 23h1v1h-1zM19 23h4v1h-4zM26 23h2v1h-2zM2 24h7v1h-7zM11 24h1v1h-1zM13 24h2v1h-2zM20 24h3v1h-3zM24 24h1v1h-1zM26 24h3v1h-3zM2 25h1v1h-1zM8 25h1v1h-1zM12 25h1v1h-1zM16 25h3v1h-3zM21 25h2v1h-2zM26 25h1v1h-1zM30 25h1v1h-1zM2 26h1v1h-1zM4 26h3v1h-3zM8 26h1v1h-1zM14 26h3v1h-3zM18 26h1v1h-1zM21 26h7v1h-7zM2 27h1v1h-1zM4 27h3v1h-3zM8 27h1v1h-1zM11 27h3v1h-3zM15 27h2v1h-2zM19 27h3v1h-3zM25 27h1v1h-1zM27 27h3v1h-3zM2 28h1v1h-1zM4 28h3v1h-3zM8 28h1v1h-1zM14 28h6v1h-6zM21 28h9v1h-9zM2 29h1v1h-1zM8 29h1v1h-1zM11 29h2v1h-2zM17 29h1v1h-1zM23 29h1v1h-1zM25 29h4v1h-4zM30 29h1v1h-1zM2 30h7v1h-7zM10 30h1v1h-1zM14 30h1v1h-1zM19 30h3v1h-3zM26 30h1v1h-1zM28 30h1v1h-1z"/></svg>`;
+// un téléphone ou une tablette (iPadOS se présente comme un Mac, mais tactile)
+const SUR_TELEPHONE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 // pour qui n'a pas encore d'assistant IA : Claude Code dans l'application de bureau, sans terminal (guide en français)
 const CLAUDE_BUREAU = "https://code.claude.com/docs/fr/desktop-quickstart";
 // [capture, titre, texte] ; « Les bases » : ce qu'on attend de tout gestionnaire de decks
@@ -4458,7 +4525,8 @@ const FAQ_ATELIER = [
     ["Comment entrent mes cartes ?",
       "On colle une liste copiée depuis Moxfield, Archidekt ou MTG Arena. La liste d'un deck préconstruit se trouve sur ces sites. Les cartes rangées hors des decks se collent de la même façon dans le classeur."],
     ["Et sur mon téléphone ?",
-      `<p>L'Atelier s'ouvre sur le PC. Pour emporter un deck, « Partager » le publie en ligne, sur une page <a href="${EXEMPLES_ATELIER}">comme celles-ci</a> : elle se lit sur téléphone et se met à jour toute seule quand le deck change. Il faut un compte GitHub, gratuit : c'est lui qui héberge votre page.</p>`],
+      `<p>Oui : ouvrez <a href="${APPLI_TELEPHONE}">atelier-mtg.github.io</a> sur votre téléphone, puis ajoutez-la à l'écran d'accueil. Elle marche seule, sans PC ni compte, ou reliée à l'Atelier de votre PC par un QR code, et garde vos decks même sans réseau. La simulation, la table de jeu, les proxies et la discussion avec Claude restent sur PC.</p>
+      <p>Pour montrer un deck à quelqu'un, « Partager » le publie sur une page <a href="${EXEMPLES_ATELIER}">comme celles-ci</a>, qui se lit sur téléphone et se met à jour toute seule. Il faut un compte GitHub, gratuit : c'est lui qui héberge votre page.</p>`],
     ["Et si mon PC tombe en panne ?",
       "Activez la sauvegarde en ligne, facultative : l'Atelier range une copie de vos decks, de leurs versions et de votre classeur sur votre propre compte GitHub, gratuit, dans un espace privé que vous seul voyez. Chaque modification s'y ajoute toute seule. Sur un autre PC, « Récupérer mes decks » les ramène."],
     ["Puis-je partir avec mes decks ?",
@@ -4517,15 +4585,16 @@ function vueAPropos(installation = false) {
           <h1>L'Atelier <span>MTG</span></h1>
           <p class="ap-accroche">Le deckbuilding Commander assisté,<br>100% local et sans compte.</p>
           <ul class="ap-puces">${["Suggestions", "Base de mana", "Combos", "Bracket", "Simulation", "Table de jeu", "Recherche avancée", "Claude"].map((x) => `<li>${x}</li>`).join("")}</ul>
-          <p class="ap-cta"><a class="btn btn-accent" href="${INSTALLER}" id="ap-installer">${ico("telecharger")}Installer l'Atelier MTG</a>
+          <p class="ap-cta">${SUR_TELEPHONE ? `<a class="btn btn-accent" href="${APPLI_TELEPHONE}" id="ap-appli">${ico("telephone")}Ouvrir l'Atelier MTG</a>`
+            : `<a class="btn btn-accent" href="${INSTALLER}" id="ap-installer">${ico("telecharger")}Installer l'Atelier MTG</a>`}
             <a class="btn" href="${EXEMPLES_ATELIER}">${ico("partager")}Voir des decks partagés</a></p>
-          <p class="ap-mention"><b>Gratuit</b> · open source · tout reste sur votre PC${versionAtelier ? ` · version ${esc(versionAtelier)}` : ""}</p>
+          <p class="ap-mention"><b>Gratuit</b> · open source · PC et téléphone${versionAtelier ? ` · version ${esc(versionAtelier)}` : ""}</p>
         </div>
       </div>
     </header>
     <article class="a-propos">
       <div class="ap-bandeau">
-        <p class="ap-promesse">Zéro pub, zéro compte, zéro cloud : l'Atelier tourne <em>uniquement sur votre PC</em>.</p>
+        <p class="ap-promesse">Zéro pub, zéro compte, zéro cloud : l'Atelier tourne <em>uniquement sur vos appareils</em>, PC ou téléphone.</p>
         <p>L'Atelier est une application locale, qui s'ouvre dans votre navigateur, pensée pour concevoir, tester et faire
           évoluer des decks Magic: The Gathering en Commander.</p>
       </div>
@@ -4539,6 +4608,7 @@ function vueAPropos(installation = false) {
       <h2>Et aussi</h2>
       <div class="ap-grille">
         ${fonction("Import en un collage", "Une liste copiée depuis Moxfield, Archidekt ou MTG Arena devient un deck, rangé par catégories.")}
+        ${fonction("Sur votre téléphone", `L'Atelier s'ajoute à l'écran d'accueil, sans passer par un store. Seul ou relié à votre PC par un QR code, il garde vos decks même sans réseau. <a href="${APPLI_TELEPHONE}">Ouvrir l'appli</a>`)}
         ${fonction("Partage simplifié", `Chaque deck a sa page en ligne, tenue à jour toute seule, à envoyer à votre groupe de jeu : liste, visuel, statistiques, et une table pour le tester. <a href="${EXEMPLES_ATELIER}">Voir des exemples</a>`)}
       </div>
 
@@ -4546,20 +4616,22 @@ function vueAPropos(installation = false) {
       <ul class="ap-principes">
         <li><strong>Open source et gratuit.</strong> Le code est publié sous <a href="${depot}/blob/main/LICENSE" target="_blank" rel="noopener">licence MIT</a> :
           accessible, vérifiable et modifiable par tous sur GitHub.</li>
-        <li><strong>Vos decks sont stockés sur votre PC.</strong> Rien n'est collecté. Seules sortent les
+        <li><strong>Vos decks sont stockés sur vos appareils.</strong> Rien n'est collecté. Seules sortent les
           requêtes nécessaires : données, images et prix des cartes (Scryfall), combos et bracket (Commander Spellbook, MTGPics),
-          la discussion avec Claude si vous l'utilisez, et les pages que vous choisissez de partager.</li>
+          la discussion avec Claude si vous l'utilisez, la sauvegarde en ligne si vous l'activez, et les pages que vous
+          choisissez de partager.</li>
         <li><strong>L'IA est optionnelle.</strong> Tri, statistiques, suggestions, test du simulateur et jeu en solo
           fonctionnent sans aucune configuration IA.</li>
       </ul>
 
       <h2 id="installation">Installation</h2>
-      <p>L'Atelier s'installe une fois sur votre ordinateur, puis s'ouvre par un raccourci sur le bureau. Trois façons de
-        faire, au choix :</p>
+      <p>Sur ordinateur, l'Atelier s'installe une fois, puis s'ouvre par un raccourci sur le bureau. Sur téléphone, il
+        s'ouvre dans le navigateur, sans rien télécharger. Au choix :</p>
       <div class="ap-onglets" role="tablist" aria-label="Façon d'installer">
         <button type="button" role="tab" id="ap-o-windows" aria-controls="ap-p-windows"><svg class="ico ap-logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8.4v8.4H3zM12.6 3H21v8.4h-8.4zM3 12.6h8.4V21H3zM12.6 12.6H21V21h-8.4z"/></svg>Installeur</button>
         <button type="button" role="tab" id="ap-o-ia" aria-controls="ap-p-ia">${ico("discussion")}Assistant IA</button>
         <button type="button" role="tab" id="ap-o-main" aria-controls="ap-p-main">${ico("terminal")}À la main</button>
+        <button type="button" role="tab" id="ap-o-tel" aria-controls="ap-p-tel">${ico("telephone")}Téléphone</button>
       </div>
       <div class="ap-install" role="tabpanel" id="ap-p-windows" aria-labelledby="ap-o-windows">
         <p class="ap-install-pour">Windows 10 et 11 · rien d'autre à installer</p>
@@ -4595,7 +4667,20 @@ python installer.py</code><button type="button" data-copier>Copier</button></div
             Linux.</li>
         </ol>
       </div>
-      <p class="ap-install-sous">Les trois donnent le même Atelier, gratuit et open source. Les nouvelles versions s'annoncent
+      <div class="ap-install" role="tabpanel" id="ap-p-tel" aria-labelledby="ap-o-tel" hidden>
+        <p class="ap-install-pour">Android et iPhone · sans store, sans compte</p>
+        <ol>
+          <li>${SUR_TELEPHONE ? `Ouvrez l'appli :
+            <a class="btn btn-accent ap-install-action" href="${APPLI_TELEPHONE}">${ico("telephone")}Ouvrir l'Atelier MTG</a>`
+            : `Sur votre téléphone, ouvrez <a href="${APPLI_TELEPHONE}">atelier-mtg.github.io</a>, ou scannez ce QR code :
+            <span class="ap-qr-cadre">${QR_APPLI}</span>`}</li>
+          <li>Ajoutez-la à l'écran d'accueil. Android : <b>Installer l'application</b> ; iPhone : <b>Partager</b>, puis
+            <b>Sur l'écran d'accueil</b>.</li>
+          <li>Touchez <b>Commencer ici</b>. Vous avez déjà l'Atelier sur PC ? Dans ses <b>Options</b>, <b>Téléphone</b>
+            affiche un QR code : <b>Scanner le QR code du PC</b> relie les deux.</li>
+        </ol>
+      </div>
+      <p class="ap-install-sous">Sur ordinateur, les trois façons donnent le même Atelier, gratuit et open source. Les nouvelles versions s'annoncent
         dans l'Atelier et s'installent en un clic ; vos decks sont conservés. Code source :
         <a class="ap-depot" href="${depot}" target="_blank" rel="noopener">${depot.replace("https://", "")}</a></p>
 
@@ -4645,7 +4730,7 @@ python installer.py</code><button type="button" data-copier>Copier</button></div
     };
   });
   const plateforme = ((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "") + " " + navigator.userAgent;
-  choisir($(/Mac|iPhone|iPad|Linux|X11|CrOS/i.test(plateforme) && !/Windows|Android/i.test(plateforme) ? "#ap-o-ia" : "#ap-o-windows", vue));
+  choisir($(SUR_TELEPHONE ? "#ap-o-tel" : /Mac|Linux|X11|CrOS/i.test(plateforme) && !/Windows/i.test(plateforme) ? "#ap-o-ia" : "#ap-o-windows", vue));
   $$("[data-copier]", vue).forEach((b) => b.onclick = async () => {
     const code = b.previousElementSibling;
     try {
@@ -4661,7 +4746,7 @@ python installer.py</code><button type="button" data-copier>Copier</button></div
   });
   // un saut, pas un défilement animé : les captures qui se chargent en chemin le feraient s'arrêter trop tôt
   const aInstallation = () => $("#installation").scrollIntoView();
-  $("#ap-installer").onclick = (ev) => { ev.preventDefault(); aInstallation(); };      // même page : sans la redessiner
+  if ($("#ap-installer")) $("#ap-installer").onclick = (ev) => { ev.preventDefault(); aInstallation(); };   // même page : sans la redessiner
   if (installation) aInstallation();
 }
 
@@ -4905,7 +4990,7 @@ async function attendreBase(z) {
     const e = (b && b.construction) || {};
     const pc = e.total ? Math.round((100 * e.fait) / e.total) : 0;
     z.innerHTML = `<div class="panneau">
-      <h3>La base de cartes se construit</h3>
+      <h3>La base de cartes ${TELEPHONE ? "arrive" : "se construit"}</h3>
       <p>${esc(e.etape || (e.erreur ? "Arrêtée" : "En attente…"))}${e.total ? ` · ${pc} %` : ""}</p>
       ${e.total ? `<div class="barre-prog"><div style="width:${pc}%"></div></div>` : ""}
       ${e.erreur ? `<p class="erreur petit">${esc(e.erreur)}</p><button class="btn" id="rch-relancer">Relancer</button>` : ""}
