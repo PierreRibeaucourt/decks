@@ -1588,7 +1588,7 @@
  },
  "Deck Tromo": {
   "slug": "tromo",
-  "date": 1794707297.3549986,
+  "date": 1794736431.556191,
   "version": "2.1.0",
   "resume": {
    "alertes": {},
@@ -1609,12 +1609,12 @@
     "U"
    ],
    "image_cmd": "https://cards.scryfall.io/normal/front/f/1/f1a4dff1-8c2a-4a5e-94db-d4711c53f05d.jpg?1782817896",
-   "maybe": 7,
-   "modifie": 1794540524.2881715,
+   "maybe": 5,
+   "modifie": 1794736278.4608884,
    "note": "",
-   "prix_total": 124.82,
+   "prix_total": 123.05,
    "titre": "Tromo",
-   "total": 98,
+   "total": 100,
    "trop_cher": [
     "Sapphire Medallion",
     "Misleading Signpost",
@@ -1682,6 +1682,10 @@
     "Poteau indicateur fallacieux"
    ],
    [
+    "Apprentice Wizard",
+    "Apprenti sorcier"
+   ],
+   [
     "Palladium Myr",
     "Myr de palladium"
    ],
@@ -1704,6 +1708,10 @@
    [
     "Freeze in Place",
     "Congelé sur place"
+   ],
+   [
+    "Floodpits Drowner",
+    "Noyeur de Fossecrue"
    ],
    [
     "Hylda's Crown of Winter",
@@ -1794,8 +1802,8 @@
     "Instigateur sournois"
    ],
    [
-    "Dissipation Field",
-    "Champ de dissipation"
+    "Angler Turtle",
+    "Tortue pêcheuse"
    ],
    [
     "Curse of Verbosity",
@@ -1892,14 +1900,6 @@
    [
     "Maze of Ith",
     "Labyrinthe d'Ith"
-   ],
-   [
-    "Apprentice Wizard",
-    "Apprenti sorcier"
-   ],
-   [
-    "Floodpits Drowner",
-    "Noyeur de Fossecrue"
    ],
    [
     "Crashing Wave",
